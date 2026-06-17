@@ -180,6 +180,23 @@ public class DefaultScreen implements Screen {
         private final EnumSet<SGR> currentMods = EnumSet.noneOf(SGR.class);
 
         byte[] transitionTo(TextCell target) {
+            // Optimization + correctness: when target is fully default (no fg/bg/modifiers),
+            // emit a single SGR reset rather than individual sequences. This avoids the
+            // "stuck background" bug where some terminals don't properly interpret
+            // \033[49m (default bg) when preceded by other partial resets.
+            boolean targetIsDefault = target.fg() == AnsiColor.DEFAULT
+                    && target.bg() == AnsiColor.DEFAULT
+                    && target.modifiers().isEmpty();
+            if (targetIsDefault && (!currentFg.equals(AnsiColor.DEFAULT)
+                    || !currentBg.equals(AnsiColor.DEFAULT)
+                    || !currentMods.isEmpty())) {
+                byte[] reset = AnsiCodes.reset();
+                currentFg = AnsiColor.DEFAULT;
+                currentBg = AnsiColor.DEFAULT;
+                currentMods.clear();
+                return reset;
+            }
+
             var sb = new StringBuilder();
             boolean changed = false;
 

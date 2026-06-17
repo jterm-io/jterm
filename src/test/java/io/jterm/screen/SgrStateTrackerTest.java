@@ -35,13 +35,28 @@ class SgrStateTrackerTest {
     }
 
     @Test
-    void removingBoldEmitsDisable() {
+    void removingBoldEmitsReset() {
         var tracker = new DefaultScreen.SgrStateTracker();
         var bold = new TextCell('A', AnsiColor.DEFAULT, AnsiColor.DEFAULT, SGR.BOLD);
         tracker.transitionTo(bold);
         var plain = bold.withoutModifier(SGR.BOLD);
         byte[] output = tracker.transitionTo(plain);
-        assertTrue(new String(output).contains("\033[22m"));
+        // When transitioning to fully-default (no fg/bg/modifiers), the tracker
+        // emits a single SGR reset instead of individual disable sequences.
+        String s = new String(output);
+        assertTrue(s.contains("\033[0m"), "Expected SGR reset, got: " + s);
+    }
+
+    @Test
+    void removingBoldWithColorEmitsIncremental() {
+        // When target still has non-default colors, use incremental disable
+        var tracker = new DefaultScreen.SgrStateTracker();
+        var boldRed = new TextCell('A', AnsiColor.RED, AnsiColor.DEFAULT, SGR.BOLD);
+        tracker.transitionTo(boldRed);
+        var plainRed = new TextCell('A', AnsiColor.RED, AnsiColor.DEFAULT);
+        byte[] output = tracker.transitionTo(plainRed);
+        String s = new String(output);
+        assertTrue(s.contains("\033[22m"), "Expected incremental bold-off, got: " + s);
     }
 
     @Test
