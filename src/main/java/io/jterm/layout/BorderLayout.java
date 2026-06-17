@@ -1,0 +1,78 @@
+package io.jterm.layout;
+
+import io.jterm.core.TerminalPosition;
+import io.jterm.core.TerminalSize;
+import io.jterm.widget.Component;
+
+import java.util.List;
+
+/** Five-region layout: NORTH, SOUTH, EAST, WEST, CENTER. */
+public class BorderLayout implements LayoutManager {
+    public enum Region { NORTH, SOUTH, EAST, WEST, CENTER }
+
+    public static class BorderLayoutData implements LayoutData {
+        public final Region region;
+        public BorderLayoutData(Region region) { this.region = region; }
+    }
+
+    @Override
+    public TerminalSize getPreferredSize(List<Component> children) {
+        int width = 0, height = 0;
+        int northHeight = 0, southHeight = 0, eastWidth = 0, westWidth = 0;
+        int centerWidth = 0, centerHeight = 0;
+        for (var c : children) {
+            var ps = c.getPreferredSize();
+            var data = (BorderLayoutData) c.getLayoutData();
+            if (data == null) continue;
+            switch (data.region) {
+                case NORTH, SOUTH -> {
+                    width = Math.max(width, ps.columns());
+                    northHeight = Math.max(northHeight, ps.rows());
+                    southHeight = Math.max(southHeight, ps.rows());
+                }
+                case EAST, WEST -> {
+                    height = Math.max(height, ps.rows());
+                    eastWidth = Math.max(eastWidth, ps.columns());
+                    westWidth = Math.max(westWidth, ps.columns());
+                }
+                case CENTER -> {
+                    centerWidth = ps.columns();
+                    centerHeight = ps.rows();
+                }
+            }
+        }
+        width = Math.max(width, eastWidth + centerWidth + westWidth);
+        height = Math.max(height, northHeight + centerHeight + southHeight);
+        return new TerminalSize(Math.max(width, 1), Math.max(height, 1));
+    }
+
+    @Override
+    public void doLayout(TerminalSize area, List<Component> children) {
+        int northHeight = 0, southHeight = 0, eastWidth = 0, westWidth = 0;
+        Component center = null;
+        for (var c : children) {
+            var data = (BorderLayoutData) c.getLayoutData();
+            if (data == null) continue;
+            switch (data.region) {
+                case NORTH -> northHeight = Math.max(northHeight, c.getPreferredSize().rows());
+                case SOUTH -> southHeight = Math.max(southHeight, c.getPreferredSize().rows());
+                case EAST -> eastWidth = Math.max(eastWidth, c.getPreferredSize().columns());
+                case WEST -> westWidth = Math.max(westWidth, c.getPreferredSize().columns());
+                case CENTER -> center = c;
+            }
+        }
+        int centerHeight = Math.max(0, area.rows() - northHeight - southHeight);
+        int centerWidth = Math.max(0, area.columns() - eastWidth - westWidth);
+        for (var c : children) {
+            var data = (BorderLayoutData) c.getLayoutData();
+            if (data == null) continue;
+            switch (data.region) {
+                case NORTH -> c.setBounds(new TerminalPosition(0, 0), new TerminalSize(area.columns(), northHeight));
+                case SOUTH -> c.setBounds(new TerminalPosition(0, area.rows() - southHeight), new TerminalSize(area.columns(), southHeight));
+                case EAST -> c.setBounds(new TerminalPosition(area.columns() - eastWidth, northHeight), new TerminalSize(eastWidth, centerHeight));
+                case WEST -> c.setBounds(new TerminalPosition(0, northHeight), new TerminalSize(westWidth, centerHeight));
+                case CENTER -> c.setBounds(new TerminalPosition(westWidth, northHeight), new TerminalSize(centerWidth, centerHeight));
+            }
+        }
+    }
+}
