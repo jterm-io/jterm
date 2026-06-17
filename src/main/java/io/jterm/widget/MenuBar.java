@@ -1,0 +1,135 @@
+package io.jterm.widget;
+
+import io.jterm.core.TerminalPosition;
+import io.jterm.core.TerminalSize;
+import io.jterm.core.input.KeyStroke;
+import io.jterm.core.input.KeyType;
+import io.jterm.graphics.TextGraphics;
+import io.jterm.style.AnsiColor;
+import io.jterm.style.SGR;
+import io.jterm.style.TextCell;
+
+import java.util.ArrayList;
+import java.util.List;
+
+/**
+ * Horizontal menu bar containing {@link Menu}s. Sits at the top of a window.
+ *
+ * <h3>Keyboard interaction</h3>
+ * <ul>
+ *   <li><b>Alt+mnemonic</b> — open the menu whose title starts with that char</li>
+ *   <li><b>Arrow Left/Right</b> — switch between open menus</li>
+ *   <li><b>Escape</b> — close the active menu</li>
+ *   <li><b>Arrow Down</b> — move focus into the open dropdown</li>
+ *   <li><b>Enter</b> — activate the focused menu item</li>
+ * </ul>
+ *
+ * <h3>Usage</h3>
+ * <pre>{@code
+ * var bar = new MenuBar();
+ * var fileMenu = new Menu("File");
+ * fileMenu.addMenuItem("Open", () -> openFile());
+ * fileMenu.addMenuItem("Quit", () -> System.exit(0));
+ * bar.addMenu(fileMenu);
+ * }</pre>
+ */
+public class MenuBar extends AbstractComponent {
+
+    private final List<Menu> menus = new ArrayList<>();
+    private int activeMenuIndex = -1;  // which menu is currently open
+
+    private static final TextCell BAR_BG = new TextCell(' ', AnsiColor.WHITE, AnsiColor.DEFAULT);
+
+    @Override
+    protected TerminalSize calculatePreferredSize() {
+        int width = 0;
+        for (var m : menus) width += m.getPreferredSize().columns();
+        return new TerminalSize(Math.max(1, width), 1);
+    }
+
+    public void addMenu(Menu menu) {
+        menus.add(menu);
+        menu.setCloseCallback(() -> {
+            activeMenuIndex = -1;
+            invalidate();
+        });
+        invalidate();
+    }
+
+    public List<Menu> getMenus() { return new ArrayList<>(menus); }
+
+    public int getActiveMenuIndex() { return activeMenuIndex; }
+
+    @Override
+    protected void drawComponent(TextGraphics graphics) {
+        var size = getSize();
+        // Fill bar background
+        graphics.fillRectangle(0, 0, size.columns(), 1, BAR_BG);
+
+        int col = 0;
+        for (int i = 0; i < menus.size(); i++) {
+            var menu = menus.get(i);
+            menu.setBounds(new TerminalPosition(col, 0), new TerminalSize(menu.getPreferredSize().columns(), 1));
+            var sub = io.jterm.graphics.TextGraphicsExtensions.subGraphics(graphics, new TerminalPosition(col, 0), new TerminalSize(menu.getPreferredSize().columns(), 1));
+            menu.draw(sub);
+            col += menu.getPreferredSize().columns();
+        }
+    }
+
+    @Override
+    public void handleKeyStroke(KeyStroke keyStroke) {
+        // Alt+char → open the menu whose mnemonic matches
+        if (keyStroke.type() == KeyType.CHARACTER && keyStroke.alt()) {
+            char ch = Character.toLowerCase(keyStroke.character());
+            for (int i = 0; i < menus.size(); i++) {
+                if (Character.toLowerCase(menus.get(i).getMnemonic()) == ch) {
+                    openMenu(i);
+                    return;
+                }
+            }
+            return;
+        }
+
+        if (activeMenuIndex >= 0) {
+            // A menu is open — route input to it, or handle left/right switching
+            var active = menus.get(activeMenuIndex);
+            switch (keyStroke.type()) {
+                case ARROW_LEFT -> {
+                    active.setOpen(false);
+                    int prev = activeMenuIndex - 1;
+                    if (prev < 0) prev = menus.size() - 1;
+                    openMenu(prev);
+                    return;
+                }
+                case ARROW_RIGHT -> {
+                    active.setOpen(false);
+                    int next = (activeMenuIndex + 1) % menus.size();
+                    openMenu(next);
+                    return;
+                }
+                default -> {
+                    active.handleKeyStroke(keyStroke);
+                    return;
+                }
+            }
+        }
+    }
+
+    private void openMenu(int index) {
+        activeMenuIndex = index;
+        for (int i = 0; i < menus.size(); i++) {
+            menus.get(i).setOpen(i == index);
+        }
+        invalidate();
+    }
+
+    public void closeAll() {
+        for (var m : menus) m.setOpen(false);
+        activeMenuIndex = -1;
+        invalidate();
+    }
+
+    public boolean hasOpenMenu() {
+        return activeMenuIndex >= 0;
+    }
+}
