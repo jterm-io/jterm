@@ -224,4 +224,59 @@ class MenuBarTest {
         bar.handleKeyStroke(KeyStroke.character('f', false, false, false));
         assertFalse(bar.hasOpenMenu());
     }
+
+    @Test
+    void altMnemonicOpensMenu() {
+        // Bug: MenuBar only checked ctrl(), not alt() — Alt+letter was ignored.
+        // Fix: MenuBar now accepts both ctrl() and alt().
+        var bar = new MenuBar();
+        var fileMenu = new Menu("File");
+        fileMenu.addMenuItem("Open", () -> {});
+        bar.addMenu(fileMenu);
+        bar.addMenu(new Menu("Edit"));
+
+        bar.handleKeyStroke(KeyStroke.character('f', false, true, false)); // Alt+F
+        assertTrue(fileMenu.isOpen());
+        assertEquals(0, bar.getActiveMenuIndex());
+        assertTrue(bar.hasOpenMenu());
+    }
+
+    @Test
+    void altMnemonicCaseInsensitive() {
+        var bar = new MenuBar();
+        var editMenu = new Menu("Edit");
+        editMenu.addMenuItem("Copy", () -> {});
+        bar.addMenu(editMenu);
+
+        bar.handleKeyStroke(KeyStroke.character('E', false, true, false)); // Alt+E
+        assertTrue(editMenu.isOpen());
+    }
+
+    @Test
+    void altMnemonicOpensHelpMenu() {
+        // Bug: Ctrl+H (0x08) was consumed as Backspace — Help menu couldn't open via Ctrl+H.
+        // Alt+H sends ESC+h, which was decoded correctly but MenuBar ignored alt().
+        // Now both are fixed. Verify Alt+H works.
+        var bar = new MenuBar();
+        bar.addMenu(new Menu("File"));
+        var helpMenu = new Menu("Help");
+        helpMenu.addMenuItem("About", () -> {});
+        bar.addMenu(helpMenu);
+
+        bar.handleKeyStroke(KeyStroke.character('h', false, true, false)); // Alt+H
+        assertTrue(helpMenu.isOpen());
+        assertEquals(1, bar.getActiveMenuIndex());
+    }
+
+    @Test
+    void plainCharWithoutModifierDoesNothing() {
+        var bar = new MenuBar();
+        var fileMenu = new Menu("File");
+        fileMenu.addMenuItem("Open", () -> {});
+        bar.addMenu(fileMenu);
+
+        // 'f' with no modifiers should not open any menu
+        bar.handleKeyStroke(KeyStroke.character('f', false, false, false));
+        assertFalse(bar.hasOpenMenu());
+    }
 }

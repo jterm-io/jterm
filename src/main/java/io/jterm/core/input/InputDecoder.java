@@ -32,7 +32,7 @@ public class InputDecoder {
         if (first == '\t') {
             return Optional.of(new KeyStroke(KeyType.TAB));
         }
-        if (first == 0x7f || first == '\b') {
+        if (first == 0x7f) {
             return Optional.of(new KeyStroke(KeyType.BACKSPACE));
         }
         if (first >= 1 && first <= 26) { // Ctrl+A..Ctrl+Z, treat as letters
@@ -44,8 +44,19 @@ public class InputDecoder {
 
     private Optional<KeyStroke> readEscapeSequence(int esc) throws IOException {
         if (input.available() == 0) {
-            // Standalone Escape
-            return Optional.of(new KeyStroke(KeyType.ESCAPE));
+            // Wait briefly to distinguish standalone Escape from Alt+key sequences.
+            // Over network connections (e.g. iPad via SSH), ESC and the following byte
+            // can arrive in separate TCP packets. A 5ms wait gives the next byte
+            // time to arrive without noticeable latency for real Escape presses.
+            try {
+                Thread.sleep(5);
+            } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
+            }
+            if (input.available() == 0) {
+                // Standalone Escape
+                return Optional.of(new KeyStroke(KeyType.ESCAPE));
+            }
         }
         int second = input.read();
         if (second == -1) {

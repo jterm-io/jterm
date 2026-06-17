@@ -25,7 +25,7 @@ import java.util.List;
  *
  * <h3>Keyboard</h3>
  * <ul>
- *   <li><b>Ctrl+F / Ctrl+E / Ctrl+H</b> — open File / Edit / Help menu</li>
+ *   <li><b>Ctrl+F/E/H</b> or <b>Alt+F/E/H</b> — open File / Edit / Help menu</li>
  *   <li><b>Arrow Up/Down</b> — navigate menu items</li>
  *   <li><b>Arrow Left/Right</b> — switch between open menus</li>
  *   <li><b>Enter</b> — activate selected item</li>
@@ -46,7 +46,7 @@ public class MenuDemo {
         content.setLayoutManager(new BorderLayout());
 
         // Status label that menu actions update
-        var statusLabel = new Label(" Press Ctrl+F, Ctrl+E, or Ctrl+H to open a menu. q to quit. ");
+        var statusLabel = new Label(" Press Ctrl+F/E/H or Alt+F/E/H to open a menu. q to quit. ");
 
         // Build the menu bar
         var menuBar = new MenuBar();
@@ -78,7 +78,7 @@ public class MenuDemo {
         // Help menu
         var helpMenu = new Menu("Help");
         helpMenu.addMenuItem("About", () -> statusLabel.setText(" Action: About JTerm v0.1 "));
-        helpMenu.addMenuItem("Shortcuts", () -> statusLabel.setText(" Ctrl+letter opens menu, arrows navigate, Enter activates "));
+        helpMenu.addMenuItem("Shortcuts", () -> statusLabel.setText(" Ctrl/Alt+letter opens menu, arrows navigate, Enter activates "));
         helpMenu.addSeparator();
         helpMenu.addMenuItem("Documentation", () -> statusLabel.setText(" Action: Open docs "));
         menuBar.addMenu(helpMenu);
@@ -89,7 +89,7 @@ public class MenuDemo {
 
         var helpPanel = new Panel(new LinearLayout(LinearLayout.Direction.VERTICAL));
         helpPanel.addComponent(new Label(" ── Menu Demo ── "));
-        helpPanel.addComponent(new Label(" Ctrl+F = File   Ctrl+E = Edit   Ctrl+H = Help "));
+        helpPanel.addComponent(new Label(" Ctrl/Alt+F = File   Ctrl/Alt+E = Edit   Ctrl/Alt+H = Help "));
         helpPanel.addComponent(new Label(" ↑↓ navigate   ←→ switch menus   Enter activate "));
         helpPanel.addComponent(new Label(" Esc = close menu   q = quit "));
         content.addComponent(helpPanel, new BorderLayout.BorderLayoutData(BorderLayout.Region.SOUTH));
@@ -97,27 +97,53 @@ public class MenuDemo {
         gui.addWindow(window);
         gui.updateScreen();
 
+        var running = true;
+
         try {
-            while (gui.processInput()) {
-                // Drain all pending input
+            while (running) {
+                // Read ALL input in a single drain loop — don't let gui.processInput()
+                // steal the first keystroke before the menu bar sees it.
+                boolean anyInput = false;
                 while (true) {
                     var ks = screen instanceof DefaultScreen ds
                             ? ds.getTerminal().pollInput().orElse(null)
                             : null;
                     if (ks == null) break;
+                    anyInput = true;
 
-                    // Route Alt-key and menu-navigation keystrokes to the menu bar
+                    // Check for quit keys first
+                    if (ks.type() == KeyType.CHARACTER) {
+                        char ch = ks.character();
+                        if (ch == 'q' || ch == 'Q') {
+                            running = false;
+                            break;
+                        }
+                        if (ks.ctrl() && (ch == 'C' || ch == 'c')) {
+                            running = false;
+                            break;
+                        }
+                    }
+
+                    // Route menu keystrokes to the menu bar
                     boolean menuHandled = false;
-                    if (menuBar.hasOpenMenu() || (ks.type() == KeyType.CHARACTER && ks.ctrl())) {
+                    if (menuBar.hasOpenMenu()
+                            || (ks.type() == KeyType.CHARACTER && (ks.ctrl() || ks.alt()))) {
                         menuBar.handleKeyStroke(ks);
                         menuHandled = true;
                     }
 
                     if (!menuHandled) {
+                        // Don't pass Escape to gui — it quits. Let MenuBar handle it.
+                        if (ks.type() == KeyType.ESCAPE && !menuBar.hasOpenMenu()) {
+                            running = false;
+                            break;
+                        }
                         gui.processInput(ks);
                     }
                 }
-                gui.updateScreen();
+                if (anyInput) {
+                    gui.updateScreen();
+                }
                 Thread.sleep(16);
             }
         } catch (InterruptedException e) {

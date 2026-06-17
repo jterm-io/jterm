@@ -84,4 +84,55 @@ class InputDecoderTest {
         var ks = decode(new byte[]{0x1b});
         assertEquals(KeyType.ESCAPE, ks.type());
     }
+
+    @Test
+    void ctrlHIsNotBackspace() {
+        // Bug: 0x08 (Ctrl+H) was intercepted as Backspace before reaching the Ctrl branch.
+        // Fix: only 0x7f should be Backspace; 0x08 should decode as Ctrl+H.
+        var ks = decode(new byte[]{0x08});
+        assertEquals(KeyType.CHARACTER, ks.type());
+        assertEquals('H', ks.character());
+        assertTrue(ks.ctrl());
+    }
+
+    @Test
+    void ctrlF() {
+        var ks = decode(new byte[]{0x06}); // Ctrl+F = 0x06
+        assertEquals(KeyType.CHARACTER, ks.type());
+        assertEquals('F', ks.character());
+        assertTrue(ks.ctrl());
+    }
+
+    @Test
+    void ctrlE() {
+        var ks = decode(new byte[]{0x05}); // Ctrl+E = 0x05
+        assertEquals(KeyType.CHARACTER, ks.type());
+        assertEquals('E', ks.character());
+        assertTrue(ks.ctrl());
+    }
+
+    @Test
+    void ctrlJIsNotEnter() {
+        // Bug: 0x0A (Ctrl+J) was intercepted as Enter (\n) before reaching the Ctrl branch.
+        // This is expected terminal behavior — \n is always Enter. But verify it.
+        var ks = decode(new byte[]{0x0A});
+        assertEquals(KeyType.ENTER, ks.type());
+    }
+
+    @Test
+    void altF() {
+        var ks = decode("\033f".getBytes()); // ESC + 'f' = Alt+F
+        assertEquals(KeyType.CHARACTER, ks.type());
+        assertEquals('f', ks.character());
+        assertTrue(ks.alt());
+        assertFalse(ks.ctrl());
+    }
+
+    @Test
+    void altH() {
+        var ks = decode("\033h".getBytes()); // ESC + 'h' = Alt+H
+        assertEquals(KeyType.CHARACTER, ks.type());
+        assertEquals('h', ks.character());
+        assertTrue(ks.alt());
+    }
 }
