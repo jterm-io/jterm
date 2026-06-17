@@ -29,8 +29,9 @@ public class DefaultTextGUI implements TextGUI, WindowManager {
     private final List<Window> windowsToRemove = new ArrayList<>();
     private Window activeWindow;
     private final FocusManager focusManager = new FocusManager();
-    private boolean running = true;
-    private boolean needsRefresh = true;
+    private volatile boolean running = true;
+    private volatile boolean needsRefresh = true;
+    private final Object screenLock = new Object();
 
     public DefaultTextGUI(Screen screen) {
         this.screen = screen;
@@ -143,27 +144,29 @@ public class DefaultTextGUI implements TextGUI, WindowManager {
 
     @Override
     public void updateScreen() throws IOException {
-        if (!needsRefresh) return;
-        screen.doResizeIfNecessary();
-        screen.clear();
-        var buf = new io.jterm.screen.ScreenBuffer(screen.getTerminalSize());
-        var g = new io.jterm.graphics.TextGraphics(buf);
-        for (var window : windows) {
-            if (windowsToRemove.contains(window)) continue;
-            sizeWindow(window);
-            var sub = io.jterm.graphics.TextGraphicsExtensions.subGraphics(g, window.getPosition(), window.getSize());
-            window.draw(sub);
-        }
-        // Copy g buffer to screen
-        for (int r = 0; r < screen.getTerminalSize().rows(); r++) {
-            for (int c = 0; c < screen.getTerminalSize().columns(); c++) {
-                screen.setCell(c, r, buf.getCell(c, r));
+        synchronized (screenLock) {
+            if (!needsRefresh) return;
+            screen.doResizeIfNecessary();
+            screen.clear();
+            var buf = new io.jterm.screen.ScreenBuffer(screen.getTerminalSize());
+            var g = new io.jterm.graphics.TextGraphics(buf);
+            for (var window : windows) {
+                if (windowsToRemove.contains(window)) continue;
+                sizeWindow(window);
+                var sub = io.jterm.graphics.TextGraphicsExtensions.subGraphics(g, window.getPosition(), window.getSize());
+                window.draw(sub);
             }
+            // Copy g buffer to screen
+            for (int r = 0; r < screen.getTerminalSize().rows(); r++) {
+                for (int c = 0; c < screen.getTerminalSize().columns(); c++) {
+                    screen.setCell(c, r, buf.getCell(c, r));
+                }
+            }
+            screen.refresh();
+            needsRefresh = false;
+            windows.removeAll(windowsToRemove);
+            windowsToRemove.clear();
         }
-        screen.refresh();
-        needsRefresh = false;
-        windows.removeAll(windowsToRemove);
-        windowsToRemove.clear();
     }
 
     private io.jterm.screen.ScreenBuffer gBuffer;

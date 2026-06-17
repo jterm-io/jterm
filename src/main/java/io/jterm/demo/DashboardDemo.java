@@ -99,8 +99,18 @@ public class DashboardDemo {
 
         try {
             while (gui.processInput()) {
+                // Drain all pending input before refreshing — prevents
+                // intermediate frames that cause stale background artifacts
+                // when scrolling fast.
+                while (true) {
+                    var ks = screen instanceof io.jterm.screen.DefaultScreen ds
+                            ? ds.getTerminal().pollInput().orElse(null)
+                            : null;
+                    if (ks == null) break;
+                    gui.processInput(ks);
+                }
                 gui.updateScreen();
-                Thread.sleep(20);
+                Thread.sleep(16);
             }
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
