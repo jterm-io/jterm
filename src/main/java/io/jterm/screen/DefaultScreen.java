@@ -21,6 +21,9 @@ public class DefaultScreen implements Screen {
     private TerminalSize size;
     private TerminalPosition cursorPosition = TerminalPosition.TOP_LEFT;
     private boolean started;
+    /** Persistent SGR state tracker — survives across refresh calls so
+     *  delta refreshes know the terminal's actual current SGR state. */
+    private final SgrStateTracker sgrState = new SgrStateTracker();
 
     public Terminal getTerminal() { return terminal; }
 
@@ -113,11 +116,11 @@ public class DefaultScreen implements Screen {
 
     private void doCompleteRefresh() throws IOException {
         terminal.setCursorPosition(0, 0);
-        var sgr = new SgrStateTracker();
+        sgrState.reset();
         for (int r = 0; r < size.rows(); r++) {
             for (int c = 0; c < size.columns(); c++) {
                 var cell = backBuffer.getCell(c, r);
-                byte[] sgrBytes = sgr.transitionTo(cell);
+                byte[] sgrBytes = sgrState.transitionTo(cell);
                 if (sgrBytes.length > 0) terminal.writeRaw(sgrBytes);
                 terminal.putCharacter(cell.character().charAt(0));
             }
@@ -129,7 +132,6 @@ public class DefaultScreen implements Screen {
         var diffs = backBuffer.diffFrom(frontBuffer);
         if (diffs.isEmpty()) return;
 
-        var sgr = new SgrStateTracker();
         int lastRow = -1;
         int lastCol = -1;
 
@@ -137,7 +139,7 @@ public class DefaultScreen implements Screen {
             if (diff.row() != lastRow || diff.column() != lastCol + 1) {
                 terminal.setCursorPosition(diff.column(), diff.row());
             }
-            byte[] sgrBytes = sgr.transitionTo(diff.cell());
+            byte[] sgrBytes = sgrState.transitionTo(diff.cell());
             if (sgrBytes.length > 0) terminal.writeRaw(sgrBytes);
             terminal.putCharacter(diff.cell().character().charAt(0));
             lastRow = diff.row();
