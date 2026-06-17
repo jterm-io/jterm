@@ -17,7 +17,7 @@ import java.util.List;
  *
  * <h3>Keyboard interaction</h3>
  * <ul>
- *   <li><b>Alt+mnemonic</b> — open the menu whose title starts with that char</li>
+ *   <li><b>Ctrl+mnemonic</b> — open the menu whose title starts with that char</li>
  *   <li><b>Arrow Left/Right</b> — switch between open menus</li>
  *   <li><b>Escape</b> — close the active menu</li>
  *   <li><b>Arrow Down</b> — move focus into the open dropdown</li>
@@ -78,8 +78,8 @@ public class MenuBar extends AbstractComponent {
 
     @Override
     public void handleKeyStroke(KeyStroke keyStroke) {
-        // Alt+char → open the menu whose mnemonic matches
-        if (keyStroke.type() == KeyType.CHARACTER && keyStroke.alt()) {
+        // Ctrl+char → open the menu whose mnemonic matches
+        if (keyStroke.type() == KeyType.CHARACTER && keyStroke.ctrl()) {
             char ch = Character.toLowerCase(keyStroke.character());
             for (int i = 0; i < menus.size(); i++) {
                 if (Character.toLowerCase(menus.get(i).getMnemonic()) == ch) {

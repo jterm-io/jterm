@@ -30,27 +30,27 @@ class MenuBarTest {
     }
 
     @Test
-    void altMnemonicOpensMenu() {
+    void ctrlMnemonicOpensMenu() {
         var bar = new MenuBar();
         var fileMenu = new Menu("File");
         fileMenu.addMenuItem("Open", () -> {});
         bar.addMenu(fileMenu);
         bar.addMenu(new Menu("Edit"));
 
-        bar.handleKeyStroke(KeyStroke.character('f', false, true, false));
+        bar.handleKeyStroke(KeyStroke.character('f', true, false, false));
         assertTrue(fileMenu.isOpen());
         assertEquals(0, bar.getActiveMenuIndex());
         assertTrue(bar.hasOpenMenu());
     }
 
     @Test
-    void altMnemonicCaseInsensitive() {
+    void ctrlMnemonicCaseInsensitive() {
         var bar = new MenuBar();
         var editMenu = new Menu("Edit");
         editMenu.addMenuItem("Copy", () -> {});
         bar.addMenu(editMenu);
 
-        bar.handleKeyStroke(KeyStroke.character('E', false, true, false));
+        bar.handleKeyStroke(KeyStroke.character('E', true, false, false));
         assertTrue(editMenu.isOpen());
     }
 
@@ -65,7 +65,7 @@ class MenuBarTest {
         bar.addMenu(editMenu);
 
         // Open File menu
-        bar.handleKeyStroke(KeyStroke.character('f', false, true, false));
+        bar.handleKeyStroke(KeyStroke.character('f', true, false, false));
         assertTrue(fileMenu.isOpen());
 
         // Arrow right → switch to Edit
@@ -86,7 +86,7 @@ class MenuBarTest {
         bar.addMenu(editMenu);
 
         // Open File menu (index 0)
-        bar.handleKeyStroke(KeyStroke.character('f', false, true, false));
+        bar.handleKeyStroke(KeyStroke.character('f', true, false, false));
 
         // Arrow left → wraps to Edit (last menu)
         bar.handleKeyStroke(new KeyStroke(KeyType.ARROW_LEFT));
@@ -106,7 +106,7 @@ class MenuBarTest {
         bar.addMenu(editMenu);
 
         // Open Edit menu (index 1)
-        bar.handleKeyStroke(KeyStroke.character('e', false, true, false));
+        bar.handleKeyStroke(KeyStroke.character('e', true, false, false));
 
         // Arrow right → wraps to File (first menu)
         bar.handleKeyStroke(new KeyStroke(KeyType.ARROW_RIGHT));
@@ -122,7 +122,7 @@ class MenuBarTest {
         fileMenu.addMenuItem("Open", () -> {});
         bar.addMenu(fileMenu);
 
-        bar.handleKeyStroke(KeyStroke.character('f', false, true, false));
+        bar.handleKeyStroke(KeyStroke.character('f', true, false, false));
         assertTrue(bar.hasOpenMenu());
 
         bar.handleKeyStroke(new KeyStroke(KeyType.ESCAPE));
@@ -139,7 +139,7 @@ class MenuBarTest {
         bar.addMenu(fileMenu);
 
         // Open File menu and press Enter on first item
-        bar.handleKeyStroke(KeyStroke.character('f', false, true, false));
+        bar.handleKeyStroke(KeyStroke.character('f', true, false, false));
         bar.handleKeyStroke(new KeyStroke(KeyType.ENTER));
         assertTrue(fired[0]);
         assertFalse(bar.hasOpenMenu());
@@ -155,7 +155,7 @@ class MenuBarTest {
         bar.addMenu(fileMenu);
 
         // Open menu, arrow down to second item, Enter
-        bar.handleKeyStroke(KeyStroke.character('f', false, true, false));
+        bar.handleKeyStroke(KeyStroke.character('f', true, false, false));
         bar.handleKeyStroke(new KeyStroke(KeyType.ARROW_DOWN));
         bar.handleKeyStroke(new KeyStroke(KeyType.ENTER));
         assertTrue(fired[0]);
@@ -168,7 +168,7 @@ class MenuBarTest {
         fileMenu.addMenuItem("Open", () -> {});
         bar.addMenu(fileMenu);
 
-        bar.handleKeyStroke(KeyStroke.character('f', false, true, false));
+        bar.handleKeyStroke(KeyStroke.character('f', true, false, false));
         assertTrue(bar.hasOpenMenu());
 
         bar.closeAll();
@@ -203,24 +203,24 @@ class MenuBarTest {
     }
 
     @Test
-    void unknownAltKeyDoesNothing() {
+    void unknownCtrlKeyDoesNothing() {
         var bar = new MenuBar();
         var fileMenu = new Menu("File");
         fileMenu.addMenuItem("Open", () -> {});
         bar.addMenu(fileMenu);
 
-        bar.handleKeyStroke(KeyStroke.character('z', false, true, false));
+        bar.handleKeyStroke(KeyStroke.character('z', true, false, false));
         assertFalse(bar.hasOpenMenu());
     }
 
     @Test
-    void inputWithoutAltAndNoOpenMenuDoesNothing() {
+    void inputWithoutCtrlAndNoOpenMenuDoesNothing() {
         var bar = new MenuBar();
         var fileMenu = new Menu("File");
         fileMenu.addMenuItem("Open", () -> {});
         bar.addMenu(fileMenu);
 
-        // Regular 'f' without Alt should not open any menu
+        // Regular 'f' without Ctrl should not open any menu
         bar.handleKeyStroke(KeyStroke.character('f', false, false, false));
         assertFalse(bar.hasOpenMenu());
     }
