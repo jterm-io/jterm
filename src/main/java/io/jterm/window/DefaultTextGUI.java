@@ -101,9 +101,16 @@ public class DefaultTextGUI implements TextGUI, WindowManager {
     public boolean processInput(KeyStroke injected) throws IOException {
         var ks = injected != null ? injected : getInput();
         if (ks == null) return running;
-        if (ks.type() == KeyType.CHARACTER && ks.ctrl() && (ks.character() == 'C' || ks.character() == 'c' || ks.character() == 'q' || ks.character() == 'Q')) {
-            running = false;
-            return false;
+        if (ks.type() == KeyType.CHARACTER) {
+            char ch = ks.character();
+            if (ch == 'q' || ch == 'Q') {
+                running = false;
+                return false;
+            }
+            if (ks.ctrl() && (ch == 'C' || ch == 'c')) {
+                running = false;
+                return false;
+            }
         }
         if (ks.type() == KeyType.ESCAPE) {
             running = false;
