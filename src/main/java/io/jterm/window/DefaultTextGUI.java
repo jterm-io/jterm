@@ -89,6 +89,11 @@ public class DefaultTextGUI implements TextGUI, WindowManager {
         return running;
     }
 
+    /** Marks the screen as needing a refresh on the next {@link #updateScreen()} call. */
+    public void requestRefresh() {
+        needsRefresh = true;
+    }
+
     public void stopRunning() {
         running = false;
     }

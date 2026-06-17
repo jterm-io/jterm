@@ -67,10 +67,7 @@ public class ChartDemo {
         content.addComponent(chart, new BorderLayout.BorderLayoutData(BorderLayout.Region.CENTER));
         content.addComponent(infoLabel, new BorderLayout.BorderLayoutData(BorderLayout.Region.SOUTH));
 
-        gui.addWindow(window);
-        gui.updateScreen();
-
-        // Generate initial data
+        // Generate initial data BEFORE first render
         var prices = generatePrices(150.0, NUM_POINTS);
         var volumes = generateVolumes(NUM_POINTS);
         var ticks = generateTicks(150.0, NUM_POINTS * 3);
@@ -79,6 +76,9 @@ public class ChartDemo {
         // Start with line chart
         showLineChart(chart, prices);
         chart.invalidate();
+
+        gui.addWindow(window);
+        gui.updateScreen();
 
         var running = true;
         try {
@@ -101,24 +101,28 @@ public class ChartDemo {
                                 chart.setYAxisConfig(ChartAxisConfig.fixed(130, 170, "$%.0f"));
                                 showLineChart(chart, prices);
                                 infoLabel.setText(" View: Line  |  Points: " + NUM_POINTS + " ");
+                                gui.requestRefresh();
                             }
                             case '2' -> {
                                 chart.setTitle("AAPL — 30 Day Volume (Bar)");
                                 chart.setYAxisConfig(ChartAxisConfig.auto());
                                 showBarChart(chart, volumes);
                                 infoLabel.setText(" View: Bar (Volume)  |  Points: " + NUM_POINTS + " ");
+                                gui.requestRefresh();
                             }
                             case '3' -> {
                                 chart.setTitle("AAPL — Tick Data (Scatter)");
                                 chart.setYAxisConfig(ChartAxisConfig.fixed(140, 160, "$%.1f"));
                                 showScatterChart(chart, ticks);
                                 infoLabel.setText(" View: Scatter (Ticks)  |  Points: " + ticks.size() + " ");
+                                gui.requestRefresh();
                             }
                             case '4' -> {
                                 chart.setTitle("AAPL — Price vs 5-day MA");
                                 chart.setYAxisConfig(ChartAxisConfig.fixed(130, 170, "$%.0f"));
                                 showMultiSeriesChart(chart, prices, ma);
                                 infoLabel.setText(" View: Multi-series (Price + MA)  |  Points: " + NUM_POINTS + " ");
+                                gui.requestRefresh();
                             }
                             case 'r' -> {
                                 prices = generatePrices(150.0, NUM_POINTS);
@@ -126,6 +130,7 @@ public class ChartDemo {
                                 ticks = generateTicks(150.0, NUM_POINTS * 3);
                                 ma = calculateMovingAverage(prices, 5);
                                 infoLabel.setText(" Data regenerated!  |  Press 1/2/3/4 to view ");
+                                gui.requestRefresh();
                             }
                         }
                     }
