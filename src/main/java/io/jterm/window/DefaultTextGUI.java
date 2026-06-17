@@ -4,11 +4,13 @@ import io.jterm.core.TerminalPosition;
 import io.jterm.core.TerminalSize;
 import io.jterm.core.input.KeyStroke;
 import io.jterm.core.input.KeyType;
+import io.jterm.event.FocusManager;
 import io.jterm.event.Listener;
 import io.jterm.graphics.TextGraphics;
 import io.jterm.graphics.TextGraphicsExtensions;
 import io.jterm.screen.Screen;
 import io.jterm.widget.Button;
+import io.jterm.widget.CheckBox;
 import io.jterm.widget.ListBox;
 import io.jterm.widget.Table;
 import io.jterm.widget.TextBox;
@@ -21,11 +23,12 @@ import java.util.Collection;
 import java.util.List;
 
 /** Default window manager, input dispatch, and event loop. */
-public class DefaultTextGUI implements TextGUI {
+public class DefaultTextGUI implements TextGUI, WindowManager {
     private final Screen screen;
     private final List<Window> windows = new ArrayList<>();
     private final List<Window> windowsToRemove = new ArrayList<>();
     private Window activeWindow;
+    private final FocusManager focusManager = new FocusManager();
     private boolean running = true;
     private boolean needsRefresh = true;
 
@@ -48,7 +51,13 @@ public class DefaultTextGUI implements TextGUI {
     @Override
     public void removeWindow(Window window) {
         windowsToRemove.add(window);
-        if (activeWindow == window) activeWindow = windows.isEmpty() ? null : windows.get(windows.size() - 1);
+        if (activeWindow == window) {
+            var remaining = new ArrayList<>(windows);
+            remaining.removeAll(windowsToRemove);
+            activeWindow = remaining.isEmpty() ? null : remaining.get(remaining.size() - 1);
+            focusManager.clearFocus();
+            if (activeWindow != null) focusFirst(activeWindow.getContents());
+        }
     }
 
     @Override
@@ -67,8 +76,29 @@ public class DefaultTextGUI implements TextGUI {
     public Collection<Window> getWindows() { return new ArrayList<>(windows); }
 
     @Override
+    public boolean containsWindow(Window window) {
+        return windows.contains(window);
+    }
+
+    public FocusManager getFocusManager() {
+        return focusManager;
+    }
+
+    public boolean isRunning() {
+        return running;
+    }
+
+    public void stopRunning() {
+        running = false;
+    }
+
+    @Override
     public boolean processInput() throws IOException {
-        var ks = screen.getTerminalSize().columns() > 0 ? getInput() : null;
+        return processInput(null);
+    }
+
+    public boolean processInput(KeyStroke injected) throws IOException {
+        var ks = injected != null ? injected : getInput();
         if (ks == null) return running;
         if (ks.type() == KeyType.CHARACTER && ks.ctrl() && (ks.character() == 'C' || ks.character() == 'c' || ks.character() == 'q' || ks.character() == 'Q')) {
             running = false;
@@ -83,23 +113,31 @@ public class DefaultTextGUI implements TextGUI {
             needsRefresh = true;
             return running;
         }
+        var modal = modalWindow();
+        if (modal != null && activeWindow != null && !modal.equals(activeWindow)) {
+            return running;
+        }
         var focused = activeWindow != null ? activeWindow.getFocusedComponent() : null;
         if (focused != null) {
             focused.handleKeyStroke(ks);
+            needsRefresh = true;
+        } else if (focusManager.getFocusedComponent() != null) {
+            focusManager.getFocusedComponent().handleKeyStroke(ks);
             needsRefresh = true;
         }
         return running;
     }
 
     private KeyStroke getInput() throws IOException {
-        // Non-blocking poll
-        return screen.getTerminalSize().columns() > 0 ? null : null;
+        return screen instanceof io.jterm.screen.DefaultScreen ds
+                ? ds.getTerminal().pollInput().orElse(null)
+                : null;
     }
 
+    @Override
     public void waitForInput() throws IOException {
-        // Blocking read from terminal if available
         if (screen instanceof io.jterm.screen.DefaultScreen ds) {
-            // no direct terminal access; rely on input thread
+            ds.getTerminal().readInput();
         }
     }
 
@@ -130,9 +168,26 @@ public class DefaultTextGUI implements TextGUI {
 
     private io.jterm.screen.ScreenBuffer gBuffer;
 
+    public void runEventLoop() throws IOException {
+        needsRefresh = true;
+        while (running) {
+            processInput();
+            updateScreen();
+        }
+    }
+
     @Override
     public void close() throws IOException {
+        running = false;
         screen.close();
+    }
+
+    private Window modalWindow() {
+        for (int i = windows.size() - 1; i >= 0; i--) {
+            var w = windows.get(i);
+            if (!windowsToRemove.contains(w) && w.getHints().contains(WindowHint.MODAL)) return w;
+        }
+        return null;
     }
 
     private void sizeWindow(Window window) {
@@ -147,7 +202,22 @@ public class DefaultTextGUI implements TextGUI {
 
     private void focusFirst(Component component) {
         if (component == null) return;
-        if (activeWindow != null) activeWindow.setFocusedComponent(component);
+        var first = findFirstFocusable(component);
+        var target = first != null ? first : component;
+        if (activeWindow != null) activeWindow.setFocusedComponent(target);
+        focusManager.setFocusedComponent(target);
+    }
+
+    private Component findFirstFocusable(Component component) {
+        if (isFocusable(component)) return component;
+        if (component instanceof Container cont) {
+            for (var child : cont.getChildren()) {
+                if (!child.isVisible()) continue;
+                var found = findFirstFocusable(child);
+                if (found != null) return found;
+            }
+        }
+        return null;
     }
 
     private void advanceFocus() {
@@ -156,21 +226,30 @@ public class DefaultTextGUI implements TextGUI {
         var order = collectFocusable(root);
         if (order.isEmpty()) return;
         var current = activeWindow.getFocusedComponent();
+        if (current == null) current = focusManager.getFocusedComponent();
         int idx = current != null ? order.indexOf(current) : -1;
         int next = (idx + 1) % order.size();
-        activeWindow.setFocusedComponent(order.get(next));
+        var nextComponent = order.get(next);
+        activeWindow.setFocusedComponent(nextComponent);
+        focusManager.setFocusedComponent(nextComponent);
     }
 
     private List<Component> collectFocusable(Component component) {
         List<Component> list = new ArrayList<>();
-        if (component instanceof Button || component instanceof ListBox || component instanceof Table || component instanceof io.jterm.widget.TextBox) {
-            list.add(component);
-        }
+        if (component.isVisible() && isFocusable(component)) list.add(component);
         if (component instanceof Container cont) {
             for (var child : cont.getChildren()) {
                 list.addAll(collectFocusable(child));
             }
         }
         return list;
+    }
+
+    private boolean isFocusable(Component component) {
+        return component instanceof Button
+                || component instanceof CheckBox
+                || component instanceof ListBox
+                || component instanceof Table
+                || component instanceof TextBox;
     }
 }

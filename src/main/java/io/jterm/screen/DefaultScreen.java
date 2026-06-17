@@ -22,6 +22,8 @@ public class DefaultScreen implements Screen {
     private TerminalPosition cursorPosition = TerminalPosition.TOP_LEFT;
     private boolean started;
 
+    public Terminal getTerminal() { return terminal; }
+
     public DefaultScreen(TerminalSize size) {
         this(new io.jterm.core.MockTerminal(size));
     }

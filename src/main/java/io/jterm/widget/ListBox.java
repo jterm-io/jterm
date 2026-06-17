@@ -46,7 +46,10 @@ public class ListBox<T> extends AbstractComponent {
     public int getSelectedIndex() { return selectedIndex; }
 
     public void setSelectedIndex(int index) {
-        if (index < 0 || index >= items.size()) return;
+        if (index < 0) index = 0;
+        else if (items.isEmpty()) index = 0;
+        else if (index >= items.size()) index = items.size() - 1;
+        if (index == this.selectedIndex) return;
         this.selectedIndex = index;
         ensureVisible();
         for (var l : selectionListeners) l.run();
@@ -68,7 +71,7 @@ public class ListBox<T> extends AbstractComponent {
         for (var item : items) {
             maxLen = Math.max(maxLen, TerminalTextUtils.getTrueWidth(renderer.apply(item)));
         }
-        return new TerminalSize(maxLen, Math.max(3, Math.min(items.size(), 10)));
+        return new TerminalSize(maxLen, Math.max(2, Math.min(items.size(), 10)));
     }
 
     @Override

@@ -5,7 +5,15 @@ import io.jterm.core.TerminalSize;
 import io.jterm.graphics.TextGraphics;
 import io.jterm.layout.LayoutData;
 
-/** Base implementation of Component with bounds, parent, renderer, and invalidation. */
+import java.util.EnumSet;
+
+/**
+ * Base implementation of {@link Component}.
+ *
+ * Tracks bounds, parent, layout data, visibility, and focus state. Subclasses
+ * provide preferred size calculation and rendering via
+ * {@link #calculatePreferredSize()} and {@link #drawComponent(TextGraphics)}.
+ */
 public abstract class AbstractComponent implements Component {
     private TerminalPosition position = TerminalPosition.TOP_LEFT;
     private TerminalSize size = TerminalSize.ZERO;
@@ -31,26 +39,32 @@ public abstract class AbstractComponent implements Component {
         return preferredSize;
     }
 
+    /**
+     * Computes the component's natural preferred size.
+     */
     protected abstract TerminalSize calculatePreferredSize();
 
     @Override
     public void setBounds(TerminalPosition position, TerminalSize size) {
         this.position = position;
         this.size = size;
-        invalidate();
     }
 
     @Override
     public void invalidate() {
         invalid = true;
         preferredSize = null;
+        if (parent != null) parent.invalidate();
     }
 
     @Override
     public boolean isVisible() { return visible; }
 
     @Override
-    public void setVisible(boolean visible) { this.visible = visible; }
+    public void setVisible(boolean visible) {
+        this.visible = visible;
+        invalidate();
+    }
 
     @Override
     public LayoutData getLayoutData() { return layoutData; }
@@ -80,5 +94,10 @@ public abstract class AbstractComponent implements Component {
         drawComponent(graphics);
     }
 
+    /**
+     * Renders this component into the supplied graphics context.
+     *
+     * The graphics size matches {@link #getSize()} after layout.
+     */
     protected abstract void drawComponent(TextGraphics graphics);
 }

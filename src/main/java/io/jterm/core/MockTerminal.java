@@ -19,6 +19,7 @@ public class MockTerminal implements Terminal {
     private final List<TerminalResizeListener> listeners = new ArrayList<>();
     private final StringBuilder output = new StringBuilder();
     private boolean closed;
+    private io.jterm.core.input.InputDecoder decoder;
 
     public MockTerminal(TerminalSize size) {
         this(size, new java.io.ByteArrayOutputStream(), new java.io.ByteArrayInputStream(new byte[0]));
@@ -28,6 +29,7 @@ public class MockTerminal implements Terminal {
         this.size = size;
         this.out = out;
         this.in = in;
+        this.decoder = new io.jterm.core.input.InputDecoder(in);
     }
 
     @Override
@@ -100,12 +102,22 @@ public class MockTerminal implements Terminal {
 
     @Override
     public Optional<KeyStroke> pollInput() throws IOException {
-        return Optional.empty();
+        return decoder != null ? decoder.poll() : Optional.empty();
     }
 
     @Override
     public KeyStroke readInput() throws IOException {
-        return new KeyStroke(io.jterm.core.input.KeyType.EOF);
+        if (decoder == null) return new KeyStroke(io.jterm.core.input.KeyType.EOF);
+        while (true) {
+            var ks = decoder.poll();
+            if (ks.isPresent()) return ks.get();
+            try {
+                Thread.sleep(10);
+            } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
+                return new KeyStroke(io.jterm.core.input.KeyType.EOF);
+            }
+        }
     }
 
     @Override

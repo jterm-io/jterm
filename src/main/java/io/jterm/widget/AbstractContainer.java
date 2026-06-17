@@ -9,7 +9,12 @@ import io.jterm.layout.LayoutManager;
 import java.util.ArrayList;
 import java.util.List;
 
-/** Base container implementation with child list and layout delegation. */
+/**
+ * Base container implementation with child list and layout delegation.
+ *
+ * {@link #calculatePreferredSize()} delegates to the layout manager, and
+ * {@link #setBounds} triggers re-layout of children.
+ */
 public abstract class AbstractContainer extends AbstractComponent implements Container {
     private final List<Component> children = new ArrayList<>();
     private LayoutManager layoutManager;
@@ -40,9 +45,10 @@ public abstract class AbstractContainer extends AbstractComponent implements Con
 
     @Override
     public void removeComponent(Component component) {
-        children.remove(component);
-        component.setParent(null);
-        invalidate();
+        if (children.remove(component)) {
+            component.setParent(null);
+            invalidate();
+        }
     }
 
     @Override
