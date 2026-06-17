@@ -1,0 +1,64 @@
+package io.jterm.widget;
+
+import io.jterm.core.TerminalSize;
+import io.jterm.core.input.KeyStroke;
+import io.jterm.core.input.KeyType;
+import io.jterm.graphics.TextGraphics;
+import io.jterm.style.AnsiColor;
+import io.jterm.style.SGR;
+import io.jterm.style.TextCell;
+
+import java.util.ArrayList;
+import java.util.List;
+
+import io.jterm.util.TerminalTextUtils;
+
+/** Clickable button with label. */
+public class Button extends AbstractComponent {
+    private String label;
+    private final List<Runnable> listeners = new ArrayList<>();
+    private TextCell fgStyle;
+    private TextCell focusStyle;
+
+    public Button(String label) {
+        this.label = label;
+        this.fgStyle = new TextCell(' ', AnsiColor.WHITE, AnsiColor.DEFAULT);
+        this.focusStyle = new TextCell(' ', AnsiColor.BLACK, AnsiColor.WHITE);
+    }
+
+    public void addListener(Runnable listener) { listeners.add(listener); }
+
+    public void click() {
+        for (var l : listeners) l.run();
+    }
+
+    public void setLabel(String label) {
+        this.label = label;
+        invalidate();
+    }
+
+    public String getLabel() { return label; }
+
+    @Override
+    protected TerminalSize calculatePreferredSize() {
+        return new TerminalSize(label.length() + 4, 1);
+    }
+
+    @Override
+    protected void drawComponent(TextGraphics graphics) {
+        var size = getSize();
+        var style = isFocused() ? focusStyle : fgStyle;
+        String rendered = "[ " + TerminalTextUtils.truncate(label, Math.max(0, size.columns() - 4)) + " ]";
+        // pad to width
+        int pad = size.columns() - rendered.length();
+        if (pad > 0) rendered += " ".repeat(pad);
+        graphics.drawString(0, 0, rendered, style);
+    }
+
+    @Override
+    public void handleKeyStroke(KeyStroke keyStroke) {
+        if (keyStroke.type() == KeyType.ENTER || (keyStroke.type() == KeyType.CHARACTER && keyStroke.character() == ' ')) {
+            click();
+        }
+    }
+}
