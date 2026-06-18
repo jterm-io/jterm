@@ -98,4 +98,85 @@ class ListBoxTest {
         var list = new ListBox<String>();
         assertNull(list.getSelectedItem());
     }
+
+    @Test
+    void scrollToBottomRevealsLastItemWhenListExceedsViewport() {
+        var list = new ListBox<String>();
+        for (int i = 0; i < 10; i++) list.addItem("Item " + i);
+        list.setBounds(TerminalPosition.TOP_LEFT, new TerminalSize(10, 3));
+        list.setSelectedIndex(0);
+        list.scrollToBottom();
+        assertEquals(7, list.getScrollOffset());
+        assertTrue(list.isLastItemVisible());
+    }
+
+    @Test
+    void scrollToBottomDoesNothingWhenAllItemsFit() {
+        var list = new ListBox<String>();
+        list.addItem("A");
+        list.addItem("B");
+        list.setBounds(TerminalPosition.TOP_LEFT, new TerminalSize(10, 5));
+        list.setSelectedIndex(0);
+        list.scrollToBottom();
+        assertEquals(0, list.getScrollOffset());
+    }
+
+    @Test
+    void autoScrollOnAddItemKeepsLastItemVisible() {
+        var list = new ListBox<String>();
+        list.setBounds(TerminalPosition.TOP_LEFT, new TerminalSize(10, 3));
+        list.setAutoScroll(true);
+        for (int i = 0; i < 5; i++) list.addItem("Item " + i);
+        assertTrue(list.isLastItemVisible(), "expected last item to be visible after auto-scroll add");
+    }
+
+    @Test
+    void autoScrollDisabledLeavesScrollOffsetUnchangedOnAddItem() {
+        var list = new ListBox<String>();
+        list.setBounds(TerminalPosition.TOP_LEFT, new TerminalSize(10, 3));
+        for (int i = 0; i < 5; i++) list.addItem("Item " + i);
+        list.setScrollOffset(2);
+        list.addItem("Item 5");
+        assertEquals(2, list.getScrollOffset());
+    }
+
+    @Test
+    void manualScrollUpPausesAutoScrollUntilNewItemAdded() {
+        var list = new ListBox<String>();
+        list.setBounds(TerminalPosition.TOP_LEFT, new TerminalSize(10, 3));
+        list.setAutoScroll(true);
+        for (int i = 0; i < 5; i++) list.addItem("Item " + i);
+        list.setScrollOffset(1); // manual scroll up
+        assertEquals(1, list.getScrollOffset());
+        list.setSelectedIndex(2); // selection change should not override manual position
+        assertEquals(1, list.getScrollOffset(), "auto-scroll should not override manual scroll on selection change");
+        list.addItem("Item 5"); // new item should resume auto-scroll
+        assertTrue(list.isLastItemVisible(), "new item should resume auto-scroll to bottom");
+    }
+
+    @Test
+    void scrollToBottomRespectsViewportBounds() {
+        var list = new ListBox<String>();
+        list.setBounds(TerminalPosition.TOP_LEFT, new TerminalSize(10, 3));
+        list.addItem("A");
+        list.addItem("B");
+        list.scrollToBottom();
+        assertEquals(0, list.getScrollOffset(), "scrollOffset must not be negative when fewer items than viewport");
+    }
+
+    @Test
+    void scrollToBottomWithEmptyListIsNoOp() {
+        var list = new ListBox<String>();
+        list.setBounds(TerminalPosition.TOP_LEFT, new TerminalSize(10, 3));
+        assertDoesNotThrow(list::scrollToBottom);
+        assertEquals(0, list.getScrollOffset());
+    }
+
+    @Test
+    void autoScrollGetterReflectsState() {
+        var list = new ListBox<String>();
+        assertFalse(list.isAutoScroll());
+        list.setAutoScroll(true);
+        assertTrue(list.isAutoScroll());
+    }
 }

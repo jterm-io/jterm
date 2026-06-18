@@ -22,12 +22,55 @@ public class ListBox<T> extends AbstractComponent {
     private volatile int scrollOffset = 0;
     private volatile Function<T, String> renderer = Object::toString;
     private final List<Runnable> selectionListeners = new java.util.concurrent.CopyOnWriteArrayList<>();
+    private volatile boolean autoScroll = false;
+    private volatile boolean manualScroll = false;
 
     public ListBox() {}
 
     public void addItem(T item) {
         items.add(item);
+        if (autoScroll) {
+            scrollToBottom();
+        }
         invalidate();
+    }
+
+    public void setAutoScroll(boolean autoScroll) {
+        this.autoScroll = autoScroll;
+        if (autoScroll) {
+            manualScroll = false;
+            scrollToBottom();
+        }
+        invalidate();
+    }
+
+    public boolean isAutoScroll() {
+        return autoScroll;
+    }
+
+    public void scrollToBottom() {
+        int rows = getSize().rows();
+        int maxOffset = Math.max(0, items.size() - rows);
+        scrollOffset = maxOffset;
+        invalidate();
+    }
+
+    public int getScrollOffset() {
+        return scrollOffset;
+    }
+
+    public void setScrollOffset(int offset) {
+        int rows = getSize().rows();
+        int maxOffset = Math.max(0, items.size() - rows);
+        this.scrollOffset = Math.max(0, Math.min(offset, maxOffset));
+        this.manualScroll = this.scrollOffset < maxOffset;
+        invalidate();
+    }
+
+    public boolean isLastItemVisible() {
+        int rows = getSize().rows();
+        if (items.size() <= rows) return true;
+        return scrollOffset + rows >= items.size();
     }
 
     public void setRenderer(Function<T, String> renderer) {
@@ -52,7 +95,9 @@ public class ListBox<T> extends AbstractComponent {
         else if (index >= items.size()) index = items.size() - 1;
         if (index == this.selectedIndex) return;
         this.selectedIndex = index;
-        ensureVisible();
+        if (!manualScroll) {
+            ensureVisible();
+        }
         for (var l : selectionListeners) l.run();
         invalidate();
     }
@@ -64,6 +109,8 @@ public class ListBox<T> extends AbstractComponent {
         if (selectedIndex < scrollOffset) scrollOffset = selectedIndex;
         if (selectedIndex >= scrollOffset + rows) scrollOffset = selectedIndex - rows + 1;
         if (scrollOffset < 0) scrollOffset = 0;
+        int maxOffset = Math.max(0, items.size() - rows);
+        if (scrollOffset > maxOffset) scrollOffset = maxOffset;
     }
 
     @Override
