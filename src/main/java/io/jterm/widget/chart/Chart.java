@@ -416,7 +416,7 @@ public class Chart extends AbstractComponent {
             } else if (y0 == y1) {
                 ch = '─';
             } else {
-                ch = (sy > 0) ? '╱' : '╲';
+                ch = (sy > 0) ? '╲' : '╱';
             }
             g.setCell(x0, y0, cell.withCharacter(ch));
 
