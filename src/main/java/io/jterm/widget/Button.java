@@ -4,8 +4,6 @@ import io.jterm.core.TerminalSize;
 import io.jterm.core.input.KeyStroke;
 import io.jterm.core.input.KeyType;
 import io.jterm.graphics.TextGraphics;
-import io.jterm.style.AnsiColor;
-import io.jterm.style.SGR;
 import io.jterm.style.TextCell;
 import io.jterm.style.ThemeManager;
 
@@ -18,18 +16,9 @@ import io.jterm.util.TerminalTextUtils;
 public class Button extends AbstractComponent {
     private String label;
     private final List<Runnable> listeners = new ArrayList<>();
-    private TextCell fgStyle;
-    private TextCell focusStyle;
 
     public Button(String label) {
         this.label = label;
-        applyTheme();
-    }
-
-    private void applyTheme() {
-        var t = ThemeManager.active();
-        this.fgStyle = new TextCell(' ', t.foreground(), t.background());
-        this.focusStyle = new TextCell(' ', t.focusFg(), t.focusBg());
     }
 
     public void addListener(Runnable listener) { listeners.add(listener); }
@@ -53,7 +42,12 @@ public class Button extends AbstractComponent {
     @Override
     protected void drawComponent(TextGraphics graphics) {
         var size = getSize();
-        var style = isFocused() ? focusStyle : fgStyle;
+        // Query theme at draw time so buttons always use the current theme
+        // colors, even after runtime theme switching.
+        var t = ThemeManager.active();
+        var style = isFocused()
+                ? new TextCell(' ', t.focusFg(), t.focusBg())
+                : new TextCell(' ', t.foreground(), t.background());
         String rendered = "[ " + TerminalTextUtils.truncate(label, Math.max(0, size.columns() - 4)) + " ]";
         // pad to width
         int pad = size.columns() - rendered.length();

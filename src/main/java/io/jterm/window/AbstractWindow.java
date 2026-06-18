@@ -71,8 +71,17 @@ public class AbstractWindow implements Window {
     public void draw(TextGraphics graphics) {
         if (!hints.contains(WindowHint.NO_DECORATIONS)) {
             drawDecorations(graphics);
+            // Content panel is offset inside the border: (1, titleBarHeight).
+            // Pass a sub-graphics at that offset so children render at the
+            // correct screen positions. Without this, content draws at
+            // window-relative (0,0) — overlapping the title bar and left border.
+            var pos = contents.getPosition();
+            var sz = contents.getSize();
+            var sub = io.jterm.graphics.TextGraphicsExtensions.subGraphics(graphics, pos, sz);
+            contents.draw(sub);
+        } else {
+            contents.draw(graphics);
         }
-        contents.draw(graphics);
     }
 
     protected void drawDecorations(TextGraphics graphics) {
