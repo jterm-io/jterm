@@ -44,7 +44,14 @@ public class MenuBar extends AbstractComponent {
     protected TerminalSize calculatePreferredSize() {
         int width = 0;
         for (var m : menus) width += m.getPreferredSize().columns();
-        return new TerminalSize(Math.max(1, width), 1);
+        // When a menu is open, we need height for the bar + the dropdown
+        int height = 1;
+        for (var m : menus) {
+            if (m.isOpen()) {
+                height = Math.max(height, 1 + m.dropdownHeight());
+            }
+        }
+        return new TerminalSize(Math.max(1, width), height);
     }
 
     public void addMenu(Menu menu) {
