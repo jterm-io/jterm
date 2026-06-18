@@ -9,9 +9,9 @@ import io.jterm.util.Symbols;
 
 /** Horizontal progress bar. */
 public class ProgressBar extends AbstractComponent {
-    private int value;
-    private int max = 100;
-    private boolean showPercentage = true;
+    private volatile int value;
+    private volatile int max = 100;
+    private volatile boolean showPercentage = true;
 
     public ProgressBar() {}
 

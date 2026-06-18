@@ -21,7 +21,7 @@ public class AnsiTerminal implements Terminal {
     private final OutputStream out;
     private final InputDecoder decoder;
     private final TerminalSize fixedSize;
-    private final List<TerminalResizeListener> resizeListeners = new ArrayList<>();
+    private final List<TerminalResizeListener> resizeListeners = new java.util.concurrent.CopyOnWriteArrayList<>();
     private final String originalStty;
     private final boolean ownStty;
     private TerminalSize lastSize;

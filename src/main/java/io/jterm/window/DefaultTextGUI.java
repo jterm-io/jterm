@@ -21,13 +21,14 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
+import java.util.concurrent.CopyOnWriteArrayList;
 
 /** Default window manager, input dispatch, and event loop. */
 public class DefaultTextGUI implements TextGUI, WindowManager {
     private final Screen screen;
-    private final List<Window> windows = new ArrayList<>();
-    private final List<Window> windowsToRemove = new ArrayList<>();
-    private Window activeWindow;
+    private final List<Window> windows = new CopyOnWriteArrayList<>();
+    private final List<Window> windowsToRemove = new CopyOnWriteArrayList<>();
+    private volatile Window activeWindow;
     private final FocusManager focusManager = new FocusManager();
     private volatile boolean running = true;
     private volatile boolean needsRefresh = true;
@@ -104,41 +105,43 @@ public class DefaultTextGUI implements TextGUI, WindowManager {
     }
 
     public boolean processInput(KeyStroke injected) throws IOException {
-        var ks = injected != null ? injected : getInput();
-        if (ks == null) return running;
-        if (ks.type() == KeyType.CHARACTER) {
-            char ch = ks.character();
-            if (ch == 'q' || ch == 'Q') {
+        synchronized (screenLock) {
+            var ks = injected != null ? injected : getInput();
+            if (ks == null) return running;
+            if (ks.type() == KeyType.CHARACTER) {
+                char ch = ks.character();
+                if (ch == 'q' || ch == 'Q') {
+                    running = false;
+                    return false;
+                }
+                if (ks.ctrl() && (ch == 'C' || ch == 'c')) {
+                    running = false;
+                    return false;
+                }
+            }
+            if (ks.type() == KeyType.ESCAPE) {
                 running = false;
                 return false;
             }
-            if (ks.ctrl() && (ch == 'C' || ch == 'c')) {
-                running = false;
-                return false;
+            if (ks.type() == KeyType.TAB) {
+                advanceFocus();
+                needsRefresh = true;
+                return running;
             }
-        }
-        if (ks.type() == KeyType.ESCAPE) {
-            running = false;
-            return false;
-        }
-        if (ks.type() == KeyType.TAB) {
-            advanceFocus();
-            needsRefresh = true;
+            var modal = modalWindow();
+            if (modal != null && activeWindow != null && !modal.equals(activeWindow)) {
+                return running;
+            }
+            var focused = activeWindow != null ? activeWindow.getFocusedComponent() : null;
+            if (focused != null) {
+                focused.handleKeyStroke(ks);
+                needsRefresh = true;
+            } else if (focusManager.getFocusedComponent() != null) {
+                focusManager.getFocusedComponent().handleKeyStroke(ks);
+                needsRefresh = true;
+            }
             return running;
         }
-        var modal = modalWindow();
-        if (modal != null && activeWindow != null && !modal.equals(activeWindow)) {
-            return running;
-        }
-        var focused = activeWindow != null ? activeWindow.getFocusedComponent() : null;
-        if (focused != null) {
-            focused.handleKeyStroke(ks);
-            needsRefresh = true;
-        } else if (focusManager.getFocusedComponent() != null) {
-            focusManager.getFocusedComponent().handleKeyStroke(ks);
-            needsRefresh = true;
-        }
-        return running;
     }
 
     private KeyStroke getInput() throws IOException {

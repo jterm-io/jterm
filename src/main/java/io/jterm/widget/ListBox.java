@@ -16,11 +16,11 @@ import java.util.function.Function;
 
 /** Scrollable list of items. */
 public class ListBox<T> extends AbstractComponent {
-    private final List<T> items = new ArrayList<>();
-    private int selectedIndex = 0;
-    private int scrollOffset = 0;
-    private Function<T, String> renderer = Object::toString;
-    private final List<Runnable> selectionListeners = new ArrayList<>();
+    private final List<T> items = new java.util.concurrent.CopyOnWriteArrayList<>();
+    private volatile int selectedIndex = 0;
+    private volatile int scrollOffset = 0;
+    private volatile Function<T, String> renderer = Object::toString;
+    private final List<Runnable> selectionListeners = new java.util.concurrent.CopyOnWriteArrayList<>();
 
     public ListBox() {}
 

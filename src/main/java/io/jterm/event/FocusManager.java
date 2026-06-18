@@ -11,8 +11,8 @@ import java.util.List;
  * One FocusManager is owned per {@link io.jterm.window.TextGUI}.
  */
 public class FocusManager {
-    private Component focusedComponent;
-    private final List<Listener<Component>> listeners = new ArrayList<>();
+    private volatile Component focusedComponent;
+    private final List<Listener<Component>> listeners = new java.util.concurrent.CopyOnWriteArrayList<>();
 
     public Component getFocusedComponent() {
         return focusedComponent;

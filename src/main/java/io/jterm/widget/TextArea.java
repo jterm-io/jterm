@@ -27,12 +27,12 @@ import java.util.List;
 public class TextArea extends AbstractComponent {
 
     private final List<String> lines = new ArrayList<>();
-    private int cursorRow = 0;
-    private int cursorCol = 0;
-    private int viewportRow = 0;   // vertical scroll offset (which text row is at top of viewport)
-    private int viewportCol = 0;   // horizontal scroll offset (which column is at left of viewport)
-    private int preferredColumns = 20;
-    private int preferredRows = 5;
+    private volatile int cursorRow = 0;
+    private volatile int cursorCol = 0;
+    private volatile int viewportRow = 0;   // vertical scroll offset (which text row is at top of viewport)
+    private volatile int viewportCol = 0;   // horizontal scroll offset (which column is at left of viewport)
+    private volatile int preferredColumns = 20;
+    private volatile int preferredRows = 5;
 
     // ── Construction ───────────────────────────────────────────
 

@@ -10,10 +10,10 @@ import io.jterm.style.TextCell;
 
 /** Single-line text input. */
 public class TextBox extends AbstractComponent {
-    private String value = "";
-    private int cursorPosition = 0;
-    private int viewportOffset = 0;
-    private int preferredColumns = 20;
+    private volatile String value = "";
+    private volatile int cursorPosition = 0;
+    private volatile int viewportOffset = 0;
+    private volatile int preferredColumns = 20;
 
     public TextBox() {}
     public TextBox(int columns) { this.preferredColumns = columns; }

@@ -14,11 +14,11 @@ import java.util.List;
 
 /** Column/row table with headers and scrolling. */
 public class Table extends AbstractComponent {
-    private final List<String> headers = new ArrayList<>();
-    private final List<List<String>> rows = new ArrayList<>();
-    private int selectedRow = 0;
-    private int scrollOffset = 0;
-    private int[] columnWidths;
+    private final List<String> headers = new java.util.concurrent.CopyOnWriteArrayList<>();
+    private final List<List<String>> rows = new java.util.concurrent.CopyOnWriteArrayList<>();
+    private volatile int selectedRow = 0;
+    private volatile int scrollOffset = 0;
+    private volatile int[] columnWidths;
 
     public Table(String... headers) {
         this.headers.addAll(Arrays.asList(headers));

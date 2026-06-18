@@ -14,13 +14,13 @@ import java.util.List;
 
 /** Base window with content panel, title bar, and decorations. */
 public class AbstractWindow implements Window {
-    private String title;
+    private volatile String title;
     private final Panel contents;
-    private TerminalPosition position = TerminalPosition.TOP_LEFT;
-    private TerminalSize size = new TerminalSize(40, 20);
-    private final List<WindowHint> hints = new ArrayList<>();
-    private Component focusedComponent;
-    private int titleBarHeight = 1;
+    private volatile TerminalPosition position = TerminalPosition.TOP_LEFT;
+    private volatile TerminalSize size = new TerminalSize(40, 20);
+    private final List<WindowHint> hints = new java.util.concurrent.CopyOnWriteArrayList<>();
+    private volatile Component focusedComponent;
+    private volatile int titleBarHeight = 1;
 
     public AbstractWindow(String title) {
         this.title = title;

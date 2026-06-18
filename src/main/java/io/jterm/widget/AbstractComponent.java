@@ -15,14 +15,14 @@ import java.util.EnumSet;
  * {@link #calculatePreferredSize()} and {@link #drawComponent(TextGraphics)}.
  */
 public abstract class AbstractComponent implements Component {
-    private TerminalPosition position = TerminalPosition.TOP_LEFT;
-    private TerminalSize size = TerminalSize.ZERO;
-    private TerminalSize preferredSize;
-    private boolean visible = true;
-    private boolean invalid = true;
-    private LayoutData layoutData;
-    private Component parent;
-    private boolean focused;
+    private volatile TerminalPosition position = TerminalPosition.TOP_LEFT;
+    private volatile TerminalSize size = TerminalSize.ZERO;
+    private volatile TerminalSize preferredSize;
+    private volatile boolean visible = true;
+    private volatile boolean invalid = true;
+    private volatile LayoutData layoutData;
+    private volatile Component parent;
+    private volatile boolean focused;
 
     @Override
     public TerminalSize getSize() { return size; }

@@ -16,11 +16,11 @@ import java.util.EnumSet;
 /** Double-buffered screen with delta refresh and SGR state batching. */
 public class DefaultScreen implements Screen {
     private final Terminal terminal;
-    private ScreenBuffer backBuffer;
-    private ScreenBuffer frontBuffer;
-    private TerminalSize size;
-    private TerminalPosition cursorPosition = TerminalPosition.TOP_LEFT;
-    private boolean started;
+    private volatile ScreenBuffer backBuffer;
+    private volatile ScreenBuffer frontBuffer;
+    private volatile TerminalSize size;
+    private volatile TerminalPosition cursorPosition = TerminalPosition.TOP_LEFT;
+    private volatile boolean started;
     /** Persistent SGR state tracker — survives across refresh calls so
      *  delta refreshes know the terminal's actual current SGR state. */
     private final SgrStateTracker sgrState = new SgrStateTracker();

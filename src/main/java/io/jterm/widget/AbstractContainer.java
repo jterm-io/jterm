@@ -16,8 +16,8 @@ import java.util.List;
  * {@link #setBounds} triggers re-layout of children.
  */
 public abstract class AbstractContainer extends AbstractComponent implements Container {
-    private final List<Component> children = new ArrayList<>();
-    private LayoutManager layoutManager;
+    private final List<Component> children = new java.util.concurrent.CopyOnWriteArrayList<>();
+    private volatile LayoutManager layoutManager;
 
     public AbstractContainer() {}
 
