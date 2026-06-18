@@ -7,6 +7,7 @@ import io.jterm.graphics.TextGraphics;
 import io.jterm.style.AnsiColor;
 import io.jterm.style.SGR;
 import io.jterm.style.TextCell;
+import io.jterm.style.ThemeManager;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -22,8 +23,13 @@ public class Button extends AbstractComponent {
 
     public Button(String label) {
         this.label = label;
-        this.fgStyle = new TextCell(' ', AnsiColor.WHITE, AnsiColor.DEFAULT);
-        this.focusStyle = new TextCell(' ', AnsiColor.BLACK, AnsiColor.WHITE);
+        applyTheme();
+    }
+
+    private void applyTheme() {
+        var t = ThemeManager.active();
+        this.fgStyle = new TextCell(' ', t.foreground(), t.background());
+        this.focusStyle = new TextCell(' ', t.focusFg(), t.focusBg());
     }
 
     public void addListener(Runnable listener) { listeners.add(listener); }

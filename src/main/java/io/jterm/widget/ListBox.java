@@ -8,6 +8,7 @@ import io.jterm.graphics.TextGraphics;
 import io.jterm.style.AnsiColor;
 import io.jterm.style.SGR;
 import io.jterm.style.TextCell;
+import io.jterm.style.ThemeManager;
 import io.jterm.util.TerminalTextUtils;
 
 import java.util.ArrayList;
@@ -77,17 +78,18 @@ public class ListBox<T> extends AbstractComponent {
     @Override
     protected void drawComponent(TextGraphics graphics) {
         var size = getSize();
+        var theme = ThemeManager.active();
         for (int r = 0; r < size.rows(); r++) {
             int idx = scrollOffset + r;
             if (idx >= items.size()) {
-                graphics.fillRectangle(0, r, size.columns(), 1, new TextCell(' ', AnsiColor.DEFAULT, AnsiColor.DEFAULT));
+                graphics.fillRectangle(0, r, size.columns(), 1, new TextCell(' ', theme.foreground(), theme.background()));
                 continue;
             }
             String text = renderer.apply(items.get(idx));
             boolean selected = idx == selectedIndex;
             TextCell style = selected
-                ? new TextCell(' ', AnsiColor.BLACK, AnsiColor.WHITE)
-                : new TextCell(' ', AnsiColor.DEFAULT, AnsiColor.DEFAULT);
+                ? new TextCell(' ', theme.selectionFg(), theme.selectionBg())
+                : new TextCell(' ', theme.foreground(), theme.background());
             graphics.fillRectangle(0, r, size.columns(), 1, style);
             graphics.drawString(0, r, TerminalTextUtils.truncate(text, size.columns()), style);
         }

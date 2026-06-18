@@ -5,6 +5,7 @@ import io.jterm.graphics.TextGraphics;
 import io.jterm.style.AnsiColor;
 import io.jterm.style.SGR;
 import io.jterm.style.TextCell;
+import io.jterm.style.ThemeManager;
 import io.jterm.util.Symbols;
 
 /** Horizontal progress bar. */
@@ -44,6 +45,7 @@ public class ProgressBar extends AbstractComponent {
         if (showPercentage) {
             sb.append(String.format(" %3d%%", max == 0 ? 0 : (int) Math.round((double) value / max * 100)));
         }
-        graphics.drawString(0, 0, sb.toString(), new TextCell(' ', AnsiColor.GREEN, AnsiColor.DEFAULT));
+        var theme = ThemeManager.active();
+        graphics.drawString(0, 0, sb.toString(), new TextCell(' ', theme.accent(), theme.background()));
     }
 }

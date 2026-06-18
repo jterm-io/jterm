@@ -6,6 +6,7 @@ import io.jterm.graphics.TextGraphics;
 import io.jterm.style.AnsiColor;
 import io.jterm.style.SGR;
 import io.jterm.style.TextCell;
+import io.jterm.style.ThemeManager;
 import io.jterm.widget.Component;
 import io.jterm.widget.Panel;
 
@@ -76,9 +77,10 @@ public class AbstractWindow implements Window {
 
     protected void drawDecorations(TextGraphics graphics) {
         var size = getSize();
-        var borderCell = new TextCell(' ', AnsiColor.DEFAULT, AnsiColor.DEFAULT);
+        var theme = ThemeManager.active();
+        var borderCell = new TextCell(' ', theme.border(), theme.background());
         // Top bar with title
-        var titleStyle = new TextCell(' ', AnsiColor.WHITE, AnsiColor.BLUE, SGR.BOLD);
+        var titleStyle = new TextCell(' ', theme.titleFg(), theme.titleBg(), SGR.BOLD);
         graphics.fillRectangle(0, 0, size.columns(), 1, titleStyle);
         if (title != null && !title.isEmpty()) {
             graphics.drawString(2, 0, " " + title + " ", titleStyle);

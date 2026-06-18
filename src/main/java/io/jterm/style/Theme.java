@@ -1,0 +1,127 @@
+package io.jterm.style;
+
+/**
+ * Color theme for the JTerm UI toolkit. Defines semantic colors used by
+ * widgets: foreground, background, selection, focus, border, title, accent, etc.
+ *
+ * <p>Themes allow swapping the entire look-and-feel of a JTerm application
+ * without modifying individual widget constructors. A {@link ThemeManager}
+ * holds the active theme; widgets query it for colors instead of hardcoding
+ * {@link AnsiColor} values.
+ *
+ * <h3>Built-in Themes</h3>
+ * <ul>
+ *   <li>{@link #DARK} — white on black (default, current behavior)</li>
+ *   <li>{@link #YELLOW_ON_BLUE} — classic yellow text on blue background</li>
+ *   <li>{@link #GREEN_ON_BLACK} — matrix-style green on black</li>
+ *   <li>{@link #WHITE_ON_GREEN} — light green background with dark text</li>
+ * </ul>
+ *
+ * @param foreground      default text color
+ * @param background      default background color
+ * @param selectionFg     selection foreground (highlighted items)
+ * @param selectionBg     selection background
+ * @param focusFg         focused widget foreground
+ * @param focusBg         focused widget background
+ * @param border           border line color
+ * @param titleFg         window/menu title foreground
+ * @param titleBg         window/menu title background
+ * @param accent           accent color (progress bars, highlights)
+ * @param headerFg        table header foreground
+ * @param headerBg        table header background
+ */
+public record Theme(
+        Color foreground,
+        Color background,
+        Color selectionFg,
+        Color selectionBg,
+        Color focusFg,
+        Color focusBg,
+        Color border,
+        Color titleFg,
+        Color titleBg,
+        Color accent,
+        Color headerFg,
+        Color headerBg
+) {
+    /** Dark theme: white on black. The default, matching prior behavior. */
+    public static final Theme DARK = new Theme(
+            AnsiColor.WHITE,
+            AnsiColor.BLACK,
+            AnsiColor.BLACK,
+            AnsiColor.WHITE,
+            AnsiColor.BLACK,
+            AnsiColor.WHITE,
+            AnsiColor.BRIGHT_BLACK,
+            AnsiColor.WHITE,
+            AnsiColor.BLUE,
+            AnsiColor.GREEN,
+            AnsiColor.WHITE,
+            AnsiColor.BLUE
+    );
+
+    /** Classic yellow-on-blue: amber text on navy. */
+    public static final Theme YELLOW_ON_BLUE = new Theme(
+            AnsiColor.BRIGHT_YELLOW,
+            AnsiColor.BLUE,
+            AnsiColor.BRIGHT_YELLOW,
+            AnsiColor.BRIGHT_BLUE,
+            AnsiColor.BLACK,
+            AnsiColor.BRIGHT_YELLOW,
+            AnsiColor.BRIGHT_BLUE,
+            AnsiColor.BRIGHT_YELLOW,
+            AnsiColor.BRIGHT_BLUE,
+            AnsiColor.BRIGHT_CYAN,
+            AnsiColor.BRIGHT_YELLOW,
+            AnsiColor.BRIGHT_BLUE
+    );
+
+    /** Matrix-style: bright green on black. */
+    public static final Theme GREEN_ON_BLACK = new Theme(
+            AnsiColor.BRIGHT_GREEN,
+            AnsiColor.BLACK,
+            AnsiColor.BLACK,
+            AnsiColor.BRIGHT_GREEN,
+            AnsiColor.BLACK,
+            AnsiColor.BRIGHT_GREEN,
+            AnsiColor.GREEN,
+            AnsiColor.BRIGHT_GREEN,
+            AnsiColor.BLACK,
+            AnsiColor.BRIGHT_CYAN,
+            AnsiColor.BRIGHT_GREEN,
+            AnsiColor.BLACK
+    );
+
+    /** Light green terminal: dark text on green background. */
+    public static final Theme WHITE_ON_GREEN = new Theme(
+            AnsiColor.BLACK,
+            AnsiColor.BRIGHT_GREEN,
+            AnsiColor.BRIGHT_GREEN,
+            AnsiColor.BLACK,
+            AnsiColor.BRIGHT_GREEN,
+            AnsiColor.BLACK,
+            AnsiColor.BLACK,
+            AnsiColor.BLACK,
+            AnsiColor.BRIGHT_GREEN,
+            AnsiColor.BLACK,
+            AnsiColor.BLACK,
+            AnsiColor.BRIGHT_GREEN
+    );
+
+    /** All built-in themes in a list for cycling. */
+    public static final Theme[] BUILT_IN = {
+            Theme.DARK,
+            Theme.YELLOW_ON_BLUE,
+            Theme.GREEN_ON_BLACK,
+            Theme.WHITE_ON_GREEN
+    };
+
+    /** Human-readable name for display. */
+    public String name() {
+        if (this == DARK) return "Dark (white on black)";
+        if (this == YELLOW_ON_BLUE) return "Yellow on Blue";
+        if (this == GREEN_ON_BLACK) return "Green on Black";
+        if (this == WHITE_ON_GREEN) return "White on Green";
+        return "Custom";
+    }
+}

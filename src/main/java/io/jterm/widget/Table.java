@@ -5,6 +5,7 @@ import io.jterm.graphics.TextGraphics;
 import io.jterm.style.AnsiColor;
 import io.jterm.style.SGR;
 import io.jterm.style.TextCell;
+import io.jterm.style.ThemeManager;
 import io.jterm.util.Symbols;
 import io.jterm.util.TerminalTextUtils;
 
@@ -47,21 +48,22 @@ public class Table extends AbstractComponent {
     @Override
     protected void drawComponent(TextGraphics graphics) {
         var size = getSize();
+        var theme = ThemeManager.active();
         updateColumnWidths(size.columns());
         int y = 0;
         // Header
-        drawRow(graphics, y++, headers, new TextCell(' ', AnsiColor.WHITE, AnsiColor.BLUE, SGR.BOLD), true);
+        drawRow(graphics, y++, headers, new TextCell(' ', theme.headerFg(), theme.headerBg(), SGR.BOLD), true);
         // Rows
         for (int i = scrollOffset; i < rows.size() && y < size.rows(); i++) {
             boolean selected = i == selectedRow;
             var style = selected
-                ? new TextCell(' ', AnsiColor.BLACK, AnsiColor.WHITE)
-                : new TextCell(' ', AnsiColor.DEFAULT, AnsiColor.DEFAULT);
+                ? new TextCell(' ', theme.selectionFg(), theme.selectionBg())
+                : new TextCell(' ', theme.foreground(), theme.background());
             drawRow(graphics, y++, rows.get(i), style, false);
         }
         // Clear remaining rows
         while (y < size.rows()) {
-            graphics.fillRectangle(0, y++, size.columns(), 1, new TextCell(' ', AnsiColor.DEFAULT, AnsiColor.DEFAULT));
+            graphics.fillRectangle(0, y++, size.columns(), 1, new TextCell(' ', theme.foreground(), theme.background()));
         }
     }
 

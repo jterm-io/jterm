@@ -7,6 +7,7 @@ import io.jterm.graphics.TextGraphics;
 import io.jterm.style.AnsiColor;
 import io.jterm.style.SGR;
 import io.jterm.style.TextCell;
+import io.jterm.style.ThemeManager;
 import io.jterm.util.TerminalTextUtils;
 
 import java.util.ArrayList;
@@ -33,12 +34,27 @@ public class Menu extends AbstractComponent {
     private int selectedIndex = 0;
     private Runnable closeCallback;
 
-    // Styles
-    private static final TextCell TITLE_NORMAL = new TextCell(' ', AnsiColor.WHITE, AnsiColor.DEFAULT);
-    private static final TextCell TITLE_OPEN = new TextCell(' ', AnsiColor.BLACK, AnsiColor.WHITE, SGR.BOLD);
-    private static final TextCell ITEM_NORMAL = new TextCell(' ', AnsiColor.DEFAULT, AnsiColor.DEFAULT);
-    private static final TextCell ITEM_SELECTED = new TextCell(' ', AnsiColor.BLACK, AnsiColor.WHITE);
-    private static final TextCell SEP_CELL = new TextCell('─', AnsiColor.DEFAULT, AnsiColor.DEFAULT);
+    // Styles — resolved from ThemeManager at draw time
+    private TextCell titleNormalStyle() {
+        var t = ThemeManager.active();
+        return new TextCell(' ', t.foreground(), t.background());
+    }
+    private TextCell titleOpenStyle() {
+        var t = ThemeManager.active();
+        return new TextCell(' ', t.focusFg(), t.focusBg(), SGR.BOLD);
+    }
+    private TextCell itemNormalStyle() {
+        var t = ThemeManager.active();
+        return new TextCell(' ', t.foreground(), t.background());
+    }
+    private TextCell itemSelectedStyle() {
+        var t = ThemeManager.active();
+        return new TextCell(' ', t.selectionFg(), t.selectionBg());
+    }
+    private TextCell sepCellStyle() {
+        var t = ThemeManager.active();
+        return new TextCell('─', t.border(), t.background());
+    }
 
     public Menu(String title) {
         this(title, title.isEmpty() ? '\0' : Character.toLowerCase(title.charAt(0)));
@@ -118,7 +134,7 @@ public class Menu extends AbstractComponent {
     protected void drawComponent(TextGraphics graphics) {
         var size = getSize();
         // Draw the title in the bar
-        var style = open ? TITLE_OPEN : TITLE_NORMAL;
+        var style = open ? titleOpenStyle() : titleNormalStyle();
         String label = " " + title + " ";
         int pad = size.columns() - label.length();
         if (pad > 0) label += " ".repeat(pad);
@@ -135,10 +151,10 @@ public class Menu extends AbstractComponent {
                 var entry = entries.get(i);
                 if (entry instanceof MenuSeparator) {
                     String sep = "─".repeat(Math.max(0, w - 2));
-                    graphics.drawString(0, row, " " + sep + " ", SEP_CELL);
+                    graphics.drawString(0, row, " " + sep + " ", sepCellStyle());
                 } else if (entry instanceof MenuItem mi) {
                     boolean selected = i == selectedIndex;
-                    var itemStyle = selected ? ITEM_SELECTED : ITEM_NORMAL;
+                    var itemStyle = selected ? itemSelectedStyle() : itemNormalStyle();
                     String text = " " + mi.getLabel() + " ";
                     text = TerminalTextUtils.truncate(text, w);
                     int pp = w - TerminalTextUtils.getTrueWidth(text);

@@ -8,6 +8,7 @@ import io.jterm.graphics.TextGraphics;
 import io.jterm.style.AnsiColor;
 import io.jterm.style.SGR;
 import io.jterm.style.TextCell;
+import io.jterm.style.ThemeManager;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -38,7 +39,10 @@ public class MenuBar extends AbstractComponent {
     private final List<Menu> menus = new ArrayList<>();
     private int activeMenuIndex = -1;  // which menu is currently open
 
-    private static final TextCell BAR_BG = new TextCell(' ', AnsiColor.WHITE, AnsiColor.DEFAULT);
+    private TextCell barBgStyle() {
+        var t = ThemeManager.active();
+        return new TextCell(' ', t.foreground(), t.background());
+    }
 
     @Override
     protected TerminalSize calculatePreferredSize() {
@@ -71,7 +75,7 @@ public class MenuBar extends AbstractComponent {
     protected void drawComponent(TextGraphics graphics) {
         var size = getSize();
         // Fill bar background
-        graphics.fillRectangle(0, 0, size.columns(), 1, BAR_BG);
+        graphics.fillRectangle(0, 0, size.columns(), 1, barBgStyle());
 
         int col = 0;
         for (int i = 0; i < menus.size(); i++) {
@@ -96,15 +100,16 @@ public class MenuBar extends AbstractComponent {
                 for (int r = 0; r < dropH; r++) {
                     int absY = 1 + r;
                     var entry = entries.get(r);
+                    var theme = ThemeManager.active();
                     if (entry instanceof MenuSeparator) {
                         String sep = "─".repeat(Math.max(0, dropW - 2));
                         graphics.drawString(col, absY, " " + sep + " ",
-                                new TextCell('─', AnsiColor.DEFAULT, AnsiColor.DEFAULT));
+                                new TextCell('─', theme.border(), theme.background()));
                     } else if (entry instanceof MenuItem mi) {
                         boolean selected = r == menu.getSelectedIndex();
                         var style = selected
-                                ? new TextCell(' ', AnsiColor.BLACK, AnsiColor.WHITE)
-                                : new TextCell(' ', AnsiColor.DEFAULT, AnsiColor.DEFAULT);
+                                ? new TextCell(' ', theme.selectionFg(), theme.selectionBg())
+                                : new TextCell(' ', theme.foreground(), theme.background());
                         String text = " " + mi.getLabel() + " ";
                         int pad = dropW - text.length();
                         if (pad > 0) text += " ".repeat(pad);
