@@ -4,6 +4,7 @@ import io.jterm.core.TerminalSize;
 import io.jterm.graphics.TextGraphics;
 import io.jterm.style.AnsiColor;
 import io.jterm.style.TextCell;
+import io.jterm.style.ThemeManager;
 
 /** Toggle checkbox. */
 public class CheckBox extends AbstractComponent {
@@ -31,8 +32,9 @@ public class CheckBox extends AbstractComponent {
 
     @Override
     protected void drawComponent(TextGraphics graphics) {
+        var theme = ThemeManager.active();
         var marker = selected ? "[✓]" : "[ ]";
-        var style = new TextCell(' ', AnsiColor.DEFAULT, AnsiColor.DEFAULT);
+        var style = new TextCell(' ', theme.foreground(), theme.background());
         graphics.drawString(0, 0, marker + " " + label, style);
     }
 

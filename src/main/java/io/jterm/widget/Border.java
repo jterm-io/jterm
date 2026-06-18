@@ -6,6 +6,7 @@ import io.jterm.graphics.TextGraphics;
 import io.jterm.style.AnsiColor;
 import io.jterm.style.SGR;
 import io.jterm.style.TextCell;
+import io.jterm.style.ThemeManager;
 import io.jterm.util.Symbols;
 
 /** Decorative border wrapping a component. */
@@ -48,7 +49,8 @@ public class Border extends AbstractContainer {
             return;
         }
         var size = getSize();
-        var borderCell = new TextCell(' ', AnsiColor.DEFAULT, AnsiColor.DEFAULT);
+        var theme = ThemeManager.active();
+        var borderCell = new TextCell(' ', theme.border(), theme.background());
         // top
         graphics.drawString(0, 0, style.tl + repeat(style.h, size.columns() - 2) + style.tr, borderCell);
         // sides
@@ -59,7 +61,7 @@ public class Border extends AbstractContainer {
         // bottom
         graphics.drawString(0, size.rows() - 1, style.bl + repeat(style.h, size.columns() - 2) + style.br, borderCell);
         if (title != null && !title.isEmpty() && size.columns() > title.length() + 4) {
-            graphics.drawString(2, 0, " " + title + " ", new TextCell(' ', AnsiColor.DEFAULT, AnsiColor.DEFAULT));
+            graphics.drawString(2, 0, " " + title + " ", new TextCell(' ', theme.foreground(), theme.background()));
         }
         super.drawComponent(graphics);
     }

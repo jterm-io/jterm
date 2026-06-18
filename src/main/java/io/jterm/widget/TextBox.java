@@ -7,6 +7,7 @@ import io.jterm.graphics.TextGraphics;
 import io.jterm.style.AnsiColor;
 import io.jterm.style.SGR;
 import io.jterm.style.TextCell;
+import io.jterm.style.ThemeManager;
 
 /** Single-line text input. */
 public class TextBox extends AbstractComponent {
@@ -33,14 +34,15 @@ public class TextBox extends AbstractComponent {
     @Override
     protected void drawComponent(TextGraphics graphics) {
         var size = getSize();
-        var style = new TextCell(' ', AnsiColor.DEFAULT, AnsiColor.DEFAULT);
+        var theme = ThemeManager.active();
+        var style = new TextCell(' ', theme.foreground(), theme.background());
         graphics.fillRectangle(0, 0, size.columns(), 1, style);
         var visible = value.substring(viewportOffset, Math.min(value.length(), viewportOffset + size.columns()));
         graphics.drawString(0, 0, visible, style);
         int cursorCol = cursorPosition - viewportOffset;
         if (cursorCol >= 0 && cursorCol < size.columns()) {
             char c = cursorPosition < value.length() ? value.charAt(cursorPosition) : ' ';
-            graphics.setCell(cursorCol, 0, new TextCell(c, AnsiColor.BLACK, AnsiColor.WHITE));
+            graphics.setCell(cursorCol, 0, new TextCell(c, theme.selectionFg(), theme.selectionBg()));
         }
     }
 

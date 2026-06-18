@@ -4,6 +4,7 @@ import io.jterm.core.TerminalSize;
 import io.jterm.graphics.TextGraphics;
 import io.jterm.style.AnsiColor;
 import io.jterm.style.TextCell;
+import io.jterm.style.ThemeManager;
 
 /** Filler component. */
 public class EmptySpace extends AbstractComponent {
@@ -17,6 +18,7 @@ public class EmptySpace extends AbstractComponent {
 
     @Override
     protected void drawComponent(TextGraphics graphics) {
-        graphics.fillRectangle(0, 0, getSize().columns(), getSize().rows(), new TextCell(' ', AnsiColor.DEFAULT, AnsiColor.DEFAULT));
+        var theme = ThemeManager.active();
+        graphics.fillRectangle(0, 0, getSize().columns(), getSize().rows(), new TextCell(' ', theme.foreground(), theme.background()));
     }
 }

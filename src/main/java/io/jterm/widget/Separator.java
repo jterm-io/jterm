@@ -4,6 +4,7 @@ import io.jterm.core.TerminalSize;
 import io.jterm.graphics.TextGraphics;
 import io.jterm.style.AnsiColor;
 import io.jterm.style.TextCell;
+import io.jterm.style.ThemeManager;
 
 /** Horizontal or vertical separator. */
 public class Separator extends AbstractComponent {
@@ -20,7 +21,8 @@ public class Separator extends AbstractComponent {
     @Override
     protected void drawComponent(TextGraphics graphics) {
         var size = getSize();
-        var style = new TextCell(' ', AnsiColor.DEFAULT, AnsiColor.DEFAULT);
+        var theme = ThemeManager.active();
+        var style = new TextCell(' ', theme.border(), theme.background());
         if (vertical) {
             for (int r = 0; r < size.rows(); r++) {
                 graphics.drawString(0, r, "│", style);
