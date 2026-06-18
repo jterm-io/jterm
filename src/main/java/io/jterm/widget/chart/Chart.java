@@ -6,6 +6,7 @@ import io.jterm.style.AnsiColor;
 import io.jterm.style.Color;
 import io.jterm.style.SGR;
 import io.jterm.style.TextCell;
+import io.jterm.style.ThemeManager;
 import io.jterm.util.Symbols;
 import io.jterm.widget.AbstractComponent;
 
@@ -216,6 +217,11 @@ public class Chart extends AbstractComponent {
         var size = getSize();
         int cols = size.columns();
         int rows = size.rows();
+        var theme = ThemeManager.active();
+
+        // Fill entire chart area with theme background so no DEFAULT cells remain
+        graphics.fillRectangle(0, 0, cols, rows,
+                new TextCell(' ', theme.foreground(), theme.background()));
 
         var plotArea = computePlotArea(cols, rows);
         int px = plotArea[0], py = plotArea[1], pw = plotArea[2], ph = plotArea[3];
@@ -225,7 +231,7 @@ public class Chart extends AbstractComponent {
 
         // Draw border if enabled
         if (showBorder) {
-            drawChartBorder(graphics, cols, rows);
+            drawChartBorder(graphics, cols, rows, theme.background());
         }
 
         // Draw title
@@ -233,29 +239,29 @@ public class Chart extends AbstractComponent {
             int titleY = showBorder ? 0 : 0;
             int titleX = showBorder ? 2 : yLabelWidth;
             graphics.drawString(titleX, titleY, truncate(title, cols - titleX - 1),
-                    new TextCell(' ', AnsiColor.BRIGHT_WHITE, AnsiColor.DEFAULT, SGR.BOLD));
+                    new TextCell(' ', AnsiColor.BRIGHT_WHITE, theme.background(), SGR.BOLD));
         }
 
         // Draw Y-axis labels and grid
-        drawYAxis(graphics, px, py, pw, ph, yMin, yMax);
+        drawYAxis(graphics, px, py, pw, ph, yMin, yMax, theme.background());
 
         // Draw X-axis baseline
-        drawXAxis(graphics, px, py + ph - 1, pw);
+        drawXAxis(graphics, px, py + ph - 1, pw, theme.background());
 
         // Draw each series
         for (var series : seriesList) {
             if (series.isEmpty()) continue;
-            drawSeries(graphics, series, px, py, pw, ph, yMin, yMax);
+            drawSeries(graphics, series, px, py, pw, ph, yMin, yMax, theme.background());
         }
 
         // Draw legend
         if (showLegend && !seriesList.isEmpty()) {
-            drawLegend(graphics, cols, rows);
+            drawLegend(graphics, cols, rows, theme.background());
         }
     }
 
-    private void drawChartBorder(TextGraphics g, int cols, int rows) {
-        var borderCell = new TextCell(' ', borderColor, AnsiColor.DEFAULT);
+    private void drawChartBorder(TextGraphics g, int cols, int rows, Color bg) {
+        var borderCell = new TextCell(' ', borderColor, bg);
 
         // Top
         for (int c = 0; c < cols; c++) g.setCell(c, 0, borderCell.withCharacter(getBorderChar(c, 0, cols, rows, 'h')));
@@ -279,10 +285,10 @@ public class Chart extends AbstractComponent {
         return ' ';
     }
 
-    private void drawYAxis(TextGraphics g, int px, int py, int pw, int ph, double yMin, double yMax) {
-        var labelCell = new TextCell(' ', axisLabelColor, AnsiColor.DEFAULT);
-        var gridCell = new TextCell(' ', gridColor, AnsiColor.DEFAULT);
-        var axisCell = new TextCell(' ', borderColor, AnsiColor.DEFAULT);
+    private void drawYAxis(TextGraphics g, int px, int py, int pw, int ph, double yMin, double yMax, Color bg) {
+        var labelCell = new TextCell(' ', axisLabelColor, bg);
+        var gridCell = new TextCell(' ', gridColor, bg);
+        var axisCell = new TextCell(' ', borderColor, bg);
 
         int yTickCount = Math.max(2, Math.min(5, ph / 2));
 
@@ -312,22 +318,22 @@ public class Chart extends AbstractComponent {
         }
     }
 
-    private void drawXAxis(TextGraphics g, int px, int pyBottom, int pw) {
-        var axisCell = new TextCell(' ', borderColor, AnsiColor.DEFAULT);
+    private void drawXAxis(TextGraphics g, int px, int pyBottom, int pw, Color bg) {
+        var axisCell = new TextCell(' ', borderColor, bg);
         for (int c = px; c < px + pw; c++) {
             g.setCell(c, pyBottom, axisCell.withCharacter('─'));
         }
         g.setCell(px - 1, pyBottom, axisCell.withCharacter('┴'));
     }
 
-    private void drawSeries(TextGraphics g, ChartSeries series, int px, int py, int pw, int ph, double yMin, double yMax) {
+    private void drawSeries(TextGraphics g, ChartSeries series, int px, int py, int pw, int ph, double yMin, double yMax, Color bg) {
         int n = series.size();
         double yRange = yMax - yMin;
         if (yRange == 0) yRange = 1;
 
         // Map data index → column
         // If we have more data points than columns, we sample; if fewer, we spread
-        var valueCell = new TextCell(' ', series.color(), AnsiColor.DEFAULT, SGR.BOLD);
+        var valueCell = new TextCell(' ', series.color(), bg, SGR.BOLD);
 
         switch (series.type()) {
             case LINE -> drawLineSeries(g, series, px, py, pw, ph, yMin, yMax, yRange, valueCell);
@@ -486,11 +492,11 @@ public class Chart extends AbstractComponent {
         return '─';
     }
 
-    private void drawLegend(TextGraphics g, int cols, int rows) {
+    private void drawLegend(TextGraphics g, int cols, int rows, Color bg) {
         int legendY = rows - 1;
         int x = showBorder ? 2 : 0;
 
-        var labelCell = new TextCell(' ', AnsiColor.WHITE, AnsiColor.DEFAULT);
+        var labelCell = new TextCell(' ', AnsiColor.WHITE, bg);
 
         for (int i = 0; i < seriesList.size(); i++) {
             var s = seriesList.get(i);
