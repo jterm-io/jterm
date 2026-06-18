@@ -15,6 +15,7 @@ public class TextBox extends AbstractComponent {
     private volatile int cursorPosition = 0;
     private volatile int viewportOffset = 0;
     private volatile int preferredColumns = 20;
+    private volatile boolean masked = false;
 
     public TextBox() {}
     public TextBox(int columns) { this.preferredColumns = columns; }
@@ -23,6 +24,15 @@ public class TextBox extends AbstractComponent {
     public void setValue(String value) {
         this.value = value;
         cursorPosition = Math.min(cursorPosition, value.length());
+        invalidate();
+    }
+
+    /** Returns true if characters are drawn as {@code '*'} instead of real text. */
+    public boolean isMasked() { return masked; }
+
+    /** Enables or disables password masking. Invalidates the component. */
+    public void setMasked(boolean masked) {
+        this.masked = masked;
         invalidate();
     }
 
@@ -38,10 +48,11 @@ public class TextBox extends AbstractComponent {
         var style = new TextCell(' ', theme.foreground(), theme.background());
         graphics.fillRectangle(0, 0, size.columns(), 1, style);
         var visible = value.substring(viewportOffset, Math.min(value.length(), viewportOffset + size.columns()));
-        graphics.drawString(0, 0, visible, style);
+        var display = masked ? "*".repeat(visible.length()) : visible;
+        graphics.drawString(0, 0, display, style);
         int cursorCol = cursorPosition - viewportOffset;
         if (cursorCol >= 0 && cursorCol < size.columns()) {
-            char c = cursorPosition < value.length() ? value.charAt(cursorPosition) : ' ';
+            char c = cursorPosition < value.length() ? (masked ? '*' : value.charAt(cursorPosition)) : ' ';
             graphics.setCell(cursorCol, 0, new TextCell(c, theme.selectionFg(), theme.selectionBg()));
         }
     }

@@ -30,6 +30,114 @@ class TextBoxTest {
         assertEquals("", box.getValue());
     }
 
+    // ── Password masking ─────────────────────────────────────────
+
+    @Test
+    void defaultMaskedIsFalse() {
+        var box = new TextBox(10);
+        assertFalse(box.isMasked());
+    }
+
+    @Test
+    void setMaskedTrueReturnsTrue() {
+        var box = new TextBox(10);
+        box.setMasked(true);
+        assertTrue(box.isMasked());
+    }
+
+    @Test
+    void setMaskedFalseReturnsFalse() {
+        var box = new TextBox(10);
+        box.setMasked(true);
+        box.setMasked(false);
+        assertFalse(box.isMasked());
+    }
+
+    @Test
+    void maskedTextBoxRendersAsterisks() {
+        var box = new TextBox(10);
+        box.setBounds(TerminalPosition.TOP_LEFT, new TerminalSize(10, 1));
+        box.setValue("secret");
+        box.setMasked(true);
+
+        var buf = drawBox(box, 10);
+        for (int c = 0; c < 6; c++) {
+            assertTrue(buf.getCell(c, 0).is('*'), "expected '*' at column " + c);
+        }
+        assertTrue(buf.getCell(6, 0).is(' '), "expected space after masked text");
+    }
+
+    @Test
+    void getValueReturnsRealTextWhenMasked() {
+        var box = new TextBox(10);
+        box.setValue("secret");
+        box.setMasked(true);
+        assertEquals("secret", box.getValue());
+    }
+
+    @Test
+    void cursorRendersAtCorrectPositionWhenMasked() {
+        var box = new TextBox(10);
+        box.setBounds(TerminalPosition.TOP_LEFT, new TerminalSize(10, 1));
+        box.setValue("secret");
+        box.setMasked(true);
+        setCursor(box, 3);
+
+        assertEquals(3, getCursor(box));
+    }
+
+    @Test
+    void unmaskingRendersNormalCharactersAgain() {
+        var box = new TextBox(10);
+        box.setBounds(TerminalPosition.TOP_LEFT, new TerminalSize(10, 1));
+        box.setValue("open");
+        box.setMasked(true);
+        box.setMasked(false);
+
+        var buf = drawBox(box, 10);
+        assertTrue(buf.getCell(0, 0).is('o'));
+        assertTrue(buf.getCell(1, 0).is('p'));
+        assertTrue(buf.getCell(2, 0).is('e'));
+        assertTrue(buf.getCell(3, 0).is('n'));
+    }
+
+    @Test
+    void typingIntoMaskedTextBoxStoresRealCharsDisplaysStars() {
+        var box = new TextBox(10);
+        box.setBounds(TerminalPosition.TOP_LEFT, new TerminalSize(10, 1));
+        box.setMasked(true);
+        box.handleKeyStroke(KeyStroke.character('p', false, false, false));
+        box.handleKeyStroke(KeyStroke.character('a', false, false, false));
+        box.handleKeyStroke(KeyStroke.character('s', false, false, false));
+        box.handleKeyStroke(KeyStroke.character('s', false, false, false));
+
+        assertEquals("pass", box.getValue());
+
+        var buf = drawBox(box, 10);
+        assertTrue(buf.getCell(0, 0).is('*'));
+        assertTrue(buf.getCell(1, 0).is('*'));
+        assertTrue(buf.getCell(2, 0).is('*'));
+        assertTrue(buf.getCell(3, 0).is('*'));
+    }
+
+    @Test
+    void backspaceInMaskedModeRemovesRealCharacterAndUpdatesDisplay() {
+        var box = new TextBox(10);
+        box.setBounds(TerminalPosition.TOP_LEFT, new TerminalSize(10, 1));
+        box.setMasked(true);
+        box.handleKeyStroke(KeyStroke.character('p', false, false, false));
+        box.handleKeyStroke(KeyStroke.character('a', false, false, false));
+        box.handleKeyStroke(new KeyStroke(KeyType.BACKSPACE));
+        box.handleKeyStroke(KeyStroke.character('s', false, false, false));
+
+        assertEquals("ps", box.getValue());
+
+        var buf = drawBox(box, 10);
+        assertTrue(buf.getCell(0, 0).is('*'));
+        assertTrue(buf.getCell(1, 0).is('*'));
+        assertTrue(buf.getCell(2, 0).is(' '), "expected space after two masked chars");
+    }
+
     // ── Emacs key bindings ──────────────────────────────────────
 
     @Test
@@ -193,5 +301,13 @@ class TextBoxTest {
         } catch (Exception e) {
             throw new RuntimeException(e);
         }
+    }
+
+    private ScreenBuffer drawBox(TextBox box, int columns) {
+        var size = new TerminalSize(columns, 1);
+        var buf = new ScreenBuffer(size);
+        var g = new TextGraphics(buf);
+        box.draw(g);
+        return buf;
     }
 }
