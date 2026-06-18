@@ -46,6 +46,19 @@ public class TextBox extends AbstractComponent {
 
     @Override
     public void handleKeyStroke(KeyStroke keyStroke) {
+        // Emacs-style key bindings (Ctrl+letter arrives as CHARACTER with ctrl=true)
+        if (keyStroke.type() == KeyType.CHARACTER && keyStroke.ctrl()) {
+            switch (keyStroke.character()) {
+                case 'A', 'a' -> { cursorPosition = 0; adjustViewport(); return; }
+                case 'E', 'e' -> { cursorPosition = value.length(); adjustViewport(); return; }
+                case 'K', 'k' -> { value = value.substring(0, cursorPosition); invalidate(); adjustViewport(); return; }
+                case 'F', 'f' -> { cursorPosition = Math.min(value.length(), cursorPosition + 1); adjustViewport(); return; }
+                case 'B', 'b' -> { cursorPosition = Math.max(0, cursorPosition - 1); adjustViewport(); return; }
+                case 'P', 'p' -> { cursorPosition = Math.max(0, cursorPosition - 1); adjustViewport(); return; }
+                case 'N', 'n' -> { cursorPosition = Math.min(value.length(), cursorPosition + 1); adjustViewport(); return; }
+                default -> { return; }  // Ignore other Ctrl+letter combos
+            }
+        }
         switch (keyStroke.type()) {
             case CHARACTER -> {
                 value = value.substring(0, cursorPosition) + keyStroke.character() + value.substring(cursorPosition);
