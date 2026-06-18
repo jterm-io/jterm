@@ -7,6 +7,7 @@ import io.jterm.core.input.KeyType;
 import io.jterm.graphics.TextGraphics;
 import io.jterm.style.AnsiColor;
 import io.jterm.style.TextCell;
+import io.jterm.style.ThemeManager;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -100,7 +101,8 @@ public class TextArea extends AbstractComponent {
     protected void drawComponent(TextGraphics graphics) {
         adjustViewport(); // ensure viewport is correct before drawing
         var size = getSize();
-        var blank = new TextCell(' ', AnsiColor.DEFAULT, AnsiColor.DEFAULT);
+        var theme = ThemeManager.active();
+        var blank = new TextCell(' ', theme.foreground(), theme.background());
 
         // Fill background
         graphics.fillRectangle(0, 0, size.columns(), size.rows(), blank);
@@ -125,7 +127,7 @@ public class TextArea extends AbstractComponent {
             String line = cursorRow < lines.size() ? lines.get(cursorRow) : "";
             char c = cursorCol < line.length() ? line.charAt(cursorCol) : ' ';
             graphics.setCell(cursorScreenCol, cursorScreenRow,
-                    new TextCell(c, AnsiColor.BLACK, AnsiColor.WHITE));
+                    new TextCell(c, theme.selectionFg(), theme.selectionBg()));
         }
     }
 

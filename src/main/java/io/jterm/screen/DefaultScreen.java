@@ -8,6 +8,7 @@ import io.jterm.style.AnsiCodes;
 import io.jterm.style.SGR;
 import io.jterm.style.TextCell;
 import io.jterm.style.Color;
+import io.jterm.style.ThemeManager;
 
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
@@ -64,7 +65,8 @@ public class DefaultScreen implements Screen {
 
     @Override
     public void clear() {
-        backBuffer.fill(TextCell.EMPTY);
+        var theme = ThemeManager.active();
+        backBuffer.fill(new TextCell(' ', theme.foreground(), theme.background()));
     }
 
     @Override
@@ -116,7 +118,12 @@ public class DefaultScreen implements Screen {
 
     private void doCompleteRefresh() throws IOException {
         terminal.setCursorPosition(0, 0);
-        sgrState.reset();
+        // Write the SGR reset to the terminal — don't discard it.
+        // Without this, the terminal keeps its stale SGR state (e.g. white
+        // background from a selection highlight) and subsequent cells render
+        // with the wrong colors. This is the "white left behind" bug.
+        byte[] resetBytes = sgrState.reset();
+        if (resetBytes.length > 0) terminal.writeRaw(resetBytes);
         for (int r = 0; r < size.rows(); r++) {
             for (int c = 0; c < size.columns(); c++) {
                 var cell = backBuffer.getCell(c, r);

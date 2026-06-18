@@ -20,7 +20,11 @@ class DefaultScreenTest {
         var screen = new DefaultScreen(new TerminalSize(10, 5));
         screen.setCell(0, 0, new TextCell('X'));
         screen.clear();
-        assertEquals(TextCell.EMPTY, screen.getBackCell(0, 0));
+        // clear() now fills with theme colors (DARK theme = WHITE on BLACK by default)
+        var cell = screen.getBackCell(0, 0);
+        assertEquals(' ', cell.character().charAt(0));
+        assertEquals(AnsiColor.WHITE, cell.fg());
+        assertEquals(AnsiColor.BLACK, cell.bg());
     }
 
     @Test

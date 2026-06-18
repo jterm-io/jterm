@@ -16,6 +16,7 @@ import io.jterm.widget.Table;
 import io.jterm.widget.TextBox;
 import io.jterm.widget.Container;
 import io.jterm.widget.Component;
+import io.jterm.style.ThemeManager;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -163,7 +164,11 @@ public class DefaultTextGUI implements TextGUI, WindowManager {
             if (!needsRefresh) return;
             screen.doResizeIfNecessary();
             screen.clear();
-            var buf = new io.jterm.screen.ScreenBuffer(screen.getTerminalSize());
+            // Initialize the rendering buffer with theme colors so areas not
+            // covered by any window get the theme background instead of black.
+            var theme = ThemeManager.active();
+            var fillCell = new io.jterm.style.TextCell(' ', theme.foreground(), theme.background());
+            var buf = new io.jterm.screen.ScreenBuffer(screen.getTerminalSize(), fillCell);
             var g = new io.jterm.graphics.TextGraphics(buf);
             for (var window : windows) {
                 if (windowsToRemove.contains(window)) continue;

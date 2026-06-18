@@ -5,6 +5,7 @@ import io.jterm.graphics.TextGraphics;
 import io.jterm.style.AnsiColor;
 import io.jterm.style.SGR;
 import io.jterm.style.TextCell;
+import io.jterm.style.ThemeManager;
 import io.jterm.util.TerminalTextUtils;
 
 /** Displays styled text. */
@@ -62,12 +63,19 @@ public class Label extends AbstractComponent {
     protected void drawComponent(TextGraphics graphics) {
         var lines = text.split("\n", -1);
         var size = getSize();
+        // If label uses DEFAULT colors, fall back to theme fg/bg so the
+        // label inherits the themed background instead of terminal default.
+        var effectiveStyle = style;
+        if (style.fg() == AnsiColor.DEFAULT && style.bg() == AnsiColor.DEFAULT) {
+            var theme = ThemeManager.active();
+            effectiveStyle = new TextCell(' ', theme.foreground(), theme.background());
+        }
         for (int i = 0; i < lines.length && i < size.rows(); i++) {
             var line = lines[i];
             int width = TerminalTextUtils.getTrueWidth(line);
             int x = 0;
             if (width < size.columns()) x = (size.columns() - width) / 2;
-            graphics.drawString(x, i, line, style);
+            graphics.drawString(x, i, line, effectiveStyle);
         }
     }
 }
