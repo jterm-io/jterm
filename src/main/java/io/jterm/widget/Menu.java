@@ -74,6 +74,8 @@ public class Menu extends AbstractComponent {
 
     public boolean isOpen() { return open; }
 
+    public int getSelectedIndex() { return selectedIndex; }
+
     public void setOpen(boolean open) {
         this.open = open;
         if (open) {

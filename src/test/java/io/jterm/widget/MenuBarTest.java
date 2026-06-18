@@ -279,4 +279,60 @@ class MenuBarTest {
         bar.handleKeyStroke(KeyStroke.character('f', false, false, false));
         assertFalse(bar.hasOpenMenu());
     }
+
+    @Test
+    void dropdownItemsVisibleWhenMenuOpen() {
+        // Bug: MenuBar sized each Menu to 1 row, clipping the dropdown.
+        // Fix: MenuBar draws dropdown directly to parent graphics at absolute coords.
+        var bar = new MenuBar();
+        var fileMenu = new Menu("File");
+        fileMenu.addMenuItem("New", () -> {});
+        fileMenu.addMenuItem("Open", () -> {});
+        fileMenu.addMenuItem("Save", () -> {});
+        bar.addMenu(fileMenu);
+
+        // Open the menu
+        bar.handleKeyStroke(KeyStroke.character('f', true, false, false));
+        assertTrue(fileMenu.isOpen());
+
+        // Draw with a tall enough buffer
+        var buf = new ScreenBuffer(new TerminalSize(40, 10));
+        var g = new TextGraphics(buf);
+        bar.setBounds(TerminalPosition.TOP_LEFT, new TerminalSize(40, 1));
+        bar.drawComponent(g);
+
+        // Row 1 should contain "New" (first dropdown item)
+        StringBuilder row1 = new StringBuilder();
+        for (int c = 0; c < 10; c++) row1.append(buf.getCell(c, 1).character());
+        assertTrue(row1.toString().contains("New"), "Dropdown row 1 should show 'New', got: " + row1);
+
+        // Row 2 should contain "Open"
+        StringBuilder row2 = new StringBuilder();
+        for (int c = 0; c < 10; c++) row2.append(buf.getCell(c, 2).character());
+        assertTrue(row2.toString().contains("Open"), "Dropdown row 2 should show 'Open', got: " + row2);
+
+        // Row 3 should contain "Save"
+        StringBuilder row3 = new StringBuilder();
+        for (int c = 0; c < 10; c++) row3.append(buf.getCell(c, 3).character());
+        assertTrue(row3.toString().contains("Save"), "Dropdown row 3 should show 'Save', got: " + row3);
+    }
+
+    @Test
+    void dropdownNotVisibleWhenMenuClosed() {
+        var bar = new MenuBar();
+        var fileMenu = new Menu("File");
+        fileMenu.addMenuItem("New", () -> {});
+        bar.addMenu(fileMenu);
+
+        // Don't open the menu
+        var buf = new ScreenBuffer(new TerminalSize(40, 10));
+        var g = new TextGraphics(buf);
+        bar.setBounds(TerminalPosition.TOP_LEFT, new TerminalSize(40, 1));
+        bar.drawComponent(g);
+
+        // Row 1 should NOT contain "New"
+        StringBuilder row1 = new StringBuilder();
+        for (int c = 0; c < 10; c++) row1.append(buf.getCell(c, 1).character());
+        assertFalse(row1.toString().contains("New"), "Dropdown should not show when menu is closed");
+    }
 }

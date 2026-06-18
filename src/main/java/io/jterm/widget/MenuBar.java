@@ -69,10 +69,50 @@ public class MenuBar extends AbstractComponent {
         int col = 0;
         for (int i = 0; i < menus.size(); i++) {
             var menu = menus.get(i);
-            menu.setBounds(new TerminalPosition(col, 0), new TerminalSize(menu.getPreferredSize().columns(), 1));
-            var sub = io.jterm.graphics.TextGraphicsExtensions.subGraphics(graphics, new TerminalPosition(col, 0), new TerminalSize(menu.getPreferredSize().columns(), 1));
-            menu.draw(sub);
-            col += menu.getPreferredSize().columns();
+            int menuWidth = menu.getPreferredSize().columns();
+
+            if (menu.isOpen()) {
+                // Draw the title (highlighted) in the bar
+                menu.setBounds(new TerminalPosition(col, 0), new TerminalSize(menuWidth, 1));
+                var titleSub = io.jterm.graphics.TextGraphicsExtensions.subGraphics(graphics,
+                        new TerminalPosition(col, 0), new TerminalSize(menuWidth, 1));
+                // Draw just the title bar via menu.draw (which draws title at row 0)
+                menu.draw(titleSub);
+
+                // Draw the dropdown directly to the MenuBar's graphics at absolute
+                // coordinates. We can't use a sub-clipped graphics because the MenuBar is
+                // only 1 row tall — the dropdown would be clipped. Instead, draw each
+                // dropdown cell directly to the parent graphics at (col, 1 + i).
+                int dropW = menu.dropdownWidth();
+                int dropH = menu.dropdownHeight();
+                var entries = menu.getEntries();
+                for (int r = 0; r < dropH; r++) {
+                    int absY = 1 + r;
+                    var entry = entries.get(r);
+                    if (entry instanceof MenuSeparator) {
+                        String sep = "─".repeat(Math.max(0, dropW - 2));
+                        graphics.drawString(col, absY, " " + sep + " ",
+                                new TextCell('─', AnsiColor.DEFAULT, AnsiColor.DEFAULT));
+                    } else if (entry instanceof MenuItem mi) {
+                        boolean selected = r == menu.getSelectedIndex();
+                        var style = selected
+                                ? new TextCell(' ', AnsiColor.BLACK, AnsiColor.WHITE)
+                                : new TextCell(' ', AnsiColor.DEFAULT, AnsiColor.DEFAULT);
+                        String text = " " + mi.getLabel() + " ";
+                        int pad = dropW - text.length();
+                        if (pad > 0) text += " ".repeat(pad);
+                        if (text.length() > dropW) text = text.substring(0, dropW);
+                        graphics.drawString(col, absY, text, style);
+                    }
+                }
+            } else {
+                // Closed menu — just draw the title
+                menu.setBounds(new TerminalPosition(col, 0), new TerminalSize(menuWidth, 1));
+                var sub = io.jterm.graphics.TextGraphicsExtensions.subGraphics(graphics,
+                        new TerminalPosition(col, 0), new TerminalSize(menuWidth, 1));
+                menu.draw(sub);
+            }
+            col += menuWidth;
         }
     }
 
