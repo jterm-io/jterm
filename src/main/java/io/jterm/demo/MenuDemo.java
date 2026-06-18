@@ -142,6 +142,7 @@ public class MenuDemo {
                     }
                 }
                 if (anyInput) {
+                    gui.requestRefresh();
                     gui.updateScreen();
                 }
                 Thread.sleep(16);
