@@ -31,6 +31,10 @@ public final class Symbols {
     public static final String BL_ROUNDED = "╰";  // \u2570
     public static final String BR_ROUNDED = "╯";  // \u256F
 
+    // Blocks for chart sub-cell resolution
+    public static final String BLOCK_UPPER_HALF = "▀"; // \u2580 — fills upper half of cell
+    public static final String BLOCK_LOWER_HALF = "▄"; // \u2584 — fills lower half of cell
+
     // Misc
     public static final String BLOCK_SOLID = "█";  // \u2588
     public static final String BLOCK_LIGHT = "░";  // \u2591

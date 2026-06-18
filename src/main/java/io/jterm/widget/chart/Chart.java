@@ -338,8 +338,10 @@ public class Chart extends AbstractComponent {
 
     private void drawLineSeries(TextGraphics g, ChartSeries series, int px, int py, int pw, int ph, double yMin, double yMax, double yRange, TextCell cell) {
         int n = series.size();
+        // Use sub-cell (half-block) Y resolution: 2 sub-rows per terminal row.
+        // subY = 0 → top of py, subY = 2*ph-1 → bottom of py+ph-1
         int[] screenX = new int[n];
-        int[] screenY = new int[n];
+        int[] subY = new int[n];
 
         for (int i = 0; i < n; i++) {
             double xFraction = n == 1 ? 0.5 : (double) i / (n - 1);
@@ -347,19 +349,23 @@ public class Chart extends AbstractComponent {
 
             double val = series.values().get(i);
             double yFraction = (val - yMin) / yRange;
-            // Invert: y=0 is top (yMax), y=ph-1 is bottom (yMin)
-            screenY[i] = py + (int) ((1.0 - yFraction) * (ph - 1));
-            screenY[i] = Math.max(py, Math.min(py + ph - 1, screenY[i]));
+            // Invert: yFraction=1 (max) → top, yFraction=0 (min) → bottom
+            double exactSubY = (1.0 - yFraction) * (2.0 * ph - 1);
+            subY[i] = (int) Math.round(exactSubY);
+            subY[i] = Math.max(0, Math.min(2 * ph - 1, subY[i]));
         }
 
-        // Draw line segments using Bresenham
+        // Draw line segments using sub-cell Bresenham
         for (int i = 0; i < n - 1; i++) {
-            drawPlotLine(g, screenX[i], screenY[i], screenX[i + 1], screenY[i + 1], cell);
+            drawPlotLineSubCell(g, screenX[i], subY[i], screenX[i + 1], subY[i + 1], py, cell);
         }
 
-        // Draw markers at data points
+        // Draw markers at data points (full block for precision)
         for (int i = 0; i < n; i++) {
-            g.setCell(screenX[i], screenY[i], cell.withCharacter('●'));
+            int row = py + subY[i] / 2;
+            int half = subY[i] % 2;  // 0 = upper half, 1 = lower half
+            char marker = half == 0 ? '▀' : '▄';
+            g.setCell(screenX[i], row, cell.withCharacter(marker));
         }
     }
 
@@ -401,41 +407,83 @@ public class Chart extends AbstractComponent {
         }
     }
 
-    private void drawPlotLine(TextGraphics g, int x0, int y0, int x1, int y1, TextCell cell) {
-        // Bresenham line with slope-aware character selection
+    /**
+     * Draws a line between two points using sub-cell (half-block) resolution.
+     *
+     * Coordinates: x0/x1 are absolute screen columns; subY0/subY1 are sub-cell
+     * rows relative to the plot area top (py). subY 0 = top of py,
+     * subY 1 = bottom of py row 0, subY 2 = top of py+1, etc.
+     *
+     * Each terminal cell can show:
+     * - ▀ (upper half) — line passes through the top half
+     * - ▄ (lower half) — line passes through the bottom half
+     * - █ (full)       — line passes through both halves (vertical segment)
+     * - ─ (horizontal) — flat segment at a sub-row boundary
+     *
+     * When two sub-points fall in different halves of the same cell, we merge
+     * them into a full block (█) for continuity.
+     */
+    private void drawPlotLineSubCell(TextGraphics g, int x0, int subY0, int x1, int subY1,
+                                      int py, TextCell cell) {
+        // Bresenham in sub-cell space
         int dx = Math.abs(x1 - x0);
-        int dy = Math.abs(y1 - y0);
+        int dy = Math.abs(subY1 - subY0);
         int sx = x0 < x1 ? 1 : -1;
-        int sy = y0 < y1 ? 1 : -1;
+        int sy = subY0 < subY1 ? 1 : -1;
         int err = dx - dy;
 
-        while (true) {
-            char ch;
-            if (x0 == x1) {
-                ch = '│';
-            } else if (y0 == y1) {
-                ch = '─';
-            } else {
-                ch = (sy > 0) ? '╲' : '╱';
-            }
-            g.setCell(x0, y0, cell.withCharacter(ch));
+        // Track which half of the current cell has been painted, so we can
+        // merge upper+lower into a full block when both are visited.
+        int prevCellX = -1;
+        int prevCellRow = -1;
+        boolean paintedUpper = false;
+        boolean paintedLower = false;
 
-            if (x0 == x1 && y0 == y1) break;
+        while (true) {
+            int cellRow = py + subY0 / 2;  // absolute screen row
+            boolean isUpper = (subY0 % 2) == 0;
+
+            if (cellRow == prevCellRow && x0 == prevCellX) {
+                // Same cell as previous point — mark the other half
+                if (isUpper) paintedUpper = true;
+                else paintedLower = true;
+            } else {
+                // New cell — flush previous cell
+                if (prevCellX >= 0) {
+                    char ch = mergeHalves(paintedUpper, paintedLower);
+                    g.setCell(prevCellX, prevCellRow, cell.withCharacter(ch));
+                }
+                prevCellX = x0;
+                prevCellRow = cellRow;
+                paintedUpper = isUpper;
+                paintedLower = !isUpper;
+            }
+
+            if (x0 == x1 && subY0 == subY1) break;
             int e2 = 2 * err;
             if (e2 > -dy) {
                 err -= dy;
-                int prevY = y0;
                 x0 += sx;
-                // Draw corner when changing direction
-                if (x0 != x1 || y0 != y1) {
-                    int nextErr = err + dx; // simulate next step's err
-                }
             }
             if (e2 < dx) {
                 err += dx;
-                y0 += sy;
+                subY0 += sy;
             }
         }
+
+        // Flush last cell
+        if (prevCellX >= 0) {
+            char ch = mergeHalves(paintedUpper, paintedLower);
+            g.setCell(prevCellX, prevCellRow, cell.withCharacter(ch));
+        }
+    }
+
+    /** Merge upper/lower half flags into a single character. */
+    private char mergeHalves(boolean upper, boolean lower) {
+        if (upper && lower) return '█';
+        if (upper) return '▀';
+        if (lower) return '▄';
+        return '─';
     }
 
     private void drawLegend(TextGraphics g, int cols, int rows) {

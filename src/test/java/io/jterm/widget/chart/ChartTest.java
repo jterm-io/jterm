@@ -487,4 +487,86 @@ class ChartTest {
         var g = new TextGraphics(buf);
         assertDoesNotThrow(() -> chart.draw(g));
     }
+
+    @Test
+    void lineChartUsesHalfBlockCharacters() {
+        // Verify the sub-cell rendering produces ▀ ▄ █ characters for smoother lines
+        var chart = new Chart("Half-block");
+        // A steep line: 0 → 100 across the plot, should produce vertical segments (█)
+        chart.addSeries(new ChartSeries("Line", List.of(0.0, 100.0), ChartType.LINE, AnsiColor.GREEN));
+        chart.setShowBorder(false);
+        chart.setShowLegend(false);
+        chart.setShowGrid(false);
+        chart.setYAxisConfig(ChartAxisConfig.fixed(0, 100, "%.0f"));
+        var size = new TerminalSize(20, 10);
+        chart.setBounds(TerminalPosition.TOP_LEFT, size);
+        var buf = new ScreenBuffer(size);
+        var g = new TextGraphics(buf);
+        chart.draw(g);
+
+        // Count half-block characters in the plot area
+        int halfBlocks = 0;
+        for (int r = 0; r < size.rows(); r++) {
+            for (int c = 0; c < size.columns(); c++) {
+                String ch = buf.getCell(c, r).character();
+                if (ch.equals("▀") || ch.equals("▄") || ch.equals("█")) {
+                    halfBlocks++;
+                }
+            }
+        }
+        assertTrue(halfBlocks > 0, "Line chart should use half-block characters (▀▄█), found " + halfBlocks);
+    }
+
+    @Test
+    void lineChartNoOldStyleDiagonalChars() {
+        // Verify old-style diagonal chars (╱╲) are NOT used anymore
+        var chart = new Chart("No diagonals");
+        chart.addSeries(new ChartSeries("Line", List.of(10.0, 50.0, 20.0, 80.0, 30.0),
+                ChartType.LINE, AnsiColor.GREEN));
+        chart.setShowBorder(false);
+        chart.setShowLegend(false);
+        chart.setShowGrid(false);
+        var size = new TerminalSize(40, 15);
+        chart.setBounds(TerminalPosition.TOP_LEFT, size);
+        var buf = new ScreenBuffer(size);
+        var g = new TextGraphics(buf);
+        chart.draw(g);
+
+        // No ╱ or ╲ should appear in the plot area (rows 0-13, cols 7+)
+        for (int r = 0; r < size.rows(); r++) {
+            for (int c = 7; c < size.columns(); c++) {
+                String ch = buf.getCell(c, r).character();
+                assertFalse(ch.equals("╱") || ch.equals("╲"),
+                        "Old diagonal char " + ch + " found at (" + c + "," + r + ")");
+            }
+        }
+    }
+
+    @Test
+    void flatLineUsesHorizontalChar() {
+        // A flat line should produce ─ characters
+        var chart = new Chart("Flat");
+        chart.addSeries(new ChartSeries("Flat", List.of(50.0, 50.0, 50.0, 50.0),
+                ChartType.LINE, AnsiColor.GREEN));
+        chart.setShowBorder(false);
+        chart.setShowLegend(false);
+        chart.setShowGrid(false);
+        chart.setYAxisConfig(ChartAxisConfig.fixed(0, 100, "%.0f"));
+        var size = new TerminalSize(20, 10);
+        chart.setBounds(TerminalPosition.TOP_LEFT, size);
+        var buf = new ScreenBuffer(size);
+        var g = new TextGraphics(buf);
+        chart.draw(g);
+
+        boolean foundHorizontal = false;
+        for (int r = 0; r < size.rows(); r++) {
+            for (int c = 0; c < size.columns(); c++) {
+                if (buf.getCell(c, r).character().equals("─")) {
+                    foundHorizontal = true;
+                    break;
+                }
+            }
+        }
+        assertTrue(foundHorizontal, "Flat line should contain ─ characters");
+    }
 }
