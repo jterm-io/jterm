@@ -19,6 +19,7 @@ public class MockTerminal implements Terminal {
     private final List<TerminalResizeListener> listeners = new ArrayList<>();
     private final StringBuilder output = new StringBuilder();
     private boolean closed;
+    private Boolean cursorVisible;
     private io.jterm.core.input.InputDecoder decoder;
 
     public MockTerminal(TerminalSize size) {
@@ -49,7 +50,12 @@ public class MockTerminal implements Terminal {
     }
 
     @Override
-    public void setCursorVisible(boolean visible) throws IOException {}
+    public void setCursorVisible(boolean visible) throws IOException {
+        cursorVisible = visible;
+    }
+
+    /** Returns the last cursor visibility state set, or null if never set. */
+    public Boolean getCursorVisible() { return cursorVisible; }
 
     @Override
     public void putCharacter(char c) throws IOException {
