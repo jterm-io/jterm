@@ -50,10 +50,13 @@ public class TextBox extends AbstractComponent {
         var visible = value.substring(viewportOffset, Math.min(value.length(), viewportOffset + size.columns()));
         var display = masked ? "*".repeat(visible.length()) : visible;
         graphics.drawString(0, 0, display, style);
-        int cursorCol = cursorPosition - viewportOffset;
-        if (cursorCol >= 0 && cursorCol < size.columns()) {
-            char c = cursorPosition < value.length() ? (masked ? '*' : value.charAt(cursorPosition)) : ' ';
-            graphics.setCell(cursorCol, 0, new TextCell(c, theme.selectionFg(), theme.selectionBg()));
+        // Only draw cursor when this TextBox has focus
+        if (isFocused()) {
+            int cursorCol = cursorPosition - viewportOffset;
+            if (cursorCol >= 0 && cursorCol < size.columns()) {
+                char c = cursorPosition < value.length() ? (masked ? '*' : value.charAt(cursorPosition)) : ' ';
+                graphics.setCell(cursorCol, 0, new TextCell(c, theme.selectionFg(), theme.selectionBg()));
+            }
         }
     }
 
