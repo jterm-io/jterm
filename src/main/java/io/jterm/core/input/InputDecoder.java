@@ -8,26 +8,59 @@ import java.util.Optional;
 public class InputDecoder {
 
     private final InputStream input;
+    private int pushback = -1;  // single-byte pushback buffer for \r\n handling
+    private boolean skipNextNulOrLf = false;  // set after \r to skip trailing \n/\0
 
     public InputDecoder(InputStream input) {
         this.input = input;
     }
 
     public Optional<KeyStroke> poll() throws IOException {
-        if (input.available() == 0) {
+        if (input.available() == 0 && pushback == -1) {
             return Optional.empty();
         }
-        int first = input.read();
+        int first = pushback != -1 ? pushback : input.read();
+        pushback = -1;
         if (first == -1) {
             return Optional.of(new KeyStroke(KeyType.EOF));
+        }
+
+        // After \r, Telnet clients send \n or \0 which we already consumed
+        // if it arrived in the same packet. If it arrives in the next packet,
+        // skip it here.
+        if (skipNextNulOrLf) {
+            skipNextNulOrLf = false;
+            if (first == '\n' || first == '\0') {
+                return poll();  // skip this byte, continue
+            }
+            // Not \n or \0 — fall through and process normally
         }
 
         if (first == 0x1b) { // ESC
             return readEscapeSequence(first);
         }
 
-        if (first == '\r' || first == '\n') {
+        if (first == '\r') {
+            // Consume optional \n or \0 that follows \r
+            // Telnet clients send \r\n, \r\0, or just \r
+            if (input.available() > 0) {
+                int next = input.read();
+                if (next != '\n' && next != '\0' && next != -1) {
+                    pushback = next;  // save for next poll()
+                }
+            } else {
+                // \n or \0 might arrive in next packet — flag to skip it
+                skipNextNulOrLf = true;
+            }
             return Optional.of(new KeyStroke(KeyType.ENTER));
+        }
+        if (first == '\n') {
+            // Standalone \n — treat as ENTER
+            return Optional.of(new KeyStroke(KeyType.ENTER));
+        }
+        if (first == '\0') {
+            // Telnet NUL — skip silently
+            return poll();
         }
         if (first == '\t') {
             return Optional.of(new KeyStroke(KeyType.TAB));
