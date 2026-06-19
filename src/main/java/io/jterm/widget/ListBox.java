@@ -35,6 +35,14 @@ public class ListBox<T> extends AbstractComponent {
         invalidate();
     }
 
+    /** Removes all items from this list. */
+    public void clearItems() {
+        items.clear();
+        selectedIndex = 0;
+        scrollOffset = 0;
+        invalidate();
+    }
+
     public void setAutoScroll(boolean autoScroll) {
         this.autoScroll = autoScroll;
         if (autoScroll) {
