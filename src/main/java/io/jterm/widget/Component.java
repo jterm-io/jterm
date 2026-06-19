@@ -43,15 +43,6 @@ public interface Component {
     /** Immediate parent container, or null if unattached. */
     Component getParent();
 
-    /**
-     * Computes the absolute screen-space position of this component by summing
-     * the positions of all ancestors up to the root. If the component is
-     * unattached (no parent), returns its own position.
-     *
-     * @return absolute terminal position
-     */
-    TerminalPosition toGlobal();
-
     /** Sets parent container. */
     void setParent(Component parent);
 

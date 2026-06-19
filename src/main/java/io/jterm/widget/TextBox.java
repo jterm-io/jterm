@@ -21,12 +21,6 @@ public class TextBox extends AbstractComponent {
     public TextBox(int columns) { this.preferredColumns = columns; }
 
     public String getValue() { return value; }
-
-    /** Returns the cursor position within the text (0-indexed). */
-    public int getCursorPosition() { return cursorPosition; }
-
-    /** Returns the current viewport offset (first visible column). */
-    public int getViewportOffset() { return viewportOffset; }
     public void setValue(String value) {
         this.value = value;
         cursorPosition = Math.min(cursorPosition, value.length());

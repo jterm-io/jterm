@@ -76,19 +76,6 @@ public abstract class AbstractComponent implements Component {
     public Component getParent() { return parent; }
 
     @Override
-    public TerminalPosition toGlobal() {
-        int col = position.column();
-        int row = position.row();
-        Component p = parent;
-        while (p != null) {
-            col += p.getPosition().column();
-            row += p.getPosition().row();
-            p = p.getParent();
-        }
-        return new TerminalPosition(col, row);
-    }
-
-    @Override
     public void setParent(Component parent) { this.parent = parent; }
 
     @Override

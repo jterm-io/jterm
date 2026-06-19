@@ -188,11 +188,6 @@ public class DefaultTextGUI implements TextGUI, WindowManager {
             } else {
                 screen.refresh();
             }
-            // Position the real terminal cursor at the focused text input
-            // field, or hide it if no TextBox is focused. This is essential
-            // for terminals that don't render SGR-based virtual cursors
-            // (e.g. MuffinTerm in CP437 mode).
-            positionRealCursor();
             needsRefresh = false;
             windows.removeAll(windowsToRemove);
             windowsToRemove.clear();
@@ -290,27 +285,5 @@ public class DefaultTextGUI implements TextGUI, WindowManager {
                 || component instanceof ListBox
                 || component instanceof Table
                 || component instanceof TextBox;
-    }
-
-    /**
-     * Positions the real terminal cursor at the focused TextBox's text cursor
-     * location, or hides it if no TextBox is focused. Called after every screen
-     * refresh. This ensures a visible blinking cursor on terminals that don't
-     * render SGR-based virtual cursors (e.g. MuffinTerm in CP437 mode).
-     */
-    private void positionRealCursor() throws IOException {
-        if (!(screen instanceof io.jterm.screen.DefaultScreen ds)) return;
-
-        Component focused = activeWindow != null ? activeWindow.getFocusedComponent() : null;
-        if (focused == null) focused = focusManager.getFocusedComponent();
-
-        if (focused instanceof TextBox tb) {
-            var globalPos = tb.toGlobal();
-            int col = globalPos.column() + tb.getCursorPosition() - tb.getViewportOffset();
-            int row = globalPos.row();
-            ds.showCursorAt(col, row);
-        } else {
-            ds.hideCursor();
-        }
     }
 }

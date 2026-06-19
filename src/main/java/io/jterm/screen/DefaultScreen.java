@@ -197,31 +197,6 @@ public class DefaultScreen implements Screen {
         return cursorPosition;
     }
 
-    /**
-     * Positions the real terminal cursor at the given screen coordinates and
-     * makes it visible. Used after refresh to show a blinking cursor at the
-     * focused text input field on terminals that don't render SGR-based
-     * virtual cursors (e.g. MuffinTerm in CP437 mode).
-     *
-     * @param column  0-based screen column
-     * @param row     0-based screen row
-     * @throws IOException if the terminal write fails
-     */
-    public void showCursorAt(int column, int row) throws IOException {
-        terminal.setCursorPosition(column, row);
-        terminal.setCursorVisible(true);
-    }
-
-    /**
-     * Hides the real terminal cursor. Called when no text input field is
-     * focused (e.g. menu navigation).
-     *
-     * @throws IOException if the terminal write fails
-     */
-    public void hideCursor() throws IOException {
-        terminal.setCursorVisible(false);
-    }
-
     /** Tracks current terminal SGR state and emits only delta transitions. */
     static class SgrStateTracker {
         private Color currentFg = AnsiColor.DEFAULT;
