@@ -7,6 +7,7 @@ import io.jterm.core.input.KeyType;
 import io.jterm.graphics.TextGraphics;
 import io.jterm.screen.ScreenBuffer;
 import io.jterm.style.AnsiColor;
+import io.jterm.style.SGR;
 import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -625,10 +626,10 @@ class TextBoxTest {
         setCursor(box, 2);
         box.setFocused(false);
         var buf = drawBox(box, 20);
-        // No cell should have selection background (WHITE) when not focused
+        // No cell should have REVERSE SGR when not focused
         for (int c = 0; c < 20; c++) {
-            assertNotEquals(AnsiColor.WHITE, buf.getCell(c, 0).bg(),
-                    "no cursor highlight should appear when not focused, at col " + c);
+            assertFalse(buf.getCell(c, 0).modifiers().contains(SGR.REVERSE),
+                    "no cursor REVERSE should appear when not focused, at col " + c);
         }
     }
 
@@ -640,8 +641,9 @@ class TextBoxTest {
         setCursor(box, 2);
         box.setFocused(true);
         var buf = drawBox(box, 20);
-        // Cell at cursor position (col 2) should have selection background (WHITE)
-        assertEquals(AnsiColor.WHITE, buf.getCell(2, 0).bg(), "cursor cell should have selection bg when focused");
+        // Cell at cursor position (col 2) should have REVERSE SGR
+        assertTrue(buf.getCell(2, 0).modifiers().contains(SGR.REVERSE),
+                "cursor cell should have REVERSE SGR when focused");
     }
 
     @Test
@@ -652,8 +654,8 @@ class TextBoxTest {
         setCursor(box, 2); // at end
         box.setFocused(true);
         var buf = drawBox(box, 20);
-        // Cursor at position 2 (past end) shows ' ' with selection bg
-        assertEquals(AnsiColor.WHITE, buf.getCell(2, 0).bg());
+        // Cursor at position 2 (past end) shows ' ' with REVERSE
+        assertTrue(buf.getCell(2, 0).modifiers().contains(SGR.REVERSE));
         assertTrue(buf.getCell(2, 0).is(' '));
     }
 
@@ -666,9 +668,9 @@ class TextBoxTest {
         setCursor(box, 2);
         box.setFocused(true);
         var buf = drawBox(box, 20);
-        // Cursor at position 2 in masked mode should show '*' with highlight
+        // Cursor at position 2 in masked mode should show '*' with REVERSE
         assertTrue(buf.getCell(2, 0).is('*'));
-        assertEquals(AnsiColor.WHITE, buf.getCell(2, 0).bg());
+        assertTrue(buf.getCell(2, 0).modifiers().contains(SGR.REVERSE));
     }
 
     @Test
@@ -686,14 +688,59 @@ class TextBoxTest {
         box.setFocused(true);
         var buf = drawBox(box, 5);
         assertTrue(buf.getCell(0, 0).is('C'), "first visible col should be 'C'");
-        // cursor at absolute pos 5, viewport 2 -> visible col 3, highlighted
-        assertEquals(AnsiColor.WHITE, buf.getCell(3, 0).bg(), "cursor should be highlighted at visible col 3");
+        // cursor at absolute pos 5, viewport 2 -> visible col 3, with REVERSE SGR
+        assertTrue(buf.getCell(3, 0).modifiers().contains(SGR.REVERSE), "cursor should have REVERSE at visible col 3");
+    }
+
+    // ── Cursor rendering with REVERSE SGR ────────────────────────
+
+    @Test
+    void focusedTextBoxCursorCellHasReverseSGR() {
+        var box = new TextBox(20);
+        box.setBounds(TerminalPosition.TOP_LEFT, new TerminalSize(20, 1));
+        box.setValue("Hello");
+        setCursor(box, 3);
+        box.setFocused(true);
+
+        var buf = drawBox(box, 20);
+        // Cursor at position 3, should have REVERSE modifier
+        var cursorCell = buf.getCell(3, 0);
+        assertTrue(cursorCell.modifiers().contains(SGR.REVERSE),
+                "cursor cell must have REVERSE SGR so it's visible on all terminals");
+    }
+
+    @Test
+    void unfocusedTextBoxCursorCellHasNoReverseSGR() {
+        var box = new TextBox(20);
+        box.setBounds(TerminalPosition.TOP_LEFT, new TerminalSize(20, 1));
+        box.setValue("Hello");
+        box.setFocused(false);
+
+        var buf = drawBox(box, 20);
+        for (int c = 0; c < 20; c++) {
+            assertFalse(buf.getCell(c, 0).modifiers().contains(SGR.REVERSE),
+                    "no cell should have REVERSE when TextBox is not focused");
+        }
+    }
+
+    @Test
+    void cursorReverseWorksOnEmptyTextBox() {
+        var box = new TextBox(20);
+        box.setBounds(TerminalPosition.TOP_LEFT, new TerminalSize(20, 1));
+        box.setFocused(true);
+
+        var buf = drawBox(box, 20);
+        // Cursor at position 0 on empty text, should be a reversed space
+        var cursorCell = buf.getCell(0, 0);
+        assertTrue(cursorCell.modifiers().contains(SGR.REVERSE),
+                "cursor on empty field should have REVERSE SGR");
+        assertTrue(cursorCell.is(' '), "cursor on empty field should be a space");
     }
 
     // ── Helpers ──────────────────────────────────────────────────
 
     private int getCursor(TextBox box) {
-        // Read cursor position by checking where the highlight is in the buffer
+        // Read cursor position by checking where the REVERSE SGR modifier is
         box.setFocused(true);  // cursor only renders when focused
         var size = new TerminalSize(20, 1);
         var buf = new ScreenBuffer(size);
@@ -701,7 +748,7 @@ class TextBoxTest {
         box.draw(g);
         for (int c = 0; c < size.columns(); c++) {
             var cell = buf.getCell(c, 0);
-            if (cell.bg().equals(AnsiColor.WHITE)) return c;
+            if (cell.modifiers().contains(SGR.REVERSE)) return c;
         }
         return -1; // cursor not visible
     }

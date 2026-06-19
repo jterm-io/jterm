@@ -55,7 +55,12 @@ public class TextBox extends AbstractComponent {
             int cursorCol = cursorPosition - viewportOffset;
             if (cursorCol >= 0 && cursorCol < size.columns()) {
                 char c = cursorPosition < value.length() ? (masked ? '*' : value.charAt(cursorPosition)) : ' ';
-                graphics.setCell(cursorCol, 0, new TextCell(c, theme.selectionFg(), theme.selectionBg()));
+                // Use REVERSE SGR so the cursor renders as an inverted block
+                // regardless of the active theme's selection colors. This is
+                // essential for CP437 clients (MuffinTerm) where the theme's
+                // selectionFg/selectionBg may be nearly identical to the field
+                // colors, making the cursor invisible.
+                graphics.setCell(cursorCol, 0, new TextCell(c, theme.foreground(), theme.background(), SGR.REVERSE));
             }
         }
     }
