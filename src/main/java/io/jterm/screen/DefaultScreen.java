@@ -89,6 +89,9 @@ public class DefaultScreen implements Screen {
         return backBuffer.getCell(col, row);
     }
 
+    /** Returns the back buffer so external code (e.g. screen mirroring) can write directly. */
+    public ScreenBuffer getBackBuffer() { return backBuffer; }
+
     @Override
     public void refresh() throws IOException {
         refresh(RefreshType.AUTOMATIC);

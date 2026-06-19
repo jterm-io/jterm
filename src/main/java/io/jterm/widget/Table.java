@@ -1,5 +1,6 @@
 package io.jterm.widget;
 
+import io.jterm.core.TerminalPosition;
 import io.jterm.core.TerminalSize;
 import io.jterm.graphics.TextGraphics;
 import io.jterm.style.AnsiColor;
@@ -114,8 +115,12 @@ public class Table extends AbstractComponent {
     }
 
     @Override
-    public void setBounds(io.jterm.core.TerminalPosition position, TerminalSize size) {
+    public void setBounds(TerminalPosition position, TerminalSize size) {
         super.setBounds(position, size);
         ensureVisible();
+    }
+
+    public List<List<String>> getTableModelRows() {
+        return new ArrayList<>(rows);
     }
 }

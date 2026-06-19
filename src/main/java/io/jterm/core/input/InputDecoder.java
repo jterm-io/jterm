@@ -32,7 +32,7 @@ public class InputDecoder {
         if (first == '\t') {
             return Optional.of(new KeyStroke(KeyType.TAB));
         }
-        if (first == 0x7f) {
+        if (first == 0x7f || first == 0x08) {
             return Optional.of(new KeyStroke(KeyType.BACKSPACE));
         }
         if (first >= 1 && first <= 26) { // Ctrl+A..Ctrl+Z, treat as letters

@@ -108,30 +108,25 @@ public class DefaultTextGUI implements TextGUI, WindowManager {
     public boolean processInput(KeyStroke injected) throws IOException {
         synchronized (screenLock) {
             var ks = injected != null ? injected : getInput();
-            if (ks == null) return running;
+            if (ks == null) return false; // no input available
             if (ks.type() == KeyType.CHARACTER) {
                 char ch = ks.character();
-                if (ch == 'q' || ch == 'Q') {
-                    running = false;
-                    return false;
-                }
                 if (ks.ctrl() && (ch == 'C' || ch == 'c')) {
                     running = false;
                     return false;
                 }
             }
             if (ks.type() == KeyType.ESCAPE) {
-                running = false;
-                return false;
+                // Don't quit on Escape in BBS mode — let screens handle it
             }
             if (ks.type() == KeyType.TAB) {
                 advanceFocus();
                 needsRefresh = true;
-                return running;
+                return true;
             }
             var modal = modalWindow();
             if (modal != null && activeWindow != null && !modal.equals(activeWindow)) {
-                return running;
+                return true;
             }
             var focused = activeWindow != null ? activeWindow.getFocusedComponent() : null;
             if (focused != null) {
@@ -141,7 +136,7 @@ public class DefaultTextGUI implements TextGUI, WindowManager {
                 focusManager.getFocusedComponent().handleKeyStroke(ks);
                 needsRefresh = true;
             }
-            return running;
+            return true;
         }
     }
 
@@ -194,8 +189,14 @@ public class DefaultTextGUI implements TextGUI, WindowManager {
     public void runEventLoop() throws IOException {
         needsRefresh = true;
         while (running) {
-            processInput();
+            boolean hadInput = processInput();
             updateScreen();
+            if (!hadInput) {
+                try { Thread.sleep(16); } catch (InterruptedException e) {
+                    Thread.currentThread().interrupt();
+                    break;
+                }
+            }
         }
     }
 
