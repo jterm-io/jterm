@@ -4,6 +4,7 @@ import io.jterm.core.input.InputDecoder;
 import io.jterm.core.input.KeyStroke;
 import io.jterm.style.AnsiCodes;
 import io.jterm.style.Color;
+import io.jterm.style.Cp437;
 import io.jterm.style.SGR;
 
 import java.io.BufferedOutputStream;
@@ -27,6 +28,7 @@ public class SocketTerminal implements Terminal {
     private final TerminalSize fixedSize;
     private volatile TerminalSize currentSize;
     private final List<TerminalResizeListener> resizeListeners = new CopyOnWriteArrayList<>();
+    private volatile boolean cp437Mode = false;
 
     /**
      * Construct a terminal from the socket's input and output streams, with an explicit size.
@@ -35,7 +37,7 @@ public class SocketTerminal implements Terminal {
      */
     public SocketTerminal(InputStream in, OutputStream out, TerminalSize size) {
         this.in = in;
-        this.out = new BufferedOutputStream(out, 4096);
+        this.out = new BufferedOutputStream(out, 65536);  // large enough for 200×100 UTF-8 full render
         this.decoder = new InputDecoder(in);
         this.fixedSize = size;
         this.currentSize = size;
@@ -87,8 +89,18 @@ public class SocketTerminal implements Terminal {
 
     @Override
     public void putCharacter(char c) throws IOException {
-        var bytes = Character.toString(c).getBytes(StandardCharsets.UTF_8);
-        writeRaw(bytes);
+        if (cp437Mode) {
+            byte b = Cp437.toCp437(c);
+            if (b != -1) {
+                writeRaw(new byte[]{b});
+            } else {
+                // No CP437 mapping — write space as fallback
+                writeRaw(new byte[]{0x20});
+            }
+        } else {
+            var bytes = Character.toString(c).getBytes(StandardCharsets.UTF_8);
+            writeRaw(bytes);
+        }
     }
 
     @Override
@@ -135,6 +147,21 @@ public class SocketTerminal implements Terminal {
                 listener.onResized(size);
             }
         }
+    }
+
+    /**
+     * Enable or disable CP437 output mode. When enabled, characters are
+     * translated from Unicode to CP437 single-byte encoding on output.
+     * Enable this for BBS clients that expect CP437 (e.g. MuffinTerm).
+     *
+     * @param cp437Mode true to enable CP437 translation
+     */
+    public void setCp437Mode(boolean cp437Mode) {
+        this.cp437Mode = cp437Mode;
+    }
+
+    public boolean isCp437Mode() {
+        return cp437Mode;
     }
 
     @Override

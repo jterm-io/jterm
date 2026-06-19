@@ -33,6 +33,7 @@ public class DefaultTextGUI implements TextGUI, WindowManager {
     private final FocusManager focusManager = new FocusManager();
     private volatile boolean running = true;
     private volatile boolean needsRefresh = true;
+    private volatile boolean forceComplete = true;  // start with a complete refresh
     private final Object screenLock = new Object();
 
     public DefaultTextGUI(Screen screen) {
@@ -49,6 +50,7 @@ public class DefaultTextGUI implements TextGUI, WindowManager {
         sizeWindow(window);
         focusFirst(window.getContents());
         needsRefresh = true;
+        forceComplete = true;
     }
 
     @Override
@@ -61,6 +63,8 @@ public class DefaultTextGUI implements TextGUI, WindowManager {
             focusManager.clearFocus();
             if (activeWindow != null) focusFirst(activeWindow.getContents());
         }
+        needsRefresh = true;
+        forceComplete = true;
     }
 
     @Override
@@ -178,7 +182,12 @@ public class DefaultTextGUI implements TextGUI, WindowManager {
                     screen.setCell(c, r, buf.getCell(c, r));
                 }
             }
-            screen.refresh();
+            if (forceComplete) {
+                screen.refresh(io.jterm.screen.RefreshType.COMPLETE);
+                forceComplete = false;
+            } else {
+                screen.refresh();
+            }
             needsRefresh = false;
             windows.removeAll(windowsToRemove);
             windowsToRemove.clear();
