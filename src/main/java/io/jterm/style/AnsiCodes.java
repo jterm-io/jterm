@@ -13,6 +13,8 @@ public final class AnsiCodes {
     public static final String SHOW_CURSOR = CSI + "?25h";
     public static final String ENTER_ALT_SCREEN = CSI + "?1049h";
     public static final String EXIT_ALT_SCREEN = CSI + "?1049l";
+    public static final String DISABLE_AUTOWRAP = CSI + "?7l";
+    public static final String ENABLE_AUTOWRAP = CSI + "?7h";
 
     private AnsiCodes() {}
 

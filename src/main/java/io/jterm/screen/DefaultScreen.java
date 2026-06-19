@@ -120,6 +120,11 @@ public class DefaultScreen implements Screen {
     }
 
     private void doCompleteRefresh() throws IOException {
+        // Disable auto-wrap before writing. Without this, writing the last cell
+        // of the last row (col 80, row 24) triggers auto-wrap → scroll, shifting
+        // all content up by one row. Per-row cursor positioning doesn't prevent
+        // this because the write itself still advances past the bottom margin.
+        terminal.writeRaw(AnsiCodes.DISABLE_AUTOWRAP.getBytes(StandardCharsets.UTF_8));
         terminal.setCursorPosition(0, 0);
         // Write the SGR reset to the terminal — don't discard it.
         // Without this, the terminal keeps its stale SGR state (e.g. white
@@ -128,6 +133,11 @@ public class DefaultScreen implements Screen {
         byte[] resetBytes = sgrState.reset();
         if (resetBytes.length > 0) terminal.writeRaw(resetBytes);
         for (int r = 0; r < size.rows(); r++) {
+            // Position cursor at start of each row instead of relying on
+            // terminal auto-wrap. Auto-wrap after the last row triggers a
+            // scroll on terminals where rows == screen height, shifting all
+            // content up. Per-row positioning avoids this entirely.
+            terminal.setCursorPosition(0, r);
             for (int c = 0; c < size.columns(); c++) {
                 var cell = backBuffer.getCell(c, r);
                 byte[] sgrBytes = sgrState.transitionTo(cell);
@@ -135,6 +145,8 @@ public class DefaultScreen implements Screen {
                 terminal.putCharacter(cell.character().charAt(0));
             }
         }
+        // Re-enable auto-wrap for normal operation (delta refreshes, etc.)
+        terminal.writeRaw(AnsiCodes.ENABLE_AUTOWRAP.getBytes(StandardCharsets.UTF_8));
         terminal.flush();
     }
 
