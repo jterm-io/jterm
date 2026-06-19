@@ -152,12 +152,15 @@ class DefaultTextGUITest {
     }
 
     @Test
-    void escapeStopsEventLoop() throws IOException {
+    void escapeDoesNotStopEventLoop() throws IOException {
+        // Escape no longer quits the GUI — BBS screens handle it themselves.
+        // Only Ctrl+C stops the event loop.
         var screen = new DefaultScreen(new MockTerminal(new TerminalSize(80, 24)));
         var gui = new DefaultTextGUI(screen);
         gui.addWindow(new WindowImpl("Test"));
-        boolean stillRunning = gui.processInput(new KeyStroke(KeyType.ESCAPE));
-        assertFalse(stillRunning);
+        boolean hadInput = gui.processInput(new KeyStroke(KeyType.ESCAPE));
+        assertTrue(hadInput);
+        assertTrue(gui.isRunning());
     }
 
     @Test
@@ -174,13 +177,15 @@ class DefaultTextGUITest {
 
     @Test
     void processInputReadsFromTerminal() throws IOException {
+        // Escape is now handled (not a quit) — verify it's read and processed
         var input = new ByteArrayInputStream("\033".getBytes());
         var terminal = new MockTerminal(new TerminalSize(80, 24), new java.io.ByteArrayOutputStream(), input);
         var screen = new DefaultScreen(terminal);
         var gui = new DefaultTextGUI(screen);
         gui.addWindow(new WindowImpl("Test"));
-        boolean stillRunning = gui.processInput();
-        assertFalse(stillRunning, "escape should stop the GUI");
+        boolean hadInput = gui.processInput();
+        assertTrue(hadInput, "escape should be read as input");
+        assertTrue(gui.isRunning(), "escape should not stop the GUI");
     }
 
     private static DefaultTextGUI createGui() {

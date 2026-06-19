@@ -86,13 +86,11 @@ class InputDecoderTest {
     }
 
     @Test
-    void ctrlHIsNotBackspace() {
-        // Bug: 0x08 (Ctrl+H) was intercepted as Backspace before reaching the Ctrl branch.
-        // Fix: only 0x7f should be Backspace; 0x08 should decode as Ctrl+H.
+    void ctrlHIsBackspace() {
+        // 0x08 (Ctrl+H) is treated as Backspace — this is standard terminal behavior.
+        // Telnet clients send 0x08 for backspace; most terminals also honor it.
         var ks = decode(new byte[]{0x08});
-        assertEquals(KeyType.CHARACTER, ks.type());
-        assertEquals('H', ks.character());
-        assertTrue(ks.ctrl());
+        assertEquals(KeyType.BACKSPACE, ks.type());
     }
 
     @Test

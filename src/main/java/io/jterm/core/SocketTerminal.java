@@ -25,6 +25,7 @@ public class SocketTerminal implements Terminal {
     private final OutputStream out;
     private final InputDecoder decoder;
     private final TerminalSize fixedSize;
+    private volatile TerminalSize currentSize;
     private final List<TerminalResizeListener> resizeListeners = new CopyOnWriteArrayList<>();
 
     /**
@@ -37,6 +38,7 @@ public class SocketTerminal implements Terminal {
         this.out = new BufferedOutputStream(out, 4096);
         this.decoder = new InputDecoder(in);
         this.fixedSize = size;
+        this.currentSize = size;
     }
 
     /**
@@ -121,7 +123,18 @@ public class SocketTerminal implements Terminal {
 
     @Override
     public TerminalSize getTerminalSize() throws IOException {
-        return fixedSize;
+        return currentSize;
+    }
+
+    /** Updates the terminal size (e.g. from Telnet NAWS). Notifies resize listeners. */
+    public void setTerminalSize(TerminalSize size) {
+        var old = this.currentSize;
+        this.currentSize = size;
+        if (!size.equals(old)) {
+            for (var listener : resizeListeners) {
+                listener.onResized(size);
+            }
+        }
     }
 
     @Override

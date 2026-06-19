@@ -131,11 +131,12 @@ public class DefaultTextGUI implements TextGUI, WindowManager {
             var focused = activeWindow != null ? activeWindow.getFocusedComponent() : null;
             if (focused != null) {
                 focused.handleKeyStroke(ks);
-                needsRefresh = true;
-            } else if (focusManager.getFocusedComponent() != null) {
-                focusManager.getFocusedComponent().handleKeyStroke(ks);
-                needsRefresh = true;
             }
+            // Always let the window handle keys too (e.g. MainMenu hotkeys)
+            if (activeWindow != null) {
+                activeWindow.handleKeyStroke(ks);
+            }
+            needsRefresh = true;
             return true;
         }
     }
