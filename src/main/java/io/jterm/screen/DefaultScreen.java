@@ -242,13 +242,24 @@ public class DefaultScreen implements Screen {
                 }
             }
             var it = currentMods.iterator();
+            boolean anyModDisabled = false;
             while (it.hasNext()) {
                 SGR mod = it.next();
                 if (!target.modifiers().contains(mod)) {
                     sb.append(new String(AnsiCodes.disable(mod), StandardCharsets.UTF_8));
                     it.remove();
                     changed = true;
+                    anyModDisabled = true;
                 }
+            }
+            // Some CP437 terminal clients (MuffinTerm, SyncTERM) reset fg/bg
+            // colors to default when processing SGR disable sequences (e.g.
+            // ESC[27m for REVERSE off, ESC[22m for BOLD off). After disabling
+            // a modifier, re-emit the current fg and bg so the terminal
+            // restores the correct colors for subsequent cells.
+            if (anyModDisabled) {
+                sb.append(AnsiCodes.CSI).append(new String(currentFg.fgSequence(), StandardCharsets.UTF_8)).append("m");
+                sb.append(AnsiCodes.CSI).append(new String(currentBg.bgSequence(), StandardCharsets.UTF_8)).append("m");
             }
 
             return changed ? sb.toString().getBytes(StandardCharsets.UTF_8) : new byte[0];

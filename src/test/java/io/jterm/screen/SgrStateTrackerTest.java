@@ -67,4 +67,46 @@ class SgrStateTrackerTest {
         byte[] output = tracker.transitionTo(TextCell.EMPTY);
         assertEquals(0, output.length);
     }
+
+    /**
+     * MuffinTerm (CP437 client) resets the background to default (black) when
+     * it receives ESC[27m (REVERSE off). After disabling REVERSE, the tracker
+     * must re-emit the current fg and bg colors so the terminal restores them.
+     * Without this, all cells after a REVERSE cursor render with black background.
+     */
+    @Test
+    void removingReverseReEmitsColors() {
+        var tracker = new DefaultScreen.SgrStateTracker();
+        // Set up: yellow on blue with REVERSE (cursor cell)
+        var cursorCell = new TextCell(' ', AnsiColor.BRIGHT_YELLOW, AnsiColor.BLUE, SGR.REVERSE);
+        tracker.transitionTo(cursorCell);
+        // Transition to a normal cell: yellow on blue, no REVERSE
+        var normalCell = new TextCell(' ', AnsiColor.BRIGHT_YELLOW, AnsiColor.BLUE);
+        byte[] output = tracker.transitionTo(normalCell);
+        String s = new String(output);
+        // Must emit ESC[27m (REVERSE off)
+        assertTrue(s.contains("\033[27m"), "Expected REVERSE off, got: " + s);
+        // Must ALSO re-emit fg (93m) and bg (44m) because some terminals
+        // (MuffinTerm CP437) reset colors when processing ESC[27m
+        assertTrue(s.contains("93m"), "Expected fg re-emit (93m) after REVERSE off, got: " + s);
+        assertTrue(s.contains("44m"), "Expected bg re-emit (44m) after REVERSE off, got: " + s);
+    }
+
+    /**
+     * Same issue applies to other SGR modifiers (e.g. BOLD off / ESC[22m).
+     * Some terminals reset colors on any SGR disable sequence.
+     */
+    @Test
+    void removingBoldWithColorsReEmitsColors() {
+        var tracker = new DefaultScreen.SgrStateTracker();
+        var boldCell = new TextCell('A', AnsiColor.RED, AnsiColor.BLUE, SGR.BOLD);
+        tracker.transitionTo(boldCell);
+        var plainCell = new TextCell('A', AnsiColor.RED, AnsiColor.BLUE);
+        byte[] output = tracker.transitionTo(plainCell);
+        String s = new String(output);
+        assertTrue(s.contains("\033[22m"), "Expected BOLD off, got: " + s);
+        // Must re-emit fg and bg after disabling BOLD
+        assertTrue(s.contains("31m"), "Expected fg re-emit (31m) after BOLD off, got: " + s);
+        assertTrue(s.contains("44m"), "Expected bg re-emit (44m) after BOLD off, got: " + s);
+    }
 }
