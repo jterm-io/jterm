@@ -16,13 +16,14 @@ public class TextBox extends AbstractComponent {
     private volatile int viewportOffset = 0;
     private volatile int preferredColumns = 20;
     private volatile boolean masked = false;
+    private volatile boolean forceUppercase = false;
 
     public TextBox() {}
     public TextBox(int columns) { this.preferredColumns = columns; }
 
     public String getValue() { return value; }
     public void setValue(String value) {
-        this.value = value;
+        this.value = forceUppercase ? value.toUpperCase() : value;
         cursorPosition = Math.min(cursorPosition, value.length());
         invalidate();
     }
@@ -33,6 +34,16 @@ public class TextBox extends AbstractComponent {
     /** Enables or disables password masking. Invalidates the component. */
     public void setMasked(boolean masked) {
         this.masked = masked;
+        invalidate();
+    }
+
+    /** Returns true if typed characters are forced to uppercase. */
+    public boolean isForceUppercase() { return forceUppercase; }
+
+    /** When enabled, all typed characters and setValue input are forced to uppercase. */
+    public void setForceUppercase(boolean force) {
+        this.forceUppercase = force;
+        if (force) value = value.toUpperCase();
         invalidate();
     }
 
@@ -82,7 +93,9 @@ public class TextBox extends AbstractComponent {
         }
         switch (keyStroke.type()) {
             case CHARACTER -> {
-                value = value.substring(0, cursorPosition) + keyStroke.character() + value.substring(cursorPosition);
+                char ch = keyStroke.character();
+                if (forceUppercase) ch = Character.toUpperCase(ch);
+                value = value.substring(0, cursorPosition) + ch + value.substring(cursorPosition);
                 cursorPosition++;
                 invalidate();
             }

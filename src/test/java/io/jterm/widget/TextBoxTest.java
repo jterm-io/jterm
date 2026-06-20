@@ -773,4 +773,33 @@ class TextBoxTest {
         box.draw(g);
         return buf;
     }
+
+    // ── forceUppercase ──────────────────────────────────────────
+
+    @Test
+    void forceUppercaseConvertsTypedCharacters() {
+        var box = new TextBox(10);
+        box.setForceUppercase(true);
+        box.handleKeyStroke(KeyStroke.character('a', false, false, false));
+        box.handleKeyStroke(KeyStroke.character('a', false, false, false));
+        box.handleKeyStroke(KeyStroke.character('p', false, false, false));
+        box.handleKeyStroke(KeyStroke.character('l', false, false, false));
+        assertEquals("AAPL", box.getValue());
+    }
+
+    @Test
+    void forceUppercaseOffByDefault() {
+        var box = new TextBox(10);
+        box.handleKeyStroke(KeyStroke.character('a', false, false, false));
+        assertEquals("a", box.getValue());
+    }
+
+    @Test
+    void forceUppercasePreservesExistingUppercase() {
+        var box = new TextBox(10);
+        box.setForceUppercase(true);
+        box.handleKeyStroke(KeyStroke.character('A', false, false, false));
+        box.handleKeyStroke(KeyStroke.character('B', false, false, false));
+        assertEquals("AB", box.getValue());
+    }
 }
