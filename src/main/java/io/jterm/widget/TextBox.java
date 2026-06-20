@@ -66,12 +66,11 @@ public class TextBox extends AbstractComponent {
             int cursorCol = cursorPosition - viewportOffset;
             if (cursorCol >= 0 && cursorCol < size.columns()) {
                 char c = cursorPosition < value.length() ? (masked ? '*' : value.charAt(cursorPosition)) : ' ';
-                // Use REVERSE SGR so the cursor renders as an inverted block
-                // regardless of the active theme's selection colors. This is
-                // essential for CP437 clients (MuffinTerm) where the theme's
-                // selectionFg/selectionBg may be nearly identical to the field
-                // colors, making the cursor invisible.
-                graphics.setCell(cursorCol, 0, new TextCell(c, theme.foreground(), theme.background(), SGR.REVERSE));
+                // Swap fg/bg directly instead of using SGR.REVERSE.
+                // Some CP437 clients (MuffinTerm) don't implement ESC[7m (REVERSE),
+                // so we invert the colors explicitly. Every terminal supports
+                // explicit fg/bg color codes.
+                graphics.setCell(cursorCol, 0, new TextCell(c, theme.background(), theme.foreground()));
             }
         }
     }

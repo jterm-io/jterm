@@ -8,6 +8,7 @@ import io.jterm.graphics.TextGraphics;
 import io.jterm.screen.ScreenBuffer;
 import io.jterm.style.AnsiColor;
 import io.jterm.style.SGR;
+import io.jterm.style.ThemeManager;
 import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -626,10 +627,14 @@ class TextBoxTest {
         setCursor(box, 2);
         box.setFocused(false);
         var buf = drawBox(box, 20);
-        // No cell should have REVERSE SGR when not focused
+        // No cell should have swapped fg/bg when not focused
+        var theme = ThemeManager.active();
         for (int c = 0; c < 20; c++) {
-            assertFalse(buf.getCell(c, 0).modifiers().contains(SGR.REVERSE),
-                    "no cursor REVERSE should appear when not focused, at col " + c);
+            var cell = buf.getCell(c, 0);
+            assertEquals(theme.foreground(), cell.fg(),
+                    "non-cursor cell should have normal fg at col " + c);
+            assertEquals(theme.background(), cell.bg(),
+                    "non-cursor cell should have normal bg at col " + c);
         }
     }
 
@@ -641,9 +646,13 @@ class TextBoxTest {
         setCursor(box, 2);
         box.setFocused(true);
         var buf = drawBox(box, 20);
-        // Cell at cursor position (col 2) should have REVERSE SGR
-        assertTrue(buf.getCell(2, 0).modifiers().contains(SGR.REVERSE),
-                "cursor cell should have REVERSE SGR when focused");
+        // Cell at cursor position (col 2) should have swapped fg/bg
+        var theme = ThemeManager.active();
+        var cursorCell = buf.getCell(2, 0);
+        assertEquals(theme.background(), cursorCell.fg(),
+                "cursor cell should have bg color as fg (swapped)");
+        assertEquals(theme.foreground(), cursorCell.bg(),
+                "cursor cell should have fg color as bg (swapped)");
     }
 
     @Test
@@ -654,8 +663,10 @@ class TextBoxTest {
         setCursor(box, 2); // at end
         box.setFocused(true);
         var buf = drawBox(box, 20);
-        // Cursor at position 2 (past end) shows ' ' with REVERSE
-        assertTrue(buf.getCell(2, 0).modifiers().contains(SGR.REVERSE));
+        // Cursor at position 2 (past end) shows ' ' with swapped fg/bg
+        var theme = ThemeManager.active();
+        assertEquals(theme.background(), buf.getCell(2, 0).fg());
+        assertEquals(theme.foreground(), buf.getCell(2, 0).bg());
         assertTrue(buf.getCell(2, 0).is(' '));
     }
 
@@ -668,9 +679,11 @@ class TextBoxTest {
         setCursor(box, 2);
         box.setFocused(true);
         var buf = drawBox(box, 20);
-        // Cursor at position 2 in masked mode should show '*' with REVERSE
+        // Cursor at position 2 in masked mode should show '*' with swapped fg/bg
+        var theme = ThemeManager.active();
         assertTrue(buf.getCell(2, 0).is('*'));
-        assertTrue(buf.getCell(2, 0).modifiers().contains(SGR.REVERSE));
+        assertEquals(theme.background(), buf.getCell(2, 0).fg());
+        assertEquals(theme.foreground(), buf.getCell(2, 0).bg());
     }
 
     @Test
@@ -688,14 +701,16 @@ class TextBoxTest {
         box.setFocused(true);
         var buf = drawBox(box, 5);
         assertTrue(buf.getCell(0, 0).is('C'), "first visible col should be 'C'");
-        // cursor at absolute pos 5, viewport 2 -> visible col 3, with REVERSE SGR
-        assertTrue(buf.getCell(3, 0).modifiers().contains(SGR.REVERSE), "cursor should have REVERSE at visible col 3");
+        // cursor at absolute pos 5, viewport 2 -> visible col 3, with swapped fg/bg
+        var theme = ThemeManager.active();
+        assertEquals(theme.background(), buf.getCell(3, 0).fg(), "cursor should have swapped fg at visible col 3");
+        assertEquals(theme.foreground(), buf.getCell(3, 0).bg(), "cursor should have swapped bg at visible col 3");
     }
 
-    // ── Cursor rendering with REVERSE SGR ────────────────────────
+    // ── Cursor rendering with swapped fg/bg ─────────────────────
 
     @Test
-    void focusedTextBoxCursorCellHasReverseSGR() {
+    void focusedTextBoxCursorCellHasSwappedColors() {
         var box = new TextBox(20);
         box.setBounds(TerminalPosition.TOP_LEFT, new TerminalSize(20, 1));
         box.setValue("Hello");
@@ -703,52 +718,64 @@ class TextBoxTest {
         box.setFocused(true);
 
         var buf = drawBox(box, 20);
-        // Cursor at position 3, should have REVERSE modifier
+        // Cursor at position 3, should have swapped fg/bg
+        var theme = ThemeManager.active();
         var cursorCell = buf.getCell(3, 0);
-        assertTrue(cursorCell.modifiers().contains(SGR.REVERSE),
-                "cursor cell must have REVERSE SGR so it's visible on all terminals");
+        assertEquals(theme.background(), cursorCell.fg(),
+                "cursor cell should have bg color as fg (swapped)");
+        assertEquals(theme.foreground(), cursorCell.bg(),
+                "cursor cell should have fg color as bg (swapped)");
     }
 
     @Test
-    void unfocusedTextBoxCursorCellHasNoReverseSGR() {
+    void unfocusedTextBoxCursorCellHasNoSwappedColors() {
         var box = new TextBox(20);
         box.setBounds(TerminalPosition.TOP_LEFT, new TerminalSize(20, 1));
         box.setValue("Hello");
         box.setFocused(false);
 
         var buf = drawBox(box, 20);
+        var theme = ThemeManager.active();
         for (int c = 0; c < 20; c++) {
-            assertFalse(buf.getCell(c, 0).modifiers().contains(SGR.REVERSE),
-                    "no cell should have REVERSE when TextBox is not focused");
+            var cell = buf.getCell(c, 0);
+            assertEquals(theme.foreground(), cell.fg(),
+                    "no cell should have swapped fg when not focused, at col " + c);
+            assertEquals(theme.background(), cell.bg(),
+                    "no cell should have swapped bg when not focused, at col " + c);
         }
     }
 
     @Test
-    void cursorReverseWorksOnEmptyTextBox() {
+    void cursorSwapWorksOnEmptyTextBox() {
         var box = new TextBox(20);
         box.setBounds(TerminalPosition.TOP_LEFT, new TerminalSize(20, 1));
         box.setFocused(true);
 
         var buf = drawBox(box, 20);
-        // Cursor at position 0 on empty text, should be a reversed space
+        // Cursor at position 0 on empty text, should be a space with swapped fg/bg
+        var theme = ThemeManager.active();
         var cursorCell = buf.getCell(0, 0);
-        assertTrue(cursorCell.modifiers().contains(SGR.REVERSE),
-                "cursor on empty field should have REVERSE SGR");
+        assertEquals(theme.background(), cursorCell.fg(),
+                "cursor on empty field should have bg as fg");
+        assertEquals(theme.foreground(), cursorCell.bg(),
+                "cursor on empty field should have fg as bg");
         assertTrue(cursorCell.is(' '), "cursor on empty field should be a space");
     }
 
     // ── Helpers ──────────────────────────────────────────────────
 
     private int getCursor(TextBox box) {
-        // Read cursor position by checking where the REVERSE SGR modifier is
+        // Read cursor position by checking where fg/bg are swapped
         box.setFocused(true);  // cursor only renders when focused
         var size = new TerminalSize(20, 1);
         var buf = new ScreenBuffer(size);
         var g = new TextGraphics(buf);
         box.draw(g);
+        var theme = ThemeManager.active();
         for (int c = 0; c < size.columns(); c++) {
             var cell = buf.getCell(c, 0);
-            if (cell.modifiers().contains(SGR.REVERSE)) return c;
+            // Cursor cell has swapped fg/bg compared to theme
+            if (!cell.fg().equals(theme.foreground()) || !cell.bg().equals(theme.background())) return c;
         }
         return -1; // cursor not visible
     }
