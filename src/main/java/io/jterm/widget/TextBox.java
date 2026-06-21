@@ -87,6 +87,7 @@ public class TextBox extends AbstractComponent {
                 case 'B', 'b' -> { cursorPosition = Math.max(0, cursorPosition - 1); adjustViewport(); return; }
                 case 'P', 'p' -> { cursorPosition = Math.max(0, cursorPosition - 1); adjustViewport(); return; }
                 case 'N', 'n' -> { cursorPosition = Math.min(value.length(), cursorPosition + 1); adjustViewport(); return; }
+                case 'D', 'd' -> { deleteForwardTextBox(); return; }
                 default -> { return; }  // Ignore other Ctrl+letter combos
             }
         }
@@ -105,17 +106,21 @@ public class TextBox extends AbstractComponent {
                     invalidate();
                 }
             }
-            case DELETE -> {
-                if (cursorPosition < value.length()) {
-                    value = value.substring(0, cursorPosition) + value.substring(cursorPosition + 1);
-                    invalidate();
-                }
-            }
+            case DELETE -> deleteForwardTextBox();
             case ARROW_LEFT -> cursorPosition = Math.max(0, cursorPosition - 1);
             case ARROW_RIGHT -> cursorPosition = Math.min(value.length(), cursorPosition + 1);
             case HOME -> cursorPosition = 0;
             case END -> cursorPosition = value.length();
             default -> {}
+        }
+        adjustViewport();
+    }
+
+    /** Delete the character at the cursor position (forward delete, emacs Ctrl+D / Delete key). */
+    private void deleteForwardTextBox() {
+        if (cursorPosition < value.length()) {
+            value = value.substring(0, cursorPosition) + value.substring(cursorPosition + 1);
+            invalidate();
         }
         adjustViewport();
     }

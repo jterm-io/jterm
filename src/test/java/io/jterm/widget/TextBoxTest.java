@@ -277,6 +277,39 @@ class TextBoxTest {
         assertEquals(0, getCursor(box));
     }
 
+    @Test
+    void ctrlDDeletesCharAtCursor() {
+        var box = new TextBox(20);
+        box.setBounds(TerminalPosition.TOP_LEFT, new TerminalSize(20, 1));
+        box.setValue("Hello");
+        setCursor(box, 1); // cursor between H and e
+        box.handleKeyStroke(KeyStroke.character('D', true, false, false)); // Ctrl+D
+        assertEquals("Hllo", box.getValue());
+        assertEquals(1, getCursor(box), "cursor should not move after Ctrl+D");
+    }
+
+    @Test
+    void ctrlDAtEndDoesNothing() {
+        var box = new TextBox(20);
+        box.setBounds(TerminalPosition.TOP_LEFT, new TerminalSize(20, 1));
+        box.setValue("Hello");
+        setCursor(box, 5); // cursor at end
+        box.handleKeyStroke(KeyStroke.character('D', true, false, false)); // Ctrl+D
+        assertEquals("Hello", box.getValue());
+        assertEquals(5, getCursor(box));
+    }
+
+    @Test
+    void lowercaseCtrlDAlsoWorks() {
+        var box = new TextBox(20);
+        box.setBounds(TerminalPosition.TOP_LEFT, new TerminalSize(20, 1));
+        box.setValue("Hello");
+        setCursor(box, 0);
+        box.handleKeyStroke(KeyStroke.character('d', true, false, false)); // ctrl+d lowercase
+        assertEquals("ello", box.getValue());
+        assertEquals(0, getCursor(box));
+    }
+
     // ── Expanded coverage: insert, delete, arrows, viewport, value ───────
 
     @Test

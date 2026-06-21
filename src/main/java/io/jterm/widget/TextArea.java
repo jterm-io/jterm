@@ -21,7 +21,7 @@ import java.util.List;
  *   <li>Multi-line text with {@code \n}-separated lines</li>
  *   <li>Horizontal and vertical scrolling</li>
  *   <li>Arrow keys, Home/End, Page Up/Down</li>
- *   <li>Emacs bindings: Ctrl+A/E/K/F/B/P/N</li>
+ *   <li>Emacs bindings: Ctrl+A/E/K/F/B/P/N/D</li>
  *   <li>Backspace (with line join), Delete (with line join), Enter (new line)</li>
  * </ul>
  */
@@ -145,6 +145,7 @@ public class TextArea extends AbstractComponent {
                 case 'B', 'b' -> { moveLeft(); return; }
                 case 'P', 'p' -> { moveUp(); return; }
                 case 'N', 'n' -> { moveDown(); return; }
+                case 'D', 'd' -> { deleteForward(); invalidate(); adjustViewport(); return; }
                 default -> { return; } // Ignore other Ctrl combos
             }
         }

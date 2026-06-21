@@ -629,6 +629,49 @@ class TextAreaTest {
         assertEquals(5, getCursorCol(ta));
     }
 
+    // ── Ctrl+D (delete char forward) ────────────────────────────
+
+    @Test
+    void ctrlDDeletesCharAtCursor() {
+        var ta = new TextArea("Hello");
+        setCursor(ta, 0, 1); // between H and e
+        ta.handleKeyStroke(ctrl('D'));
+        assertEquals("Hllo", ta.getText());
+        assertEquals(0, getCursorRow(ta));
+        assertEquals(1, getCursorCol(ta), "cursor should not move after Ctrl+D");
+    }
+
+    @Test
+    void ctrlDAtEndOfLineJoinsWithNextLine() {
+        var ta = new TextArea("Hi\nWorld");
+        setCursor(ta, 0, 2); // end of first line
+        ta.handleKeyStroke(ctrl('D'));
+        assertEquals("HiWorld", ta.getText());
+        assertEquals(1, ta.getLineCount());
+        assertEquals(0, getCursorRow(ta));
+        assertEquals(2, getCursorCol(ta));
+    }
+
+    @Test
+    void ctrlDAtEndOfLastLineDoesNothing() {
+        var ta = new TextArea("Hello\nWorld");
+        setCursor(ta, 1, 5); // end of last line
+        ta.handleKeyStroke(ctrl('D'));
+        assertEquals("Hello\nWorld", ta.getText());
+        assertEquals(2, ta.getLineCount());
+        assertEquals(1, getCursorRow(ta));
+        assertEquals(5, getCursorCol(ta));
+    }
+
+    @Test
+    void lowercaseCtrlDAlsoWorks() {
+        var ta = new TextArea("Hello");
+        setCursor(ta, 0, 0);
+        ta.handleKeyStroke(ctrl('d'));
+        assertEquals("ello", ta.getText());
+        assertEquals(0, getCursorCol(ta));
+    }
+
     // ── Constructor variants ──────────────────────────────────
 
     @Test

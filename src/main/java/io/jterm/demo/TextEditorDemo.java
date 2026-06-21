@@ -33,6 +33,7 @@ import java.util.List;
  *   <li><b>Ctrl+K</b> — kill to end of line</li>
  *   <li><b>Ctrl+F/B</b> — forward / backward (emacs)</li>
  *   <li><b>Ctrl+N/P</b> — down / up (emacs)</li>
+ *   <li><b>Ctrl+D</b> — delete char forward (emacs)</li>
  *   <li><b>Ctrl+S</b> — save (prints to console)</li>
  *   <li><b>q</b> or <b>Ctrl+C</b> — quit</li>
  * </ul>
