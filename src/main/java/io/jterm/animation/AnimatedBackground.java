@@ -26,4 +26,7 @@ public interface AnimatedBackground {
 
     /** Target frames per second. Default 15 (BBS terminals are slow, keep CPU low). */
     default int targetFps() { return 15; }
+
+    /** Returns the last terminal size passed to {@link #onResize}, or null if never resized. */
+    default TerminalSize lastSize() { return null; }
 }
