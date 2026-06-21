@@ -38,7 +38,7 @@ class CircuitBoardTest {
     void implementsAnimatedBackground() {
         var board = new CircuitBoard(new TerminalSize(10, 5));
         assertTrue(board instanceof AnimatedBackground);
-        assertEquals(15, board.targetFps());
+        assertEquals(8, board.targetFps());
         board.start();
         assertTrue(board.isRunning());
         board.stop();
@@ -130,7 +130,7 @@ class CircuitBoardTest {
                 if (ch == '\u2500' || ch == '\u2502' || ch == '\u2510' || ch == '\u2518' || ch == '\u2514') {
                     hasTrace = true;
                 }
-                if (ch == '*' || ch == 'o') {
+                if (ch == '+' || ch == '\u00B7') {
                     hasPad = true;
                 }
             }

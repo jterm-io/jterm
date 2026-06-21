@@ -38,7 +38,7 @@ public class CircuitBoard extends AbstractComponent implements AnimatedBackgroun
     private final Random random = new Random();
     private TerminalSize preferredSize;
 
-    private volatile int targetFps = 15;
+    private volatile int targetFps = 8;
     private volatile boolean paused = false;
     private volatile boolean running = false;
 
@@ -156,8 +156,9 @@ public class CircuitBoard extends AbstractComponent implements AnimatedBackgroun
 
         var theme = ThemeManager.active();
         Color bg = theme.background();
-        Color traceColor = dimColor(AnsiColor.BRIGHT_GREEN, 0.35);
-        Color padColor = dimColor(AnsiColor.GREEN, 0.55);
+        Color traceColor = AnsiColor.GREEN;
+        Color padColor = AnsiColor.BRIGHT_GREEN;
+        Color viaColor = AnsiColor.GREEN;
 
         graphics.fillRectangle(0, 0, size.columns(), size.rows(),
                 new TextCell(' ', theme.foreground(), bg));
@@ -189,9 +190,9 @@ public class CircuitBoard extends AbstractComponent implements AnimatedBackgroun
                         }
                     }
                     if (hasTrace) {
-                        graphics.setCell(x, y, new TextCell('*', padColor, bg));
+                        graphics.setCell(x, y, new TextCell('+', padColor, bg, SGR.BOLD));
                     } else if (random.nextDouble() < 0.08) {
-                        graphics.setCell(x, y, new TextCell('o', dimColor(AnsiColor.BRIGHT_BLACK, 0.6), bg));
+                        graphics.setCell(x, y, new TextCell('·', viaColor, bg));
                     }
                 }
             }
