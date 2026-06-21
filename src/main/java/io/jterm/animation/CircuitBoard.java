@@ -390,6 +390,10 @@ public class CircuitBoard extends AbstractComponent implements AnimatedBackgroun
             case RESISTOR -> drawResistor(graphics, ox, oy, w, h, size, bg);
             case CAPACITOR -> drawCapacitor(graphics, ox, oy, w, h, size, bg);
             case CRYSTAL -> drawCrystal(graphics, ox, oy, w, h, size, bg);
+            case DIODE -> drawDiode(graphics, ox, oy, w, h, size, bg);
+            case LED -> drawLed(graphics, ox, oy, w, h, size, bg);
+            case TRANSISTOR -> drawTransistor(graphics, ox, oy, w, h, size, bg);
+            case INDUCTOR -> drawInductor(graphics, ox, oy, w, h, size, bg);
         }
     }
 
@@ -595,6 +599,152 @@ public class CircuitBoard extends AbstractComponent implements AnimatedBackgroun
             graphics.setCell(labelX + 1, labelY, new TextCell('T', labelColor, bg, SGR.BOLD));
     }
 
+    /**
+     * Draws a diode as a triangle pointing into a cathode bar.
+     * <pre>
+     * ───►│───
+     * </pre>
+     */
+    private void drawDiode(TextGraphics graphics, int ox, int oy, int w, int h, TerminalSize size, Color bg) {
+        Color bodyColor = AnsiColor.BRIGHT_YELLOW;
+        Color leadColor = AnsiColor.GREEN;
+        int cols = size.columns();
+        int rows = size.rows();
+        int midY = oy + h / 2;
+
+        // Triangle (anode) → bar (cathode)
+        int triX = ox + w / 3;
+        int barX = triX + 2;
+        if (inBounds(triX, midY, cols, rows))
+            graphics.setCell(triX, midY, new TextCell('\u25BA', bodyColor, bg, SGR.BOLD)); // ►
+        if (inBounds(barX, midY, cols, rows))
+            graphics.setCell(barX, midY, new TextCell('\u2502', bodyColor, bg, SGR.BOLD)); // │
+
+        // Leads
+        for (int x = ox; x < triX; x++) {
+            if (inBounds(x, midY, cols, rows))
+                graphics.setCell(x, midY, new TextCell('\u2500', leadColor, bg));
+        }
+        for (int x = barX + 1; x <= ox + w; x++) {
+            if (inBounds(x, midY, cols, rows))
+                graphics.setCell(x, midY, new TextCell('\u2500', leadColor, bg));
+        }
+    }
+
+    /**
+     * Draws an LED as a diode with a small circle around it.
+     * <pre>
+     * ───►│───
+     *  °
+     * </pre>
+     */
+    private void drawLed(TextGraphics graphics, int ox, int oy, int w, int h, TerminalSize size, Color bg) {
+        Color bodyColor = AnsiColor.BRIGHT_RED;
+        Color leadColor = AnsiColor.GREEN;
+        int cols = size.columns();
+        int rows = size.rows();
+        int midY = oy + h / 2;
+
+        int triX = ox + w / 3;
+        int barX = triX + 2;
+        if (inBounds(triX, midY, cols, rows))
+            graphics.setCell(triX, midY, new TextCell('\u25BA', bodyColor, bg, SGR.BOLD)); // ►
+        if (inBounds(barX, midY, cols, rows))
+            graphics.setCell(barX, midY, new TextCell('\u2502', bodyColor, bg, SGR.BOLD)); // │
+
+        // LED indicator dot below
+        if (inBounds(triX, midY + 1, cols, rows))
+            graphics.setCell(triX, midY + 1, new TextCell('\u00B0', bodyColor, bg));
+
+        // Leads
+        for (int x = ox; x < triX; x++) {
+            if (inBounds(x, midY, cols, rows))
+                graphics.setCell(x, midY, new TextCell('\u2500', leadColor, bg));
+        }
+        for (int x = barX + 1; x <= ox + w; x++) {
+            if (inBounds(x, midY, cols, rows))
+                graphics.setCell(x, midY, new TextCell('\u2500', leadColor, bg));
+        }
+    }
+
+    /**
+     * Draws a transistor: three leads (base, collector, emitter) converging
+     * to a vertical body line.
+     * <pre>
+     *      ┌──
+     *  ────┤
+     *      └──
+     * </pre>
+     */
+    private void drawTransistor(TextGraphics graphics, int ox, int oy, int w, int h, TerminalSize size, Color bg) {
+        Color bodyColor = AnsiColor.BRIGHT_YELLOW;
+        Color leadColor = AnsiColor.GREEN;
+        int cols = size.columns();
+        int rows = size.rows();
+
+        int bodyX = ox + w / 2;
+        int topY = oy + h / 4;
+        int midY = oy + h / 2;
+        int botY = oy + 3 * h / 4;
+
+        // Vertical body line
+        for (int y = topY; y <= botY; y++) {
+            if (inBounds(bodyX, y, cols, rows))
+                graphics.setCell(bodyX, y, new TextCell('\u2502', bodyColor, bg, SGR.BOLD));
+        }
+
+        // Base lead (left → body center)
+        for (int x = ox; x < bodyX; x++) {
+            if (inBounds(x, midY, cols, rows))
+                graphics.setCell(x, midY, new TextCell('\u2500', leadColor, bg));
+        }
+
+        // Collector lead (body top → right)
+        for (int x = bodyX; x <= ox + w; x++) {
+            if (inBounds(x, topY, cols, rows))
+                graphics.setCell(x, topY, new TextCell('\u2500', leadColor, bg));
+        }
+
+        // Emitter lead (body bottom → right)
+        for (int x = bodyX; x <= ox + w; x++) {
+            if (inBounds(x, botY, cols, rows))
+                graphics.setCell(x, botY, new TextCell('\u2500', leadColor, bg));
+        }
+    }
+
+    /**
+     * Draws an inductor as a series of bumps (coils).
+     * <pre>
+     * ───∩∩∩───
+     * </pre>
+     */
+    private void drawInductor(TextGraphics graphics, int ox, int oy, int w, int h, TerminalSize size, Color bg) {
+        Color bodyColor = AnsiColor.BRIGHT_CYAN;
+        Color leadColor = AnsiColor.GREEN;
+        int cols = size.columns();
+        int rows = size.rows();
+        int midY = oy + h / 2;
+
+        int coilStart = ox + 2;
+        int coilEnd = ox + w - 2;
+        var coil = new TextCell('\u2229', bodyColor, bg, SGR.BOLD); // ∩
+
+        for (int x = coilStart; x < coilEnd; x++) {
+            if (inBounds(x, midY, cols, rows))
+                graphics.setCell(x, midY, coil);
+        }
+
+        // Leads
+        for (int x = ox; x < coilStart; x++) {
+            if (inBounds(x, midY, cols, rows))
+                graphics.setCell(x, midY, new TextCell('\u2500', leadColor, bg));
+        }
+        for (int x = coilEnd; x <= ox + w; x++) {
+            if (inBounds(x, midY, cols, rows))
+                graphics.setCell(x, midY, new TextCell('\u2500', leadColor, bg));
+        }
+    }
+
     // ── Pulses ────────────────────────────────────────────────────────────
 
     private void spawnPulses() {
@@ -739,20 +889,28 @@ public class CircuitBoard extends AbstractComponent implements AnimatedBackgroun
         public enum Type {
             /** IC chip: rectangle with pins, "IC" label. 5×3 grid. */
             CHIP(5, 3),
-            /** Resistor: shaded body with leads. 5×1 grid. */
-            RESISTOR(5, 1),
-            /** Capacitor: two parallel plates with leads. 4×1 grid. */
-            CAPACITOR(4, 1),
-            /** Crystal oscillator: rectangle with "XT" label. 5×2 grid. */
-            CRYSTAL(5, 2);
+                /** Resistor: shaded body with leads. 5×1 grid. */
+                RESISTOR(5, 1),
+                /** Capacitor: two parallel plates with leads. 4×1 grid. */
+                CAPACITOR(4, 1),
+                /** Crystal oscillator: rectangle with "XT" label. 5×2 grid. */
+                CRYSTAL(5, 2),
+                /** Diode: triangle pointing into a bar. 3×1 grid. */
+                DIODE(3, 1),
+                /** LED: diode with a circle indicator. 3×1 grid. */
+                LED(3, 1),
+                /** Transistor: three leads converging to a body. 3×3 grid. */
+                TRANSISTOR(3, 3),
+                /** Inductor: coiled line. 5×1 grid. */
+                INDUCTOR(5, 1);
 
-            public final int width;
-            public final int height;
+                public final int width;
+                public final int height;
 
-            Type(int width, int height) {
-                this.width = width;
-                this.height = height;
+                Type(int width, int height) {
+                    this.width = width;
+                    this.height = height;
+                }
             }
-        }
     }
 }

@@ -258,12 +258,15 @@ class CircuitBoardTest {
         var buffer = new ScreenBuffer(size);
         board.draw(new TextGraphics(buffer));
 
-        // Check for component body characters (shade chars used by chips/crystals)
+        // Check for component body characters (shade chars used by chips/crystals,
+        // diode triangles, inductor coils, etc.)
         boolean hasComponent = false;
         for (int r = 0; r < size.rows(); r++) {
             for (int c = 0; c < size.columns(); c++) {
                 char ch = buffer.getCell(c, r).character().charAt(0);
                 if (ch == '\u2592' || ch == '\u2593'  // shade chars (chip/crystal/resistor body)
+                        || ch == '\u25BA'             // diode/LED triangle ►
+                        || ch == '\u2229'             // inductor coil ∩
                         || ch == 'I' || ch == 'C'    // IC label
                         || ch == 'X' || ch == 'T') {  // XT label
                     hasComponent = true;
