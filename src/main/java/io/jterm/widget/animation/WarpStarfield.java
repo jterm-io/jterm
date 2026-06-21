@@ -6,6 +6,7 @@ import io.jterm.core.TerminalSize;
 import io.jterm.graphics.TextGraphics;
 import io.jterm.style.AnsiColor;
 import io.jterm.style.Color;
+import io.jterm.style.RgbColor;
 import io.jterm.style.SGR;
 import io.jterm.style.TextCell;
 import io.jterm.style.ThemeManager;
@@ -251,10 +252,18 @@ public class WarpStarfield extends AbstractComponent implements AnimatedBackgrou
     }
 
     private static Color blend(Color a, Color b, double aWeight) {
-        if (a instanceof AnsiColor ac && b instanceof AnsiColor bc) {
-            return aWeight >= 0.5 ? ac : bc;
+        if (aWeight <= 0.0) return a;
+        if (aWeight >= 1.0) return a;
+        // Use RGB interpolation so dim stars are actually visible.
+        if (a instanceof AnsiColor ac) a = ac.toRgb();
+        if (b instanceof AnsiColor bc) b = bc.toRgb();
+        if (a instanceof RgbColor ra && b instanceof RgbColor rb) {
+            int r = (int) (ra.r() + (rb.r() - ra.r()) * aWeight);
+            int g = (int) (ra.g() + (rb.g() - ra.g()) * aWeight);
+            int bl = (int) (ra.b() + (rb.b() - ra.b()) * aWeight);
+            return new RgbColor(r, g, bl);
         }
-        return a;
+        return aWeight >= 0.5 ? a : b;
     }
 
     @Override

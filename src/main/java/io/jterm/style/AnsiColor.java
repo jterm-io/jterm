@@ -2,16 +2,27 @@ package io.jterm.style;
 
 /** Classic 16-color ANSI palette. Maximum terminal compatibility. */
 public enum AnsiColor implements Color {
-    BLACK(0), RED(1), GREEN(2), YELLOW(3),
-    BLUE(4), MAGENTA(5), CYAN(6), WHITE(7),
-    BRIGHT_BLACK(8), BRIGHT_RED(9), BRIGHT_GREEN(10),
-    BRIGHT_YELLOW(11), BRIGHT_BLUE(12), BRIGHT_MAGENTA(13),
-    BRIGHT_CYAN(14), BRIGHT_WHITE(15),
-    DEFAULT(-1);
+    BLACK(0, 0, 0, 0), RED(1, 170, 0, 0), GREEN(2, 0, 170, 0), YELLOW(3, 170, 85, 0),
+    BLUE(4, 0, 0, 170), MAGENTA(5, 170, 0, 170), CYAN(6, 0, 170, 170), WHITE(7, 170, 170, 170),
+    BRIGHT_BLACK(8, 85, 85, 85), BRIGHT_RED(9, 255, 85, 85), BRIGHT_GREEN(10, 85, 255, 85),
+    BRIGHT_YELLOW(11, 255, 255, 85), BRIGHT_BLUE(12, 85, 85, 255), BRIGHT_MAGENTA(13, 255, 85, 255),
+    BRIGHT_CYAN(14, 85, 255, 255), BRIGHT_WHITE(15, 255, 255, 255),
+    DEFAULT(-1, 0, 0, 0);
 
     private final int index;
+    private final int r, g, b;
 
-    AnsiColor(int index) { this.index = index; }
+    AnsiColor(int index, int r, int g, int b) {
+        this.index = index;
+        this.r = r;
+        this.g = g;
+        this.b = b;
+    }
+
+    /** Returns the RGB representation of this ANSI color. */
+    public RgbColor toRgb() {
+        return new RgbColor(r, g, b);
+    }
 
     @Override
     public byte[] fgSequence() {

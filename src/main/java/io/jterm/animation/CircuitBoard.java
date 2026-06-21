@@ -51,6 +51,7 @@ public class CircuitBoard extends AbstractComponent implements AnimatedBackgroun
     private int gridRows;
     private final List<Trace> traces = new ArrayList<>();
     private final List<Pulse> pulses = new ArrayList<>();
+    private final java.util.Set<Integer> viaPositions = new java.util.HashSet<>();
 
     public CircuitBoard(TerminalSize preferredSize) {
         this.preferredSize = preferredSize;
@@ -82,6 +83,7 @@ public class CircuitBoard extends AbstractComponent implements AnimatedBackgroun
         accumulatedNs = 0;
         traces.clear();
         pulses.clear();
+        viaPositions.clear();
     }
 
     public List<Trace> getTraces() {
@@ -141,7 +143,9 @@ public class CircuitBoard extends AbstractComponent implements AnimatedBackgroun
             gridRows = newGridRows;
             traces.clear();
             pulses.clear();
+            viaPositions.clear();
             generateTraces();
+            generateVias();
         }
     }
 
@@ -191,8 +195,8 @@ public class CircuitBoard extends AbstractComponent implements AnimatedBackgroun
                     }
                     if (hasTrace) {
                         graphics.setCell(x, y, new TextCell('+', padColor, bg, SGR.BOLD));
-                    } else if (random.nextDouble() < 0.08) {
-                        graphics.setCell(x, y, new TextCell('·', viaColor, bg));
+                    } else if (viaPositions.contains(gy * gridCols + gx)) {
+                        graphics.setCell(x, y, new TextCell('\u00B7', viaColor, bg));
                     }
                 }
             }
@@ -232,6 +236,24 @@ public class CircuitBoard extends AbstractComponent implements AnimatedBackgroun
                 if (length > MAX_TRACE_LENGTH) continue;
 
                 traces.add(new Trace(gx, gy, gx1, gy1, random.nextBoolean()));
+            }
+        }
+    }
+
+    private void generateVias() {
+        for (int gy = 0; gy < gridRows; gy++) {
+            for (int gx = 0; gx < gridCols; gx++) {
+                boolean hasTrace = false;
+                for (Trace trace : traces) {
+                    if (trace.gx0 == gx && trace.gy0 == gy
+                            || trace.gx1 == gx && trace.gy1 == gy) {
+                        hasTrace = true;
+                        break;
+                    }
+                }
+                if (!hasTrace && random.nextDouble() < 0.08) {
+                    viaPositions.add(gy * gridCols + gx);
+                }
             }
         }
     }
