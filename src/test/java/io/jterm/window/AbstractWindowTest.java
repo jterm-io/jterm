@@ -6,6 +6,7 @@ import io.jterm.core.TerminalSize;
 import io.jterm.graphics.TextGraphics;
 import io.jterm.screen.ScreenBuffer;
 import io.jterm.style.AnsiColor;
+import io.jterm.style.TextCell;
 import io.jterm.style.Theme;
 import io.jterm.style.ThemeManager;
 import io.jterm.widget.Button;
@@ -370,6 +371,54 @@ class AbstractWindowTest {
             // And the bottom-right corner should NOT be a decoration corner char.
             char br = buf.getCell(9, 2).character().charAt(0);
             assertNotEquals('┘', br, "NO_DECORATIONS should not draw bottom-right corner");
+        }
+
+        @Test
+        @DisplayName("draw() with TRANSPARENT hint skips window-level background fill")
+        void drawTransparentSkipsBackgroundFill() {
+            // Verify that a TRANSPARENT window does NOT fill the buffer with
+            // theme background before drawing content. We pre-fill with 'X'
+            // and check that cells outside the content panel survive.
+            var size = new TerminalSize(10, 5);
+            var buf = new ScreenBuffer(size, new TextCell('X', AnsiColor.WHITE, AnsiColor.BLACK));
+            var g = new TextGraphics(buf);
+
+            var w = new TestWindow("T");
+            w.setHints(List.of(WindowHint.NO_DECORATIONS, WindowHint.TRANSPARENT));
+            w.setBounds(TerminalPosition.TOP_LEFT, size);
+            // Shrink the content panel so it only covers part of the window.
+            w.getContents().setBounds(new TerminalPosition(0, 0), new TerminalSize(4, 2));
+
+            w.draw(g);
+
+            // Cell at (8,4) is outside the content panel (4x2 at origin).
+            // With TRANSPARENT, the window does not fill, so this cell should
+            // still be 'X' from the pre-fill.
+            assertEquals('X', buf.getCell(8, 4).character().charAt(0),
+                    "TRANSPARENT window should not fill cells outside content panel");
+            // Cell at (0,0) is inside the content panel. The content panel is
+            // a Panel (no fill), so it won't overwrite 'X' either — but the
+            // window's draw() calls contents.draw() which just draws children.
+            // With no children added, the cell stays 'X'.
+            assertEquals('X', buf.getCell(0, 0).character().charAt(0),
+                    "Panel without children should not fill its area");
+        }
+
+        @Test
+        @DisplayName("draw() without TRANSPARENT hint fills background, overwriting prior content")
+        void drawNonTransparentFillsBackground() {
+            var size = new TerminalSize(10, 5);
+            var buf = new ScreenBuffer(size, new TextCell('X', AnsiColor.WHITE, AnsiColor.BLACK));
+            var g = new TextGraphics(buf);
+
+            var w = new TestWindow("T");
+            w.setHints(List.of(WindowHint.NO_DECORATIONS)); // no TRANSPARENT
+            w.setBounds(TerminalPosition.TOP_LEFT, size);
+            w.draw(g);
+
+            // The background fill should have replaced 'X' with ' '.
+            assertEquals(' ', buf.getCell(0, 0).character().charAt(0),
+                    "non-TRANSPARENT window should fill background");
         }
 
         @Test

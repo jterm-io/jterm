@@ -72,8 +72,13 @@ public class AbstractWindow implements Window {
         var size = getSize();
         var theme = ThemeManager.active();
         // Fill the entire window area with background so lower windows don't bleed through
-        var bgCell = new TextCell(' ', theme.foreground(), theme.background());
-        graphics.fillRectangle(0, 0, size.columns(), size.rows(), bgCell);
+        // — unless the window opted into TRANSPARENT, in which case we skip the fill
+        // and let whatever was drawn by lower-z-order windows (e.g. AnimatedBackgroundWindow)
+        // show through the empty cells.
+        if (!hints.contains(WindowHint.TRANSPARENT)) {
+            var bgCell = new TextCell(' ', theme.foreground(), theme.background());
+            graphics.fillRectangle(0, 0, size.columns(), size.rows(), bgCell);
+        }
 
         if (!hints.contains(WindowHint.NO_DECORATIONS)) {
             drawDecorations(graphics);
