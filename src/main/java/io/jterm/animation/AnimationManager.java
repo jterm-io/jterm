@@ -6,6 +6,8 @@ import io.jterm.window.DefaultTextGUI;
 import io.jterm.window.WindowImpl;
 import io.jterm.window.WindowHint;
 
+import io.jterm.widget.animation.WarpStarfield;
+
 import java.io.IOException;
 import java.util.List;
 import java.util.concurrent.CopyOnWriteArrayList;
@@ -106,6 +108,14 @@ public class AnimationManager {
                 sfb.tick(nowNanos);
             } else if (bg instanceof TypewriterEffect tw) {
                 tw.tick(nowNanos);
+            } else if (bg instanceof MatrixRain mr) {
+                mr.tick(nowNanos);
+            } else if (bg instanceof PlasmaWash pw) {
+                pw.tick(nowNanos);
+            } else if (bg instanceof WarpStarfield wf) {
+                wf.tick(nowNanos);
+            } else if (bg instanceof CircuitBoard cb) {
+                cb.tick(nowNanos);
             }
         }
     }
