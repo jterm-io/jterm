@@ -43,7 +43,7 @@ public class CircuitBoard extends AbstractComponent implements AnimatedBackgroun
     private final Random random = new Random();
     private TerminalSize preferredSize;
 
-    private volatile int targetFps = 2;
+    private volatile int targetFps = 6;
     private volatile boolean paused = false;
     private volatile boolean running = false;
 

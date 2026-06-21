@@ -5,6 +5,7 @@ import io.jterm.core.input.KeyStroke;
 import io.jterm.core.input.KeyType;
 import io.jterm.graphics.TextGraphics;
 import io.jterm.style.AnsiColor;
+import io.jterm.style.Color;
 import io.jterm.style.SGR;
 import io.jterm.style.TextCell;
 import io.jterm.style.ThemeManager;
@@ -17,6 +18,7 @@ public class TextBox extends AbstractComponent {
     private volatile int preferredColumns = 20;
     private volatile boolean masked = false;
     private volatile boolean forceUppercase = false;
+    private Color backgroundColorOverride = null;
 
     public TextBox() {}
     public TextBox(int columns) { this.preferredColumns = columns; }
@@ -47,6 +49,15 @@ public class TextBox extends AbstractComponent {
         invalidate();
     }
 
+    /** Returns the background color override, or null if none set (uses theme background). */
+    public Color getBackgroundColorOverride() { return backgroundColorOverride; }
+
+    /** Sets a background color override for this text box. Pass null to revert to theme background. */
+    public void setBackgroundColorOverride(Color color) {
+        this.backgroundColorOverride = color;
+        invalidate();
+    }
+
     @Override
     protected TerminalSize calculatePreferredSize() {
         return new TerminalSize(preferredColumns, 1);
@@ -56,7 +67,8 @@ public class TextBox extends AbstractComponent {
     protected void drawComponent(TextGraphics graphics) {
         var size = getSize();
         var theme = ThemeManager.active();
-        var style = new TextCell(' ', theme.foreground(), theme.background());
+        Color bg = backgroundColorOverride != null ? backgroundColorOverride : theme.background();
+        var style = new TextCell(' ', theme.foreground(), bg);
         graphics.fillRectangle(0, 0, size.columns(), 1, style);
         var visible = value.substring(viewportOffset, Math.min(value.length(), viewportOffset + size.columns()));
         var display = masked ? "*".repeat(visible.length()) : visible;
@@ -70,7 +82,7 @@ public class TextBox extends AbstractComponent {
                 // Some CP437 clients (MuffinTerm) don't implement ESC[7m (REVERSE),
                 // so we invert the colors explicitly. Every terminal supports
                 // explicit fg/bg color codes.
-                graphics.setCell(cursorCol, 0, new TextCell(c, theme.background(), theme.foreground()));
+                graphics.setCell(cursorCol, 0, new TextCell(c, bg, theme.foreground()));
             }
         }
     }
