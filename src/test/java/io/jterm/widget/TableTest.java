@@ -6,17 +6,41 @@ import io.jterm.core.input.KeyStroke;
 import io.jterm.core.input.KeyType;
 import io.jterm.graphics.TextGraphics;
 import io.jterm.screen.ScreenBuffer;
+import io.jterm.widget.model.DefaultTableModel;
+import io.jterm.widget.model.TableModelEvent;
+import io.jterm.widget.model.TableModelEventType;
+import io.jterm.widget.model.TableModelListener;
 import org.junit.jupiter.api.Test;
+
+import java.util.ArrayList;
+import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.*;
 
 class TableTest {
+
+    private static final class CapturingListener implements TableModelListener {
+        private final List<TableModelEvent> events = new ArrayList<>();
+
+        @Override
+        public void tableChanged(TableModelEvent e) {
+            events.add(e);
+        }
+    }
+
     @Test
     void constructorStoresHeaders() {
         var table = new Table("Name", "Age");
         var ps = table.getPreferredSize();
         assertTrue(ps.columns() >= 9);
         assertTrue(ps.rows() >= 3);
+    }
+
+    @Test
+    void constructorWithModelUsesModelHeaders() {
+        DefaultTableModel model = new DefaultTableModel("Ticker", "Price");
+        var table = new Table(model);
+        assertEquals(model, table.getModel());
     }
 
     @Test
@@ -28,6 +52,14 @@ class TableTest {
     }
 
     @Test
+    void addRowPopulatesBackingModel() {
+        var table = new Table("A");
+        table.addRow("Alpha");
+        assertEquals(1, table.getModel().getRowCount());
+        assertEquals("Alpha", table.getModel().getValueAt(0, 0));
+    }
+
+    @Test
     void setSelectedRowClampsToRange() {
         var table = new Table("A");
         table.addRow("1");
@@ -35,6 +67,14 @@ class TableTest {
         table.setBounds(TerminalPosition.TOP_LEFT, new TerminalSize(10, 5));
         table.setSelectedRow(5);
         assertEquals(1, table.getSelectedRow());
+    }
+
+    @Test
+    void setSelectedRowClampsToZeroWhenEmpty() {
+        var table = new Table("A");
+        table.setBounds(TerminalPosition.TOP_LEFT, new TerminalSize(10, 5));
+        table.setSelectedRow(5);
+        assertEquals(0, table.getSelectedRow());
     }
 
     @Test
@@ -69,11 +109,150 @@ class TableTest {
     }
 
     @Test
+    void drawComponentReadsFromModel() {
+        DefaultTableModel model = new DefaultTableModel("Name", "Age");
+        model.addRow("Bob", "25");
+        var table = new Table(model);
+        var buffer = new ScreenBuffer(new TerminalSize(20, 5));
+        table.setBounds(TerminalPosition.TOP_LEFT, new TerminalSize(20, 5));
+        table.draw(new TextGraphics(buffer));
+        assertEquals('B', buffer.getCell(0, 1).character().charAt(0));
+    }
+
+    @Test
     void emptyTableRendersHeader() {
         var buffer = new ScreenBuffer(new TerminalSize(10, 3));
         var table = new Table("A");
         table.setBounds(TerminalPosition.TOP_LEFT, new TerminalSize(10, 3));
         table.draw(new TextGraphics(buffer));
         assertEquals('A', buffer.getCell(0, 0).character().charAt(0));
+    }
+
+    @Test
+    void modelDrivenUpdateReflectsNewRow() {
+        DefaultTableModel model = new DefaultTableModel("A");
+        var table = new Table(model);
+        model.addRow("added");
+        assertEquals(1, table.getModel().getRowCount());
+        assertEquals("added", table.getModel().getValueAt(0, 0));
+    }
+
+    @Test
+    void rowsRemovedClampsSelection() {
+        DefaultTableModel model = new DefaultTableModel("A");
+        var table = new Table(model);
+        table.setBounds(TerminalPosition.TOP_LEFT, new TerminalSize(10, 5));
+        model.addRow("a");
+        model.addRow("b");
+        model.addRow("c");
+        table.setSelectedRow(2);
+        model.removeRow(2);
+        assertEquals(1, table.getSelectedRow());
+    }
+
+    @Test
+    void setModelSwitchesCleanly() {
+        DefaultTableModel first = new DefaultTableModel("A");
+        first.addRow("first");
+        var table = new Table(first);
+        table.setBounds(TerminalPosition.TOP_LEFT, new TerminalSize(10, 5));
+        DefaultTableModel second = new DefaultTableModel("B");
+        table.setModel(second);
+        assertEquals(second, table.getModel());
+        assertEquals(0, table.getSelectedRow());
+    }
+
+    @Test
+    void oldModelStopsNotifyingAfterSetModel() {
+        DefaultTableModel first = new DefaultTableModel("A");
+        var table = new Table(first);
+        DefaultTableModel second = new DefaultTableModel("B");
+        table.setModel(second);
+        CapturingListener tableListener = new CapturingListener();
+        second.addTableModelListener(tableListener);
+        first.addRow("x");
+        assertTrue(tableListener.events.isEmpty());
+    }
+
+    @Test
+    void structureChangedResetsSelection() {
+        DefaultTableModel model = new DefaultTableModel("A");
+        var table = new Table(model);
+        table.setBounds(TerminalPosition.TOP_LEFT, new TerminalSize(10, 5));
+        for (int i = 0; i < 20; i++) {
+            model.addRow("row" + i);
+        }
+        table.setSelectedRow(19);
+        model.clear();
+        assertEquals(0, table.getSelectedRow());
+    }
+
+    @Test
+    void cellsChangedInvalidatesTable() {
+        DefaultTableModel model = new DefaultTableModel("A");
+        var table = new Table(model);
+        table.setBounds(TerminalPosition.TOP_LEFT, new TerminalSize(10, 5));
+        model.addRow("old");
+        var buffer = new ScreenBuffer(new TerminalSize(10, 3));
+        table.draw(new TextGraphics(buffer));
+        model.setValueAt(0, 0, "new");
+        buffer = new ScreenBuffer(new TerminalSize(10, 3));
+        table.draw(new TextGraphics(buffer));
+        assertEquals('n', buffer.getCell(0, 1).character().charAt(0));
+    }
+
+    @Test
+    void rowsChangedClampsSelection() {
+        DefaultTableModel model = new DefaultTableModel("A");
+        var table = new Table(model);
+        table.setBounds(TerminalPosition.TOP_LEFT, new TerminalSize(10, 5));
+        model.addRow("a");
+        model.addRow("b");
+        table.setSelectedRow(1);
+        model.clear();
+        assertEquals(0, table.getSelectedRow());
+    }
+
+    @Test
+    void getTableModelRowsReturnsCopy() {
+        var table = new Table("A");
+        table.addRow("x");
+        List<List<String>> rows = table.getTableModelRows();
+        assertEquals(1, rows.size());
+        assertEquals("x", rows.get(0).get(0));
+    }
+
+    @Test
+    void addRowThrowsWhenModelIsNotDefault() {
+        var table = new Table(new io.jterm.widget.model.AbstractTableModel() {
+            @Override public int getRowCount() { return 0; }
+            @Override public int getColumnCount() { return 1; }
+            @Override public String getColumnName(int col) { return "C"; }
+            @Override public String getValueAt(int row, int col) { return ""; }
+        });
+        assertThrows(IllegalStateException.class, () -> table.addRow("x"));
+    }
+
+    @Test
+    void drawWithCustomModelReturnsValues() {
+        var table = new Table(new io.jterm.widget.model.AbstractTableModel() {
+            @Override public int getRowCount() { return 2; }
+            @Override public int getColumnCount() { return 1; }
+            @Override public String getColumnName(int col) { return "H"; }
+            @Override public String getValueAt(int row, int col) { return row == 0 ? "One" : "Two"; }
+        });
+        var buffer = new ScreenBuffer(new TerminalSize(10, 4));
+        table.setBounds(TerminalPosition.TOP_LEFT, new TerminalSize(10, 4));
+        table.draw(new TextGraphics(buffer));
+        assertEquals('H', buffer.getCell(0, 0).character().charAt(0));
+        assertEquals('O', buffer.getCell(0, 1).character().charAt(0));
+        assertEquals('T', buffer.getCell(0, 2).character().charAt(0));
+    }
+
+    @Test
+    void preferredSizeReflectsModelColumnCount() {
+        DefaultTableModel model = new DefaultTableModel("One", "Two", "Three");
+        var table = new Table(model);
+        assertTrue(table.getPreferredSize().columns() >= 3);
     }
 }

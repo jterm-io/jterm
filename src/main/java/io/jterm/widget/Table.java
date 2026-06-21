@@ -9,41 +9,113 @@ import io.jterm.style.TextCell;
 import io.jterm.style.ThemeManager;
 import io.jterm.util.Symbols;
 import io.jterm.util.TerminalTextUtils;
+import io.jterm.widget.model.DefaultTableModel;
+import io.jterm.widget.model.TableModel;
+import io.jterm.widget.model.TableModelEvent;
+import io.jterm.widget.model.TableModelEventType;
+import io.jterm.widget.model.TableModelListener;
 
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
 /** Column/row table with headers and scrolling. */
-public class Table extends AbstractComponent {
-    private final List<String> headers = new java.util.concurrent.CopyOnWriteArrayList<>();
-    private final List<List<String>> rows = new java.util.concurrent.CopyOnWriteArrayList<>();
+public class Table extends AbstractComponent implements TableModelListener {
+    private TableModel model;
     private volatile int selectedRow = 0;
     private volatile int scrollOffset = 0;
     private volatile int[] columnWidths;
 
-    public Table(String... headers) {
-        this.headers.addAll(Arrays.asList(headers));
+    /**
+     * Creates a table backed by the provided model.
+     *
+     * @param model the backing table model
+     */
+    public Table(TableModel model) {
+        setModel(model);
     }
 
-    public void addRow(String... cells) {
-        rows.add(new ArrayList<>(Arrays.asList(cells)));
+    /**
+     * Creates a table with the given headers backed by a {@link DefaultTableModel}.
+     *
+     * @param headers the column headers
+     */
+    public Table(String... headers) {
+        this(new DefaultTableModel(headers));
+    }
+
+    /**
+     * Sets the backing model and attaches this table as a listener.
+     *
+     * @param model the new backing model
+     */
+    public void setModel(TableModel model) {
+        if (this.model != null) {
+            this.model.removeTableModelListener(this);
+        }
+        this.model = model;
+        if (model != null) {
+            model.addTableModelListener(this);
+        }
+        selectedRow = 0;
+        scrollOffset = 0;
         invalidate();
     }
 
-    public void setSelectedRow(int index) {
-        this.selectedRow = Math.max(0, Math.min(rows.size() - 1, index));
+    /**
+     * Returns the backing model.
+     *
+     * @return the current model
+     */
+    public TableModel getModel() {
+        return model;
+    }
+
+    @Override
+    public void tableChanged(TableModelEvent e) {
+        if (e.type() == TableModelEventType.ROWS_REMOVED
+                || e.type() == TableModelEventType.ROWS_CHANGED
+                || e.type() == TableModelEventType.STRUCTURE_CHANGED) {
+            if (model != null && selectedRow >= model.getRowCount()) {
+                selectedRow = Math.max(0, model.getRowCount() - 1);
+            }
+        }
+        if (e.type() == TableModelEventType.STRUCTURE_CHANGED) {
+            scrollOffset = 0;
+        }
         ensureVisible();
         invalidate();
     }
 
-    public int getSelectedRow() { return selectedRow; }
+    public void addRow(String... cells) {
+        if (model instanceof DefaultTableModel dtm) {
+            dtm.addRow(cells);
+        } else {
+            throw new IllegalStateException("Table was not created with a DefaultTableModel; add rows via the model");
+        }
+    }
+
+    public void setSelectedRow(int index) {
+        int count = model == null ? 0 : model.getRowCount();
+        this.selectedRow = Math.max(0, Math.min(count - 1, index));
+        ensureVisible();
+        invalidate();
+    }
+
+    public int getSelectedRow() {
+        return selectedRow;
+    }
 
     @Override
     protected TerminalSize calculatePreferredSize() {
-        int totalWidth = headers.size() + 1;
-        for (var h : headers) totalWidth += TerminalTextUtils.getTrueWidth(h);
-        return new TerminalSize(totalWidth, Math.max(3, Math.min(rows.size() + 1, 12)));
+        int totalWidth = model == null ? 1 : model.getColumnCount() + 1;
+        if (model != null) {
+            for (int i = 0; i < model.getColumnCount(); i++) {
+                totalWidth += TerminalTextUtils.getTrueWidth(model.getColumnName(i));
+            }
+        }
+        int rowCount = model == null ? 0 : model.getRowCount();
+        return new TerminalSize(totalWidth, Math.max(3, Math.min(rowCount + 1, 12)));
     }
 
     @Override
@@ -52,15 +124,25 @@ public class Table extends AbstractComponent {
         var theme = ThemeManager.active();
         updateColumnWidths(size.columns());
         int y = 0;
+        int columnCount = model == null ? 0 : model.getColumnCount();
         // Header
-        drawRow(graphics, y++, headers, new TextCell(' ', theme.headerFg(), theme.headerBg(), SGR.BOLD), true);
+        List<String> headerCells = new ArrayList<>();
+        for (int i = 0; i < columnCount; i++) {
+            headerCells.add(model.getColumnName(i));
+        }
+        drawRow(graphics, y++, headerCells, new TextCell(' ', theme.headerFg(), theme.headerBg(), SGR.BOLD), true);
         // Rows
-        for (int i = scrollOffset; i < rows.size() && y < size.rows(); i++) {
+        int rowCount = model == null ? 0 : model.getRowCount();
+        for (int i = scrollOffset; i < rowCount && y < size.rows(); i++) {
             boolean selected = i == selectedRow;
             var style = selected
-                ? new TextCell(' ', theme.selectionFg(), theme.selectionBg())
-                : new TextCell(' ', theme.foreground(), theme.background());
-            drawRow(graphics, y++, rows.get(i), style, false);
+                    ? new TextCell(' ', theme.selectionFg(), theme.selectionBg())
+                    : new TextCell(' ', theme.foreground(), theme.background());
+            List<String> rowCells = new ArrayList<>();
+            for (int c = 0; c < columnCount; c++) {
+                rowCells.add(model.getValueAt(i, c));
+            }
+            drawRow(graphics, y++, rowCells, style, false);
         }
         // Clear remaining rows
         while (y < size.rows()) {
@@ -69,29 +151,34 @@ public class Table extends AbstractComponent {
     }
 
     private void updateColumnWidths(int availableWidth) {
-        if (columnWidths == null || columnWidths.length != headers.size()) {
-            columnWidths = new int[headers.size()];
+        int columnCount = model == null ? 0 : model.getColumnCount();
+        if (columnWidths == null || columnWidths.length != columnCount) {
+            columnWidths = new int[columnCount];
         }
-        int minPerCol = Math.max(3, availableWidth / Math.max(1, headers.size()) - 1);
-        for (int i = 0; i < headers.size(); i++) {
-            int max = TerminalTextUtils.getTrueWidth(headers.get(i));
-            for (var row : rows) {
-                if (i < row.size()) max = Math.max(max, TerminalTextUtils.getTrueWidth(row.get(i)));
+        int minPerCol = Math.max(3, availableWidth / Math.max(1, columnCount) - 1);
+        for (int i = 0; i < columnCount; i++) {
+            int max = TerminalTextUtils.getTrueWidth(model.getColumnName(i));
+            int rowCount = model.getRowCount();
+            for (int r = 0; r < rowCount; r++) {
+                max = Math.max(max, TerminalTextUtils.getTrueWidth(model.getValueAt(r, i)));
             }
-            columnWidths[i] = Math.max(minPerCol, Math.min(max, availableWidth / headers.size()));
+            columnWidths[i] = Math.max(minPerCol, Math.min(max, availableWidth / Math.max(1, columnCount)));
         }
     }
 
     private void drawRow(TextGraphics graphics, int y, List<String> cells, TextCell style, boolean isHeader) {
         int x = 0;
-        for (int i = 0; i < headers.size(); i++) {
+        int columnCount = model == null ? 0 : model.getColumnCount();
+        for (int i = 0; i < columnCount; i++) {
             String text = i < cells.size() ? cells.get(i) : "";
             String truncated = TerminalTextUtils.truncate(text, columnWidths[i]);
             graphics.drawString(x, y, truncated, style);
             int pad = columnWidths[i] - TerminalTextUtils.getTrueWidth(truncated);
-            if (pad > 0) graphics.fillRectangle(x + TerminalTextUtils.getTrueWidth(truncated), y, pad, 1, style);
+            if (pad > 0) {
+                graphics.fillRectangle(x + TerminalTextUtils.getTrueWidth(truncated), y, pad, 1, style);
+            }
             x += columnWidths[i];
-            if (i < headers.size() - 1) {
+            if (i < columnCount - 1) {
                 graphics.drawString(x, y, "│", style);
                 x++;
             }
@@ -121,6 +208,16 @@ public class Table extends AbstractComponent {
     }
 
     public List<List<String>> getTableModelRows() {
-        return new ArrayList<>(rows);
+        int rowCount = model == null ? 0 : model.getRowCount();
+        int columnCount = model == null ? 0 : model.getColumnCount();
+        List<List<String>> result = new ArrayList<>();
+        for (int r = 0; r < rowCount; r++) {
+            List<String> cells = new ArrayList<>();
+            for (int c = 0; c < columnCount; c++) {
+                cells.add(model.getValueAt(r, c));
+            }
+            result.add(cells);
+        }
+        return result;
     }
 }

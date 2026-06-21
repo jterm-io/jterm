@@ -10,6 +10,10 @@ import io.jterm.style.AnsiColor;
 import io.jterm.style.TextCell;
 import io.jterm.style.Theme;
 import io.jterm.style.ThemeManager;
+import io.jterm.widget.model.DefaultListModel;
+import io.jterm.widget.model.ListDataEvent;
+import io.jterm.widget.model.ListDataListener;
+import io.jterm.widget.model.ListModel;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
 
@@ -561,5 +565,267 @@ class ListBoxTest {
         var buf = new ScreenBuffer(new TerminalSize(cols, rows));
         list.draw(new TextGraphics(buf));
         return buf;
+    }
+
+    // ── Model-driven behavior tests ─────────────────────────────────────
+
+    @Test
+    void defaultConstructorUsesDefaultListModel() {
+        var list = new ListBox<String>();
+        assertNotNull(list.getModel());
+        assertTrue(list.getModel() instanceof DefaultListModel);
+    }
+
+    @Test
+    void constructorAcceptsCustomModel() {
+        DefaultListModel<String> model = new DefaultListModel<>();
+        model.addElement("A");
+        var list = new ListBox<>(model);
+        assertSame(model, list.getModel());
+        assertEquals("A", list.getSelectedItem());
+    }
+
+    @Test
+    void modelAddElementUpdatesListView() {
+        DefaultListModel<String> model = new DefaultListModel<>();
+        var list = new ListBox<>(model);
+        list.setBounds(TerminalPosition.TOP_LEFT, new TerminalSize(10, 3));
+        model.addElement("Hello");
+        assertEquals(1, list.getItems().size());
+        assertEquals("Hello", list.getSelectedItem());
+    }
+
+    @Test
+    void modelRemoveElementClampsSelection() {
+        DefaultListModel<String> model = new DefaultListModel<>();
+        model.addElement("A");
+        model.addElement("B");
+        var list = new ListBox<>(model);
+        list.setBounds(TerminalPosition.TOP_LEFT, new TerminalSize(10, 3));
+        list.setSelectedIndex(1);
+        model.removeElementAt(1);
+        assertEquals(0, list.getSelectedIndex());
+        assertEquals("A", list.getSelectedItem());
+    }
+
+    @Test
+    void modelClearResetsSelection() {
+        DefaultListModel<String> model = new DefaultListModel<>();
+        model.addElement("A");
+        model.addElement("B");
+        var list = new ListBox<>(model);
+        list.setBounds(TerminalPosition.TOP_LEFT, new TerminalSize(10, 3));
+        list.setSelectedIndex(1);
+        model.clear();
+        assertEquals(0, list.getSelectedIndex());
+        assertNull(list.getSelectedItem());
+    }
+
+    @Test
+    void intervalAddedAutoScrollsToBottom() {
+        DefaultListModel<String> model = new DefaultListModel<>();
+        for (int i = 0; i < 5; i++) model.addElement("Item " + i);
+        var list = new ListBox<>(model);
+        list.setBounds(TerminalPosition.TOP_LEFT, new TerminalSize(10, 3));
+        list.setAutoScroll(true);
+        model.addElement("Item 5");
+        assertTrue(list.isLastItemVisible());
+    }
+
+    @Test
+    void intervalAddedWithoutAutoScrollPreservesScrollOffset() {
+        DefaultListModel<String> model = new DefaultListModel<>();
+        for (int i = 0; i < 5; i++) model.addElement("Item " + i);
+        var list = new ListBox<>(model);
+        list.setBounds(TerminalPosition.TOP_LEFT, new TerminalSize(10, 3));
+        list.setScrollOffset(2);
+        model.addElement("Item 5");
+        assertEquals(2, list.getScrollOffset());
+    }
+
+    @Test
+    void setModelSwitchesListeners() {
+        DefaultListModel<String> modelA = new DefaultListModel<>();
+        modelA.addElement("A");
+        var list = new ListBox<>(modelA);
+        list.setBounds(TerminalPosition.TOP_LEFT, new TerminalSize(10, 3));
+
+        DefaultListModel<String> modelB = new DefaultListModel<>();
+        modelB.addElement("B");
+        list.setModel(modelB);
+
+        assertSame(modelB, list.getModel());
+        assertEquals("B", list.getSelectedItem());
+        // Modifying modelA should not affect the list anymore
+        modelA.addElement("C");
+        assertEquals(1, list.getItems().size());
+    }
+
+    @Test
+    void backwardCompatAddItemStillWorks() {
+        var list = new ListBox<String>();
+        list.addItem("A");
+        list.addItem("B");
+        assertEquals(2, list.getItems().size());
+        assertEquals("A", list.getSelectedItem());
+    }
+
+    @Test
+    void backwardCompatClearItemsStillWorks() {
+        var list = new ListBox<String>();
+        list.addItem("A");
+        list.addItem("B");
+        list.clearItems();
+        assertEquals(0, list.getItems().size());
+        assertNull(list.getSelectedItem());
+    }
+
+    @Test
+    void backwardCompatGetItemsReturnsDefensiveCopy() {
+        var list = new ListBox<String>();
+        list.addItem("A");
+        list.addItem("B");
+        var items = list.getItems();
+        items.clear();
+        assertEquals(2, list.getItems().size());
+    }
+
+    @Test
+    void rendererWorksWithModelElements() {
+        DefaultListModel<Integer> model = new DefaultListModel<>();
+        model.addElement(42);
+        var list = new ListBox<>(model);
+        list.setRenderer(i -> "Value: " + i);
+        assertTrue(list.getPreferredSize().columns() >= 9);
+    }
+
+    @Test
+    void selectionListenerFiresAfterModelRemovalAdjustsSelection() {
+        DefaultListModel<String> model = new DefaultListModel<>();
+        model.addElement("A");
+        model.addElement("B");
+        var list = new ListBox<>(model);
+        list.setBounds(TerminalPosition.TOP_LEFT, new TerminalSize(10, 3));
+        list.setSelectedIndex(1);
+        var fired = new int[1];
+        list.addSelectionListener(() -> fired[0]++);
+        model.removeElementAt(1);
+        assertEquals(0, list.getSelectedIndex());
+        assertEquals(1, fired[0], "selection listener should fire when model removal clamps selection");
+    }
+
+    @Test
+    void customModelImplementationWorks() {
+        ListModel<String> model = new ListModel<>() {
+            @Override public int getSize() { return 2; }
+            @Override public String getElementAt(int index) { return index == 0 ? "One" : "Two"; }
+            @Override public void addListDataListener(ListDataListener l) {}
+            @Override public void removeListDataListener(ListDataListener l) {}
+        };
+        var list = new ListBox<>(model);
+        list.setBounds(TerminalPosition.TOP_LEFT, new TerminalSize(10, 3));
+        assertEquals("One", list.getSelectedItem());
+        list.setSelectedIndex(1);
+        assertEquals("Two", list.getSelectedItem());
+    }
+
+    @Test
+    void addItemOnNonDefaultModelThrows() {
+        ListModel<String> readOnlyModel = new ListModel<>() {
+            @Override public int getSize() { return 0; }
+            @Override public String getElementAt(int index) { return null; }
+            @Override public void addListDataListener(ListDataListener l) {}
+            @Override public void removeListDataListener(ListDataListener l) {}
+        };
+        var list = new ListBox<>(readOnlyModel);
+        assertThrows(UnsupportedOperationException.class, () -> list.addItem("X"));
+    }
+
+    @Test
+    void clearItemsOnNonDefaultModelThrows() {
+        ListModel<String> readOnlyModel = new ListModel<>() {
+            @Override public int getSize() { return 0; }
+            @Override public String getElementAt(int index) { return null; }
+            @Override public void addListDataListener(ListDataListener l) {}
+            @Override public void removeListDataListener(ListDataListener l) {}
+        };
+        var list = new ListBox<>(readOnlyModel);
+        assertThrows(UnsupportedOperationException.class, list::clearItems);
+    }
+
+    @Test
+    void intervalRemovedAdjustsScrollOffset() {
+        DefaultListModel<String> model = new DefaultListModel<>();
+        for (int i = 0; i < 10; i++) model.addElement("I" + i);
+        var list = new ListBox<>(model);
+        list.setBounds(TerminalPosition.TOP_LEFT, new TerminalSize(10, 3));
+        list.setScrollOffset(7);
+        for (int i = 0; i < 8; i++) model.removeElementAt(model.getSize() - 1);
+        // model now has 2 items, max offset = 0
+        assertEquals(0, list.getScrollOffset());
+    }
+
+    @Test
+    void contentsChangedAdjustsSelectionIfOutOfRange() {
+        DefaultListModel<String> model = new DefaultListModel<>();
+        model.addElement("A");
+        model.addElement("B");
+        model.addElement("C");
+        var list = new ListBox<>(model);
+        list.setBounds(TerminalPosition.TOP_LEFT, new TerminalSize(10, 3));
+        list.setSelectedIndex(2);
+        model.removeElementAt(2);
+        // removal fires intervalRemoved, not contentsChanged, but verify behavior anyway
+        assertEquals(1, list.getSelectedIndex());
+
+        list.setSelectedIndex(1);
+        model.clear(); // fires contentsChanged
+        assertEquals(0, list.getSelectedIndex());
+        assertNull(list.getSelectedItem());
+    }
+
+    @Test
+    void setModelResetsScrollAndSelection() {
+        DefaultListModel<String> modelA = new DefaultListModel<>();
+        for (int i = 0; i < 10; i++) modelA.addElement("A" + i);
+        var list = new ListBox<>(modelA);
+        list.setBounds(TerminalPosition.TOP_LEFT, new TerminalSize(10, 3));
+        list.setSelectedIndex(5);
+        list.setScrollOffset(3);
+
+        DefaultListModel<String> modelB = new DefaultListModel<>();
+        modelB.addElement("B");
+        list.setModel(modelB);
+
+        assertEquals(0, list.getSelectedIndex());
+        assertEquals(0, list.getScrollOffset());
+        assertEquals("B", list.getSelectedItem());
+    }
+
+    @Test
+    void listBoxImplementsListDataListener() {
+        var list = new ListBox<String>();
+        assertTrue(list instanceof io.jterm.widget.model.ListDataListener);
+    }
+
+    @Test
+    void listenerRemovedFromOldModelOnSetModel() {
+        DefaultListModel<String> modelA = new DefaultListModel<>();
+        modelA.addElement("A");
+        var list = new ListBox<>(modelA);
+        list.setModel(new DefaultListModel<>());
+
+        var fired = new int[1];
+        // list is detached from modelA; adding a listener to modelA should not fire the list
+        modelA.addListDataListener(new io.jterm.widget.model.ListDataListener() {
+            @Override
+            public void contentsChanged(io.jterm.widget.model.ListDataEvent e) { fired[0]++; }
+            @Override
+            public void intervalAdded(io.jterm.widget.model.ListDataEvent e) { fired[0]++; }
+            @Override
+            public void intervalRemoved(io.jterm.widget.model.ListDataEvent e) { fired[0]++; }
+        });
+        modelA.addElement("B");
+        assertEquals(1, fired[0], "only the test listener should fire, not the detached ListBox");
     }
 }
