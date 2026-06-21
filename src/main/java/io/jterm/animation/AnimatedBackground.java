@@ -29,4 +29,10 @@ public interface AnimatedBackground {
 
     /** Returns the last terminal size passed to {@link #onResize}, or null if never resized. */
     default TerminalSize lastSize() { return null; }
+
+    /** Advance internal animation state by one frame. Called before each
+     * {@link #renderFrame}. Implementations that derive state from wall-clock
+     * time (e.g. TwinkleStarfield) can ignore this; implementations with
+     * step-based state (e.g. CircuitBoard, TypewriterEffect) must override. */
+    default void tick(long nowNanos) {}
 }

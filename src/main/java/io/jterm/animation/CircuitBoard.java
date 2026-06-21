@@ -189,9 +189,9 @@ public class CircuitBoard extends AbstractComponent implements AnimatedBackgroun
                         }
                     }
                     if (hasTrace) {
-                        graphics.setCell(x, y, new TextCell('\u25cf', padColor, bg));
+                        graphics.setCell(x, y, new TextCell('*', padColor, bg));
                     } else if (random.nextDouble() < 0.08) {
-                        graphics.setCell(x, y, new TextCell('\u25cb', dimColor(AnsiColor.BRIGHT_BLACK, 0.6), bg));
+                        graphics.setCell(x, y, new TextCell('o', dimColor(AnsiColor.BRIGHT_BLACK, 0.6), bg));
                     }
                 }
             }
