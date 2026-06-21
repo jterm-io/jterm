@@ -38,7 +38,7 @@ class CircuitBoardTest {
     void implementsAnimatedBackground() {
         var board = new CircuitBoard(new TerminalSize(10, 5));
         assertTrue(board instanceof AnimatedBackground);
-        assertEquals(8, board.targetFps());
+        assertEquals(2, board.targetFps());
         board.start();
         assertTrue(board.isRunning());
         board.stop();
@@ -306,5 +306,55 @@ class CircuitBoardTest {
             }
         }
         assertTrue(hasContent, "bounds area should contain rendered content somewhere");
+    }
+
+    @Test
+    @DisplayName("IC chip component is 3x2 grid cells (not oversized)")
+    void chipDimensionsAreCompact() {
+        // IC chip should be 3x2 grid cells (12x8 chars at PAD_SPACING=4),
+        // not the old 5x3 (20x12) which was too large for an 80-column terminal.
+        assertEquals(3, CircuitBoard.PcbComponent.Type.CHIP.width,
+                "IC chip width should be 3 grid cells");
+        assertEquals(2, CircuitBoard.PcbComponent.Type.CHIP.height,
+                "IC chip height should be 2 grid cells");
+    }
+
+    @Test
+    @DisplayName("pulse tail fades out after head reaches end, not removed instantly")
+    void pulseTailFadesOutAfterEnd() {
+        // A pulse should survive past its trace length so the tail can fade.
+        // The old code removed the pulse immediately when progress >= length,
+        // making the tail vanish abruptly. Now the pulse stays alive for
+        // a fade-out phase (tailLen extra frames) before being removed.
+        var size = new TerminalSize(40, 20);
+        var board = new CircuitBoard(size);
+        board.setBounds(TerminalPosition.TOP_LEFT, size);
+        board.tick(0);
+
+        // Spawn pulses by running many frames
+        for (int i = 0; i < 200; i++) {
+            var buf = new ScreenBuffer(size);
+            board.tick(i * 80_000_000L);
+            board.draw(new TextGraphics(buf));
+        }
+
+        if (board.getPulses().isEmpty()) return; // no pulses spawned — flaky, skip
+
+        // Find a pulse and advance it to the end of its trace
+        var pulse = board.getPulses().get(0);
+        int traceLen = pulse.length();
+
+        // Advance the pulse to exactly the end
+        while (pulse.progress < traceLen) {
+            var buf = new ScreenBuffer(size);
+            board.tick(System.nanoTime());
+            board.draw(new TextGraphics(buf));
+        }
+
+        // At this point progress == length, but the pulse should NOT be
+        // immediately removed — it should still exist for the fade-out phase.
+        boolean pulseStillAlive = board.getPulses().contains(pulse);
+        assertTrue(pulseStillAlive,
+                "pulse should survive past trace end for tail fade-out, but was removed immediately");
     }
 }

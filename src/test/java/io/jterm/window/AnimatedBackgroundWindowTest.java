@@ -270,4 +270,44 @@ class AnimatedBackgroundWindowTest {
         }
         return buf;
     }
+
+    @Test
+    @DisplayName("WarpStarfield background renders stars visible through TRANSPARENT foreground window")
+    void warpStarfieldVisibleThroughTransparentWindow() throws Exception {
+        var size = new TerminalSize(80, 23);
+        var screen = new DefaultScreen(new MockTerminal(size));
+        var gui = new DefaultTextGUI(screen);
+
+        // WarpStarfield as background
+        var warp = new io.jterm.widget.animation.WarpStarfield(size);
+        var bgWindow = new AnimatedBackgroundWindow(warp, gui);
+
+        // Foreground window with TRANSPARENT hint (like LoginScreen)
+        var fgWindow = new WindowImpl("Login");
+        fgWindow.setHints(List.of(WindowHint.FULLSCREEN, WindowHint.TRANSPARENT));
+        var contents = fgWindow.getContents();
+        contents.setLayoutManager(null);
+        // Add a small label that only covers a few cells
+        var label = new Label("Login", AnsiColor.BRIGHT_WHITE, AnsiColor.BLACK);
+        label.setBounds(new TerminalPosition(30, 10), new TerminalSize(5, 1));
+        contents.addComponent(label);
+
+        gui.addWindow(bgWindow);
+        gui.addWindow(fgWindow);
+        gui.updateScreen();
+
+        var buf = captureScreenBuffer(screen);
+
+        // Count star characters in the buffer — at least some should be
+        // visible through the transparent foreground window
+        int stars = 0;
+        for (int r = 0; r < size.rows(); r++) {
+            for (int c = 0; c < size.columns(); c++) {
+                char ch = buf.getCell(c, r).character().charAt(0);
+                if (ch == '*' || ch == '+' || ch == '#' || ch == '.') stars++;
+            }
+        }
+        assertTrue(stars > 0,
+                "WarpStarfield should render visible stars through TRANSPARENT window, found " + stars);
+    }
 }

@@ -24,6 +24,39 @@ public class ClippedTextGraphics extends TextGraphics {
     }
 
     @Override
+    public void drawLine(int x0, int y0, int x1, int y1, TextCell cell) {
+        // TextGraphics.drawLine writes to this.buffer only — we must delegate
+        // to setCell so each point also reaches the parent buffer.
+        int dx = Math.abs(x1 - x0);
+        int dy = Math.abs(y1 - y0);
+        int sx = x0 < x1 ? 1 : -1;
+        int sy = y0 < y1 ? 1 : -1;
+        int err = dx - dy;
+        int x = x0, y = y0;
+        while (true) {
+            setCell(x, y, cell);
+            if (x == x1 && y == y1) break;
+            int e2 = 2 * err;
+            if (e2 > -dy) { err -= dy; x += sx; }
+            if (e2 < dx) { err += dx; y += sy; }
+        }
+    }
+
+    @Override
+    public void drawRectangle(int x, int y, int width, int height, TextCell borderCell) {
+        int maxCol = x + width - 1;
+        int maxRow = y + height - 1;
+        for (int c = x; c <= maxCol; c++) {
+            setCell(c, y, borderCell);
+            setCell(c, maxRow, borderCell);
+        }
+        for (int r = y + 1; r < maxRow; r++) {
+            setCell(x, r, borderCell);
+            setCell(maxCol, r, borderCell);
+        }
+    }
+
+    @Override
     public void fillRectangle(int x, int y, int width, int height, TextCell cell) {
         for (int r = Math.max(0, y); r < y + height && r < getSize().rows(); r++) {
             for (int c = Math.max(0, x); c < x + width && c < getSize().columns(); c++) {

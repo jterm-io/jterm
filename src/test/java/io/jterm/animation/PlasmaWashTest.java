@@ -295,4 +295,60 @@ class PlasmaWashTest {
 
         assertTrue(receivedTime.get() >= 0, "renderer should receive time");
     }
+
+    @Test
+    @DisplayName("plasma palette has visible non-BLACK colors at higher shading levels")
+    void paletteHasVisibleColorsAtHigherLevels() {
+        var size = new TerminalSize(20, 10);
+        var bg = new PlasmaWash(size);
+        bg.setBounds(TerminalPosition.TOP_LEFT, size);
+        bg.tick(0);
+
+        var buffer = new ScreenBuffer(size);
+        bg.draw(new TextGraphics(buffer));
+
+        // At least one cell should have a non-BLACK foreground color.
+        // The plasma uses shading chars (░▒▓█) with blended colors; if all
+        // blend weights are too low, every color snaps to BLACK and the
+        // animation is invisible against a black background.
+        boolean hasVisibleColor = false;
+        for (int r = 0; r < size.rows() && !hasVisibleColor; r++) {
+            for (int c = 0; c < size.columns(); c++) {
+                var cell = buffer.getCell(c, r);
+                if (cell.fg() instanceof AnsiColor ac && ac != AnsiColor.BLACK) {
+                    hasVisibleColor = true;
+                    break;
+                }
+            }
+        }
+        assertTrue(hasVisibleColor,
+                "plasma should have at least one cell with non-BLACK foreground (otherwise it's invisible)");
+    }
+
+    @Test
+    @DisplayName("plasma uses multiple distinct hues, not just blue shades")
+    void paletteUsesMultipleHues() {
+        var size = new TerminalSize(40, 20);
+        var bg = new PlasmaWash(size);
+        bg.setBounds(TerminalPosition.TOP_LEFT, size);
+        bg.tick(0);
+
+        var buffer = new ScreenBuffer(size);
+        bg.draw(new TextGraphics(buffer));
+
+        // Collect all distinct foreground AnsiColors used in the render
+        java.util.Set<AnsiColor> colors = new java.util.HashSet<>();
+        for (int r = 0; r < size.rows(); r++) {
+            for (int c = 0; c < size.columns(); c++) {
+                var cell = buffer.getCell(c, r);
+                if (cell.fg() instanceof AnsiColor ac && ac != AnsiColor.BLACK) {
+                    colors.add(ac);
+                }
+            }
+        }
+        // Should have at least 3 distinct non-BLACK colors (not just BLUE and
+        // its blend variants which all snap back to BLUE).
+        assertTrue(colors.size() >= 3,
+                "plasma should use at least 3 distinct hues, got: " + colors);
+    }
 }

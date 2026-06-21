@@ -37,12 +37,13 @@ public class CircuitBoard extends AbstractComponent implements AnimatedBackgroun
     private static final int MAX_TRACE_LENGTH = 22;
     private static final double PULSE_SPAWN_CHANCE = 0.12;
     private static final int MAX_PULSES = 8;
-    private static final double COMPONENT_CHANCE = 0.18;
+    private static final int TAIL_LEN = 3;
+    private static final double COMPONENT_CHANCE = 0.25;
 
     private final Random random = new Random();
     private TerminalSize preferredSize;
 
-    private volatile int targetFps = 8;
+    private volatile int targetFps = 2;
     private volatile boolean paused = false;
     private volatile boolean running = false;
 
@@ -238,20 +239,22 @@ public class CircuitBoard extends AbstractComponent implements AnimatedBackgroun
         componentCells.clear();
         if (gridCols < 4 || gridRows < 3) return;
 
-        for (int gy = 0; gy < gridRows - 2; gy++) {
-            for (int gx = 0; gx < gridCols - 3; gx++) {
+        for (int gy = 0; gy <= gridRows - 3; gy++) {
+            for (int gx = 0; gx <= gridCols - 4; gx++) {
                 if (random.nextDouble() >= COMPONENT_CHANCE) continue;
                 // Check this area is free
-                if (isAreaOccupied(gx, gy, 4, 3)) continue;
+                int w = 4;  // max footprint for overlap check
+                int h = 3;
+                if (isAreaOccupied(gx, gy, w, h)) continue;
 
                 PcbComponent.Type type = pickComponentType();
-                int w = type.width;
-                int h = type.height;
-                if (gx + w > gridCols || gy + h > gridRows) continue;
+                int tw = type.width;
+                int th = type.height;
+                if (gx + tw > gridCols || gy + th > gridRows) continue;
 
                 // Mark cells as occupied
-                for (int dy = 0; dy < h; dy++) {
-                    for (int dx = 0; dx < w; dx++) {
+                for (int dy = 0; dy < th; dy++) {
+                    for (int dx = 0; dx < tw; dx++) {
                         componentCells.add((gy + dy) * gridCols + (gx + dx));
                     }
                 }
@@ -759,7 +762,9 @@ public class CircuitBoard extends AbstractComponent implements AnimatedBackgroun
     private void advancePulses() {
         pulses.removeIf(pulse -> {
             pulse.progress++;
-            return pulse.progress >= pulse.length();
+            // Keep the pulse alive past the trace end so the tail can fade out
+            // gradually instead of vanishing abruptly.
+            return pulse.progress >= pulse.length() + TAIL_LEN;
         });
     }
 
@@ -771,39 +776,43 @@ public class CircuitBoard extends AbstractComponent implements AnimatedBackgroun
 
         int total = pulse.length();
         int pos = pulse.forward ? pulse.progress : total - 1 - pulse.progress;
-        if (pos < 0 || pos >= total) return;
-
-        int px;
-        int py;
-        if (pulse.trace.horizontalFirst) {
-            int horizontalSteps = Math.abs(x1 - x0);
-            if (pos <= horizontalSteps) {
-                px = Math.min(x0, x1) + pos;
-                py = y0;
-            } else {
-                px = x1;
-                py = Math.min(y0, y1) + (pos - horizontalSteps);
-            }
-        } else {
-            int verticalSteps = Math.abs(y1 - y0);
-            if (pos <= verticalSteps) {
-                px = x0;
-                py = Math.min(y0, y1) + pos;
-            } else {
-                px = Math.min(x0, x1) + (pos - verticalSteps);
-                py = y1;
-            }
-        }
-
-        if (px < 0 || px >= size.columns() || py < 0 || py >= size.rows()) return;
 
         Color bright = AnsiColor.BRIGHT_GREEN;
         Color medium = AnsiColor.GREEN;
         Color bg = ThemeManager.active().background();
 
-        // Draw bright head and a short fading tail.
-        graphics.setCell(px, py, new TextCell('\u2588', bright, bg, SGR.BOLD));
-        int tailLen = 3;
+        // Draw bright head only while it's still on the trace.
+        // Once progress >= total (head passed the end), only the tail remains
+        // and fades out over TAIL_LEN frames.
+        if (pos >= 0 && pos < total) {
+            int px;
+            int py;
+            if (pulse.trace.horizontalFirst) {
+                int horizontalSteps = Math.abs(x1 - x0);
+                if (pos <= horizontalSteps) {
+                    px = Math.min(x0, x1) + pos;
+                    py = y0;
+                } else {
+                    px = x1;
+                    py = Math.min(y0, y1) + (pos - horizontalSteps);
+                }
+            } else {
+                int verticalSteps = Math.abs(y1 - y0);
+                if (pos <= verticalSteps) {
+                    px = x0;
+                    py = Math.min(y0, y1) + pos;
+                } else {
+                    px = Math.min(x0, x1) + (pos - verticalSteps);
+                    py = y1;
+                }
+            }
+            if (px >= 0 && px < size.columns() && py >= 0 && py < size.rows()) {
+                graphics.setCell(px, py, new TextCell('\u2588', bright, bg, SGR.BOLD));
+            }
+        }
+
+        // Draw fading tail behind the head.
+        int tailLen = TAIL_LEN;
         for (int i = 1; i <= tailLen; i++) {
             int tailPos = pulse.forward ? pos - i : pos + i;
             if (tailPos < 0 || tailPos >= total) continue;
@@ -828,6 +837,9 @@ public class CircuitBoard extends AbstractComponent implements AnimatedBackgroun
                 }
             }
             if (tx < 0 || tx >= size.columns() || ty < 0 || ty >= size.rows()) continue;
+            // Tail fades: first cell medium green, rest dim.
+            // During fade-out phase (pos >= total), the head is gone so
+            // the tail shortens naturally as cells fall off the end.
             Color color = i == 1 ? medium : AnsiColor.BRIGHT_BLACK;
             graphics.setCell(tx, ty, new TextCell('\u2591', color, bg));
         }
@@ -887,8 +899,8 @@ public class CircuitBoard extends AbstractComponent implements AnimatedBackgroun
 
         /** Component types with their grid-cell dimensions. */
         public enum Type {
-            /** IC chip: rectangle with pins, "IC" label. 5×3 grid. */
-            CHIP(5, 3),
+            /** IC chip: rectangle with pins, "IC" label. 3×2 grid (12×8 chars). */
+            CHIP(3, 2),
                 /** Resistor: shaded body with leads. 5×1 grid. */
                 RESISTOR(5, 1),
                 /** Capacitor: two parallel plates with leads. 4×1 grid. */

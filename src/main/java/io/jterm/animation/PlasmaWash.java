@@ -178,7 +178,7 @@ public class PlasmaWash extends AbstractComponent implements AnimatedBackground 
                 double value = plasmaValue(x, y, time);
                 int level = valueToLevel(value);
                 Color fg = palette[level];
-                Color cellBg = level == 0 ? bg : blend(bg, baseColor, 0.15 * level / (SHADING_LEVELS - 1));
+                Color cellBg = level == 0 ? bg : blend(bg, palette[level], 0.3);
                 graphics.setCell(x, y, new TextCell(SHADING_CHARS[level], fg, cellBg));
             }
         }
@@ -214,14 +214,25 @@ public class PlasmaWash extends AbstractComponent implements AnimatedBackground 
     }
 
     /**
-     * Builds a foreground palette from the theme background up to the base color.
-     * Keeps the plasma dim: the brightest cell is still only a mid-brightness tint.
+     * Builds a foreground palette mapping each shading level to a different
+     * ANSI hue, blended toward the theme background so the plasma shows a
+     * spectrum of colors rather than a single-hue gradient.
      */
     private Color[] buildPalette(Color bg) {
+        // Spectrum of ANSI hues from cool to warm. Each shading level gets
+        // a different base hue so the plasma shows multiple colors.
+        AnsiColor[] hues = {
+            AnsiColor.BLUE,       // level 0 — dimmest
+            AnsiColor.CYAN,
+            AnsiColor.GREEN,
+            AnsiColor.YELLOW,
+            AnsiColor.MAGENTA,
+            AnsiColor.BRIGHT_CYAN  // level 5 — brightest
+        };
         Color[] palette = new Color[SHADING_LEVELS];
         for (int i = 0; i < SHADING_LEVELS; i++) {
-            double weight = 0.08 + (0.18 * i) / (SHADING_LEVELS - 1);
-            palette[i] = blend(bg, baseColor, weight);
+            double weight = 0.30 + (0.55 * i) / (SHADING_LEVELS - 1);
+            palette[i] = blend(bg, hues[i], weight);
         }
         return palette;
     }

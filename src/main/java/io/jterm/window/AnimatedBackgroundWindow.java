@@ -27,15 +27,19 @@ public class AnimatedBackgroundWindow extends WindowImpl {
 
     @Override
     public void draw(TextGraphics graphics) {
-        // Advance animation state before rendering. Animations that use
-        // tick() (CircuitBoard, TypewriterEffect, MatrixRain, etc.) need
-        // this to progress their internal state each frame.
         background.tick(System.nanoTime());
-        background.renderFrame(graphics, getSize());
+        var sz = getSize();
+        background.renderFrame(graphics, sz);
     }
 
     public void start() {
         background.start();
+        // Pre-tick a few times so the first frame has visible content spread
+        // across the screen instead of clustered at initial positions.
+        long now = System.nanoTime();
+        for (int i = 0; i < 5; i++) {
+            background.tick(now + i * 250_000_000L); // 250ms steps
+        }
         timer = new AnimationTimer(background.targetFps(), () -> gui.requestRefresh());
         timer.start();
     }

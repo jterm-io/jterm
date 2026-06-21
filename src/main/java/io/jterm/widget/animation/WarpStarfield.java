@@ -32,7 +32,7 @@ public class WarpStarfield extends AbstractComponent implements AnimatedBackgrou
     private final int starCount;
     private TerminalSize preferredSize;
 
-    private volatile int targetFps = 15;
+    private volatile int targetFps = 2;
     private volatile double warpSpeed = DEFAULT_WARP_SPEED;
     private volatile boolean paused = false;
     private volatile boolean running = false;
@@ -257,6 +257,11 @@ public class WarpStarfield extends AbstractComponent implements AnimatedBackgrou
             return AnsiColor.blendAnsi(ac, bc, aWeight);
         }
         return aWeight >= 0.5 ? a : b;
+    }
+
+    @Override
+    public int targetFps() {
+        return targetFps;
     }
 
     @Override
