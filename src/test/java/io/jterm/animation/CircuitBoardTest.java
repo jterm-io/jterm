@@ -130,7 +130,7 @@ class CircuitBoardTest {
                 if (ch == '\u2500' || ch == '\u2502' || ch == '\u2510' || ch == '\u2518' || ch == '\u2514') {
                     hasTrace = true;
                 }
-                if (ch == '+' || ch == '\u00B7') {
+                if (ch == '+' || ch == '\u00B0') {
                     hasPad = true;
                 }
             }

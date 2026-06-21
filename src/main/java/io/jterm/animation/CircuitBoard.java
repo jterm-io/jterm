@@ -162,7 +162,7 @@ public class CircuitBoard extends AbstractComponent implements AnimatedBackgroun
         Color bg = theme.background();
         Color traceColor = AnsiColor.GREEN;
         Color padColor = AnsiColor.BRIGHT_GREEN;
-        Color viaColor = AnsiColor.GREEN;
+        Color viaColor = AnsiColor.BRIGHT_CYAN;
 
         graphics.fillRectangle(0, 0, size.columns(), size.rows(),
                 new TextCell(' ', theme.foreground(), bg));
@@ -196,7 +196,7 @@ public class CircuitBoard extends AbstractComponent implements AnimatedBackgroun
                     if (hasTrace) {
                         graphics.setCell(x, y, new TextCell('+', padColor, bg, SGR.BOLD));
                     } else if (viaPositions.contains(gy * gridCols + gx)) {
-                        graphics.setCell(x, y, new TextCell('\u00B7', viaColor, bg));
+                        graphics.setCell(x, y, new TextCell('\u00B0', viaColor, bg));
                     }
                 }
             }
@@ -251,7 +251,7 @@ public class CircuitBoard extends AbstractComponent implements AnimatedBackgroun
                         break;
                     }
                 }
-                if (!hasTrace && random.nextDouble() < 0.08) {
+                if (!hasTrace && random.nextDouble() < 0.15) {
                     viaPositions.add(gy * gridCols + gx);
                 }
             }
