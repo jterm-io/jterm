@@ -11,13 +11,16 @@ import io.jterm.style.ThemeManager;
 import io.jterm.widget.AbstractComponent;
 
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Random;
+import java.util.Set;
 
 /**
  * Animated circuit-board (PCB) background. Generates a grid of orthogonal
- * copper traces, pads, and vias, then sends pulses of electricity flowing
- * along random routes. Uses ANSI colors only for broad terminal compatibility.
+ * copper traces, pads, vias, and PCB components (chips, resistors, capacitors,
+ * crystals), then sends pulses of electricity flowing along random routes.
+ * Uses ANSI colors only for broad terminal compatibility.
  *
  * <p>This is an {@link AnimatedBackground} and a regular Component, so it can
  * be drawn into a background window or added to a panel like the other
@@ -34,6 +37,7 @@ public class CircuitBoard extends AbstractComponent implements AnimatedBackgroun
     private static final int MAX_TRACE_LENGTH = 22;
     private static final double PULSE_SPAWN_CHANCE = 0.12;
     private static final int MAX_PULSES = 8;
+    private static final double COMPONENT_CHANCE = 0.18;
 
     private final Random random = new Random();
     private TerminalSize preferredSize;
@@ -51,7 +55,9 @@ public class CircuitBoard extends AbstractComponent implements AnimatedBackgroun
     private int gridRows;
     private final List<Trace> traces = new ArrayList<>();
     private final List<Pulse> pulses = new ArrayList<>();
-    private final java.util.Set<Integer> viaPositions = new java.util.HashSet<>();
+    private final Set<Integer> viaPositions = new HashSet<>();
+    private final List<PcbComponent> components = new ArrayList<>();
+    private final Set<Integer> componentCells = new HashSet<>();
 
     public CircuitBoard(TerminalSize preferredSize) {
         this.preferredSize = preferredSize;
@@ -84,6 +90,8 @@ public class CircuitBoard extends AbstractComponent implements AnimatedBackgroun
         traces.clear();
         pulses.clear();
         viaPositions.clear();
+        components.clear();
+        componentCells.clear();
     }
 
     public List<Trace> getTraces() {
@@ -92,6 +100,10 @@ public class CircuitBoard extends AbstractComponent implements AnimatedBackgroun
 
     public List<Pulse> getPulses() {
         return List.copyOf(pulses);
+    }
+
+    public List<PcbComponent> getComponents() {
+        return List.copyOf(components);
     }
 
     /**
@@ -144,6 +156,9 @@ public class CircuitBoard extends AbstractComponent implements AnimatedBackgroun
             traces.clear();
             pulses.clear();
             viaPositions.clear();
+            components.clear();
+            componentCells.clear();
+            generateComponents();
             generateTraces();
             generateVias();
         }
@@ -202,14 +217,64 @@ public class CircuitBoard extends AbstractComponent implements AnimatedBackgroun
             }
         }
 
+        // Draw PCB components (chips, resistors, etc.) over the traces.
+        for (PcbComponent comp : components) {
+            drawComponent(graphics, comp, size, bg);
+        }
+
         advancePulses();
         spawnPulses();
 
-        // Draw electricity pulses over the traces.
+        // Draw electricity pulses over everything.
         for (Pulse pulse : pulses) {
             drawPulse(graphics, pulse, size);
         }
     }
+
+    // ── Component generation ──────────────────────────────────────────────
+
+    private void generateComponents() {
+        components.clear();
+        componentCells.clear();
+        if (gridCols < 4 || gridRows < 3) return;
+
+        for (int gy = 0; gy < gridRows - 2; gy++) {
+            for (int gx = 0; gx < gridCols - 3; gx++) {
+                if (random.nextDouble() >= COMPONENT_CHANCE) continue;
+                // Check this area is free
+                if (isAreaOccupied(gx, gy, 4, 3)) continue;
+
+                PcbComponent.Type type = pickComponentType();
+                int w = type.width;
+                int h = type.height;
+                if (gx + w > gridCols || gy + h > gridRows) continue;
+
+                // Mark cells as occupied
+                for (int dy = 0; dy < h; dy++) {
+                    for (int dx = 0; dx < w; dx++) {
+                        componentCells.add((gy + dy) * gridCols + (gx + dx));
+                    }
+                }
+                components.add(new PcbComponent(type, gx, gy));
+            }
+        }
+    }
+
+    private boolean isAreaOccupied(int gx, int gy, int w, int h) {
+        for (int dy = 0; dy < h; dy++) {
+            for (int dx = 0; dx < w; dx++) {
+                if (componentCells.contains((gy + dy) * gridCols + (gx + dx))) return true;
+            }
+        }
+        return false;
+    }
+
+    private PcbComponent.Type pickComponentType() {
+        var types = PcbComponent.Type.values();
+        return types[random.nextInt(types.length)];
+    }
+
+    // ── Trace generation ──────────────────────────────────────────────────
 
     private void generateTraces() {
         traces.clear();
@@ -217,6 +282,9 @@ public class CircuitBoard extends AbstractComponent implements AnimatedBackgroun
 
         for (int gy = 0; gy < gridRows; gy++) {
             for (int gx = 0; gx < gridCols; gx++) {
+                // Skip trace origins that are inside a component
+                if (componentCells.contains(gy * gridCols + gx)) continue;
+
                 if (random.nextDouble() >= TRACE_DENSITY) continue;
 
                 int gx1;
@@ -235,6 +303,9 @@ public class CircuitBoard extends AbstractComponent implements AnimatedBackgroun
                 if (length < MIN_TRACE_LENGTH) continue;
                 if (length > MAX_TRACE_LENGTH) continue;
 
+                // Skip if endpoint is inside a component
+                if (componentCells.contains(gy1 * gridCols + gx1)) continue;
+
                 traces.add(new Trace(gx, gy, gx1, gy1, random.nextBoolean()));
             }
         }
@@ -243,6 +314,7 @@ public class CircuitBoard extends AbstractComponent implements AnimatedBackgroun
     private void generateVias() {
         for (int gy = 0; gy < gridRows; gy++) {
             for (int gx = 0; gx < gridCols; gx++) {
+                if (componentCells.contains(gy * gridCols + gx)) continue;
                 boolean hasTrace = false;
                 for (Trace trace : traces) {
                     if (trace.gx0 == gx && trace.gy0 == gy
@@ -257,6 +329,8 @@ public class CircuitBoard extends AbstractComponent implements AnimatedBackgroun
             }
         }
     }
+
+    // ── Drawing ───────────────────────────────────────────────────────────
 
     private void drawTrace(TextGraphics graphics, Trace trace, Color traceColor, Color bg) {
         int x0 = trace.gx0 * PAD_SPACING + PAD_SPACING / 2;
@@ -304,6 +378,224 @@ public class CircuitBoard extends AbstractComponent implements AnimatedBackgroun
             if (y != y1) y += stepY;
         }
     }
+
+    private void drawComponent(TextGraphics graphics, PcbComponent comp, TerminalSize size, Color bg) {
+        int ox = comp.gx * PAD_SPACING + PAD_SPACING / 2;
+        int oy = comp.gy * PAD_SPACING + PAD_SPACING / 2;
+        int w = comp.type.width * PAD_SPACING;
+        int h = comp.type.height * PAD_SPACING;
+
+        switch (comp.type) {
+            case CHIP -> drawChip(graphics, ox, oy, w, h, size, bg);
+            case RESISTOR -> drawResistor(graphics, ox, oy, w, h, size, bg);
+            case CAPACITOR -> drawCapacitor(graphics, ox, oy, w, h, size, bg);
+            case CRYSTAL -> drawCrystal(graphics, ox, oy, w, h, size, bg);
+        }
+    }
+
+    /**
+     * Draws an IC/chip as a rectangle with pins. Example (5×3 grid → 20×12 chars):
+     * <pre>
+     *  ┌──────────────┐
+     *  │  ▓▓▓▓▓▓▓▓▓▓  │
+     *  │  ▓▓ IC  ▓▓  │
+     *  │  ▓▓▓▓▓▓▓▓▓▓  │
+     *  └──────────────┘
+     * ─┤├────────────┤├─
+     * </pre>
+     */
+    private void drawChip(TextGraphics graphics, int ox, int oy, int w, int h, TerminalSize size, Color bg) {
+        Color bodyColor = AnsiColor.BRIGHT_YELLOW;
+        Color pinColor = AnsiColor.GREEN;
+        Color labelColor = AnsiColor.BRIGHT_WHITE;
+        int cols = size.columns();
+        int rows = size.rows();
+
+        // Outline (single-line box)
+        var hLine = new TextCell('\u2500', bodyColor, bg);
+        var vLine = new TextCell('\u2502', bodyColor, bg);
+        var tl = new TextCell('\u250C', bodyColor, bg);
+        var tr = new TextCell('\u2510', bodyColor, bg);
+        var bl = new TextCell('\u2514', bodyColor, bg);
+        var br = new TextCell('\u2518', bodyColor, bg);
+        var fill = new TextCell('\u2592', bodyColor, bg); // medium shade fill
+
+        // Top edge
+        for (int x = ox + 1; x < ox + w; x++) {
+            if (inBounds(x, oy, cols, rows)) graphics.setCell(x, oy, hLine);
+        }
+        // Bottom edge
+        int botY = oy + h;
+        for (int x = ox + 1; x < ox + w; x++) {
+            if (inBounds(x, botY, cols, rows)) graphics.setCell(x, botY, hLine);
+        }
+        // Left and right edges, plus fill
+        for (int y = oy + 1; y < botY; y++) {
+            if (inBounds(ox, y, cols, rows)) graphics.setCell(ox, y, vLine);
+            if (inBounds(ox + w, y, cols, rows)) graphics.setCell(ox + w, y, vLine);
+            // Fill interior with shade
+            for (int x = ox + 1; x < ox + w; x++) {
+                if (inBounds(x, y, cols, rows)) graphics.setCell(x, y, fill);
+            }
+        }
+        // Corners
+        if (inBounds(ox, oy, cols, rows)) graphics.setCell(ox, oy, tl);
+        if (inBounds(ox + w, oy, cols, rows)) graphics.setCell(ox + w, oy, tr);
+        if (inBounds(ox, botY, cols, rows)) graphics.setCell(ox, botY, bl);
+        if (inBounds(ox + w, botY, cols, rows)) graphics.setCell(ox + w, botY, br);
+
+        // Label "IC" centered
+        int labelX = ox + w / 2 - 1;
+        int labelY = oy + h / 2;
+        if (inBounds(labelX, labelY, cols, rows))
+            graphics.setCell(labelX, labelY, new TextCell('I', labelColor, bg, SGR.BOLD));
+        if (inBounds(labelX + 1, labelY, cols, rows))
+            graphics.setCell(labelX + 1, labelY, new TextCell('C', labelColor, bg, SGR.BOLD));
+
+        // Pin notch (small dot on top-left to indicate pin 1)
+        if (inBounds(ox + 1, oy + 1, cols, rows))
+            graphics.setCell(ox + 1, oy + 1, new TextCell('\u00B0', pinColor, bg));
+
+        // Pins extending left and right from mid-row
+        int pinY = oy + h / 2;
+        if (inBounds(ox - 2, pinY, cols, rows))
+            graphics.setCell(ox - 2, pinY, new TextCell('\u2500', pinColor, bg));
+        if (inBounds(ox - 1, pinY, cols, rows))
+            graphics.setCell(ox - 1, pinY, new TextCell('\u2500', pinColor, bg));
+        if (inBounds(ox + w + 1, pinY, cols, rows))
+            graphics.setCell(ox + w + 1, pinY, new TextCell('\u2500', pinColor, bg));
+        if (inBounds(ox + w + 2, pinY, cols, rows))
+            graphics.setCell(ox + w + 2, pinY, new TextCell('\u2500', pinColor, bg));
+    }
+
+    /**
+     * Draws a resistor as a small filled rectangle with leads.
+     * <pre>
+     * ───╞═══╡───
+     * </pre>
+     */
+    private void drawResistor(TextGraphics graphics, int ox, int oy, int w, int h, TerminalSize size, Color bg) {
+        Color bodyColor = AnsiColor.BRIGHT_YELLOW;
+        Color leadColor = AnsiColor.GREEN;
+        int cols = size.columns();
+        int rows = size.rows();
+        int midY = oy + h / 2;
+
+        // Body: shaded block
+        var body = new TextCell('\u2593', bodyColor, bg); // dark shade
+        int bodyStart = ox + 2;
+        int bodyEnd = ox + w - 2;
+        for (int x = bodyStart; x < bodyEnd; x++) {
+            if (inBounds(x, midY, cols, rows)) graphics.setCell(x, midY, body);
+        }
+
+        // End caps
+        if (inBounds(bodyStart - 1, midY, cols, rows))
+            graphics.setCell(bodyStart - 1, midY, new TextCell('\u251C', bodyColor, bg)); // ├
+        if (inBounds(bodyEnd, midY, cols, rows))
+            graphics.setCell(bodyEnd, midY, new TextCell('\u2524', bodyColor, bg)); // ┤
+
+        // Leads
+        for (int x = ox; x < bodyStart - 1; x++) {
+            if (inBounds(x, midY, cols, rows))
+                graphics.setCell(x, midY, new TextCell('\u2500', leadColor, bg));
+        }
+        for (int x = bodyEnd + 1; x <= ox + w; x++) {
+            if (inBounds(x, midY, cols, rows))
+                graphics.setCell(x, midY, new TextCell('\u2500', leadColor, bg));
+        }
+    }
+
+    /**
+     * Draws a capacitor as two parallel plates with leads.
+     * <pre>
+     * ───│▓▓│───
+     * </pre>
+     */
+    private void drawCapacitor(TextGraphics graphics, int ox, int oy, int w, int h, TerminalSize size, Color bg) {
+        Color plateColor = AnsiColor.BRIGHT_CYAN;
+        Color leadColor = AnsiColor.GREEN;
+        Color fillColor = AnsiColor.CYAN;
+        int cols = size.columns();
+        int rows = size.rows();
+        int midY = oy + h / 2;
+
+        int plate1 = ox + w / 2 - 1;
+        int plate2 = ox + w / 2;
+
+        // Plates (vertical bars)
+        if (inBounds(plate1, midY, cols, rows))
+            graphics.setCell(plate1, midY, new TextCell('\u2502', plateColor, bg, SGR.BOLD));
+        if (inBounds(plate2, midY, cols, rows))
+            graphics.setCell(plate2, midY, new TextCell('\u2502', plateColor, bg, SGR.BOLD));
+
+        // Fill between plates
+        // (no fill — plates are adjacent, representing a non-polarized cap)
+
+        // Leads
+        for (int x = ox; x < plate1; x++) {
+            if (inBounds(x, midY, cols, rows))
+                graphics.setCell(x, midY, new TextCell('\u2500', leadColor, bg));
+        }
+        for (int x = plate2 + 1; x <= ox + w; x++) {
+            if (inBounds(x, midY, cols, rows))
+                graphics.setCell(x, midY, new TextCell('\u2500', leadColor, bg));
+        }
+    }
+
+    /**
+     * Draws a crystal oscillator as a small rectangle with "XT" label.
+     * <pre>
+     *  ┌────────┐
+     *  │ ▓▓XT▓▓ │
+     *  └────────┘
+     * </pre>
+     */
+    private void drawCrystal(TextGraphics graphics, int ox, int oy, int w, int h, TerminalSize size, Color bg) {
+        Color bodyColor = AnsiColor.BRIGHT_CYAN;
+        Color labelColor = AnsiColor.BRIGHT_WHITE;
+        int cols = size.columns();
+        int rows = size.rows();
+
+        var hLine = new TextCell('\u2500', bodyColor, bg);
+        var vLine = new TextCell('\u2502', bodyColor, bg);
+        var tl = new TextCell('\u250C', bodyColor, bg);
+        var tr = new TextCell('\u2510', bodyColor, bg);
+        var bl = new TextCell('\u2514', bodyColor, bg);
+        var br = new TextCell('\u2518', bodyColor, bg);
+        var fill = new TextCell('\u2591', bodyColor, bg); // light shade
+
+        int botY = oy + h;
+
+        // Top and bottom edges
+        for (int x = ox + 1; x < ox + w; x++) {
+            if (inBounds(x, oy, cols, rows)) graphics.setCell(x, oy, hLine);
+            if (inBounds(x, botY, cols, rows)) graphics.setCell(x, botY, hLine);
+        }
+        // Sides and fill
+        for (int y = oy + 1; y < botY; y++) {
+            if (inBounds(ox, y, cols, rows)) graphics.setCell(ox, y, vLine);
+            if (inBounds(ox + w, y, cols, rows)) graphics.setCell(ox + w, y, vLine);
+            for (int x = ox + 1; x < ox + w; x++) {
+                if (inBounds(x, y, cols, rows)) graphics.setCell(x, y, fill);
+            }
+        }
+        // Corners
+        if (inBounds(ox, oy, cols, rows)) graphics.setCell(ox, oy, tl);
+        if (inBounds(ox + w, oy, cols, rows)) graphics.setCell(ox + w, oy, tr);
+        if (inBounds(ox, botY, cols, rows)) graphics.setCell(ox, botY, bl);
+        if (inBounds(ox + w, botY, cols, rows)) graphics.setCell(ox + w, botY, br);
+
+        // Label "XT"
+        int labelX = ox + w / 2 - 1;
+        int labelY = oy + h / 2;
+        if (inBounds(labelX, labelY, cols, rows))
+            graphics.setCell(labelX, labelY, new TextCell('X', labelColor, bg, SGR.BOLD));
+        if (inBounds(labelX + 1, labelY, cols, rows))
+            graphics.setCell(labelX + 1, labelY, new TextCell('T', labelColor, bg, SGR.BOLD));
+    }
+
+    // ── Pulses ────────────────────────────────────────────────────────────
 
     private void spawnPulses() {
         if (pulses.size() >= MAX_PULSES) return;
@@ -386,22 +678,15 @@ public class CircuitBoard extends AbstractComponent implements AnimatedBackgroun
                 }
             }
             if (tx < 0 || tx >= size.columns() || ty < 0 || ty >= size.rows()) continue;
-            Color color = i == 1 ? medium : dimColor(medium, 0.5);
+            Color color = i == 1 ? medium : AnsiColor.BRIGHT_BLACK;
             graphics.setCell(tx, ty, new TextCell('\u2591', color, bg));
         }
     }
 
-    private Color dimColor(Color color, double weight) {
-        if (color == AnsiColor.BRIGHT_GREEN) {
-            return weight < 0.5 ? AnsiColor.GREEN : AnsiColor.BRIGHT_BLACK;
-        }
-        if (color == AnsiColor.GREEN) {
-            return weight < 0.5 ? AnsiColor.GREEN : AnsiColor.BRIGHT_BLACK;
-        }
-        if (color == AnsiColor.BRIGHT_BLACK) {
-            return AnsiColor.BRIGHT_BLACK;
-        }
-        return color;
+    // ── Helpers ───────────────────────────────────────────────────────────
+
+    private static boolean inBounds(int x, int y, int cols, int rows) {
+        return x >= 0 && x < cols && y >= 0 && y < rows;
     }
 
     @Override
@@ -444,6 +729,30 @@ public class CircuitBoard extends AbstractComponent implements AnimatedBackgroun
 
         int length() {
             return trace.length();
+        }
+    }
+
+    /** A PCB component placed on the grid. */
+    public record PcbComponent(Type type, int gx, int gy) {
+
+        /** Component types with their grid-cell dimensions. */
+        public enum Type {
+            /** IC chip: rectangle with pins, "IC" label. 5×3 grid. */
+            CHIP(5, 3),
+            /** Resistor: shaded body with leads. 5×1 grid. */
+            RESISTOR(5, 1),
+            /** Capacitor: two parallel plates with leads. 4×1 grid. */
+            CAPACITOR(4, 1),
+            /** Crystal oscillator: rectangle with "XT" label. 5×2 grid. */
+            CRYSTAL(5, 2);
+
+            public final int width;
+            public final int height;
+
+            Type(int width, int height) {
+                this.width = width;
+                this.height = height;
+            }
         }
     }
 }

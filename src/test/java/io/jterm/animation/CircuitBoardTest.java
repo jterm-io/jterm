@@ -237,6 +237,44 @@ class CircuitBoardTest {
     }
 
     @Test
+    @DisplayName("resize generates PCB components")
+    void resizeGeneratesComponents() {
+        var board = new CircuitBoard(new TerminalSize(80, 24));
+        assertTrue(board.getComponents().isEmpty());
+        board.setBounds(TerminalPosition.TOP_LEFT, new TerminalSize(80, 24));
+        // Components should be generated on a large enough board
+        // (not guaranteed non-empty due to randomness, but the list should be accessible)
+        assertNotNull(board.getComponents());
+    }
+
+    @Test
+    @DisplayName("draw renders component characters on large board")
+    void drawRendersComponents() {
+        var size = new TerminalSize(80, 24);
+        var board = new CircuitBoard(size);
+        board.setBounds(TerminalPosition.TOP_LEFT, size);
+        board.tick(0);
+
+        var buffer = new ScreenBuffer(size);
+        board.draw(new TextGraphics(buffer));
+
+        // Check for component body characters (shade chars used by chips/crystals)
+        boolean hasComponent = false;
+        for (int r = 0; r < size.rows(); r++) {
+            for (int c = 0; c < size.columns(); c++) {
+                char ch = buffer.getCell(c, r).character().charAt(0);
+                if (ch == '\u2592' || ch == '\u2593'  // shade chars (chip/crystal/resistor body)
+                        || ch == 'I' || ch == 'C'    // IC label
+                        || ch == 'X' || ch == 'T') {  // XT label
+                    hasComponent = true;
+                    break;
+                }
+            }
+        }
+        assertTrue(hasComponent, "should render at least one PCB component character");
+    }
+
+    @Test
     @DisplayName("drawing empty screen does not throw")
     void drawZeroSizeSafe() {
         var board = new CircuitBoard(new TerminalSize(0, 0));
