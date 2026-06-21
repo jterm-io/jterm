@@ -5,7 +5,6 @@ import io.jterm.core.TerminalSize;
 import io.jterm.graphics.TextGraphics;
 import io.jterm.style.AnsiColor;
 import io.jterm.style.Color;
-import io.jterm.style.RgbColor;
 import io.jterm.style.SGR;
 import io.jterm.style.TextCell;
 import io.jterm.style.ThemeManager;
@@ -371,18 +370,13 @@ public class MatrixRain extends AbstractComponent implements AnimatedBackground 
 
         private static Color blendToBlack(Color color, double weight) {
             if (color instanceof AnsiColor ansi) {
+                // Snap to nearest ANSI color for terminal compatibility (no 24-bit RGB).
                 return switch (ansi) {
-                    case GREEN, BRIGHT_GREEN -> new RgbColor(0, (int) (128 * weight), 0);
-                    case CYAN, BRIGHT_CYAN -> new RgbColor(0, (int) (128 * weight), (int) (128 * weight));
-                    case WHITE, BRIGHT_WHITE -> new RgbColor((int) (192 * weight), (int) (192 * weight), (int) (192 * weight));
+                    case GREEN, BRIGHT_GREEN -> AnsiColor.blendAnsi(AnsiColor.BLACK, AnsiColor.GREEN, weight);
+                    case CYAN, BRIGHT_CYAN -> AnsiColor.blendAnsi(AnsiColor.BLACK, AnsiColor.CYAN, weight);
+                    case WHITE, BRIGHT_WHITE -> AnsiColor.blendAnsi(AnsiColor.BLACK, AnsiColor.WHITE, weight);
                     default -> AnsiColor.BLACK;
                 };
-            }
-            if (color instanceof RgbColor rgb) {
-                return new RgbColor(
-                        (int) (rgb.r() * weight),
-                        (int) (rgb.g() * weight),
-                        (int) (rgb.b() * weight));
             }
             return AnsiColor.BLACK;
         }

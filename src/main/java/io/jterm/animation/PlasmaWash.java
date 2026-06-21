@@ -6,7 +6,6 @@ import io.jterm.graphics.TextGraphics;
 import io.jterm.screen.ScreenBuffer;
 import io.jterm.style.AnsiColor;
 import io.jterm.style.Color;
-import io.jterm.style.RgbColor;
 import io.jterm.style.TextCell;
 import io.jterm.style.ThemeManager;
 import io.jterm.widget.AbstractComponent;
@@ -235,15 +234,8 @@ public class PlasmaWash extends AbstractComponent implements AnimatedBackground 
     static Color blend(Color a, Color b, double weight) {
         if (weight <= 0.0) return a;
         if (weight >= 1.0) return b;
-        // Use RGB interpolation so dim levels are actually visible instead of
-        // collapsing to the background color when both inputs are AnsiColors.
-        if (a instanceof AnsiColor ac) a = ac.toRgb();
-        if (b instanceof AnsiColor bc) b = bc.toRgb();
-        if (a instanceof RgbColor ra && b instanceof RgbColor rb) {
-            int r = (int) (ra.r() + (rb.r() - ra.r()) * weight);
-            int g = (int) (ra.g() + (rb.g() - ra.g()) * weight);
-            int bl = (int) (ra.b() + (rb.b() - ra.b()) * weight);
-            return new RgbColor(r, g, bl);
+        if (a instanceof AnsiColor ac && b instanceof AnsiColor bc) {
+            return AnsiColor.blendAnsi(ac, bc, weight);
         }
         return weight < 0.5 ? a : b;
     }

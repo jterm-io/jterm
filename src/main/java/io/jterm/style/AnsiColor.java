@@ -24,6 +24,31 @@ public enum AnsiColor implements Color {
         return new RgbColor(r, g, b);
     }
 
+    /** Returns the ANSI color closest to the given RGB values. */
+    public static AnsiColor nearest(int r, int g, int b) {
+        AnsiColor best = BLACK;
+        double bestDist = Double.MAX_VALUE;
+        for (AnsiColor c : values()) {
+            if (c == DEFAULT) continue;
+            double dist = (c.r - r) * (c.r - r) + (c.g - g) * (c.g - g) + (c.b - b) * (c.b - b);
+            if (dist < bestDist) {
+                bestDist = dist;
+                best = c;
+            }
+        }
+        return best;
+    }
+
+    /** Blends two ANSI colors and returns the nearest ANSI color in the palette. */
+    public static AnsiColor blendAnsi(AnsiColor a, AnsiColor b, double aWeight) {
+        if (aWeight <= 0.0) return b;
+        if (aWeight >= 1.0) return a;
+        int r = (int) (a.r + (b.r - a.r) * aWeight);
+        int g = (int) (a.g + (b.g - a.g) * aWeight);
+        int bl = (int) (a.b + (b.b - a.b) * aWeight);
+        return nearest(r, g, bl);
+    }
+
     @Override
     public byte[] fgSequence() {
         return switch (index) {
