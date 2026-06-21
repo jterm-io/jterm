@@ -32,7 +32,7 @@ public class WarpStarfield extends AbstractComponent implements AnimatedBackgrou
     private final int starCount;
     private TerminalSize preferredSize;
 
-    private volatile int targetFps = 6;
+    private volatile int targetFps = 10;
     private volatile double warpSpeed = DEFAULT_WARP_SPEED;
     private volatile boolean paused = false;
     private volatile boolean running = false;

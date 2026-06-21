@@ -187,7 +187,7 @@ class WarpStarfieldTest {
     void implementsAnimatedBackground() {
         var bg = new WarpStarfield(new TerminalSize(40, 20));
         assertTrue(bg instanceof io.jterm.animation.AnimatedBackground);
-        assertEquals(6, bg.targetFps(), "default FPS should be 6");
+        assertEquals(10, bg.targetFps(), "default FPS should be 10");
         bg.start();
         assertTrue(bg.isRunning());
         bg.stop();
