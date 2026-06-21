@@ -81,6 +81,7 @@ public class Table extends AbstractComponent implements TableModelListener {
             }
         }
         if (e.type() == TableModelEventType.STRUCTURE_CHANGED) {
+            selectedRow = 0;
             scrollOffset = 0;
         }
         ensureVisible();
@@ -111,7 +112,12 @@ public class Table extends AbstractComponent implements TableModelListener {
         int totalWidth = model == null ? 1 : model.getColumnCount() + 1;
         if (model != null) {
             for (int i = 0; i < model.getColumnCount(); i++) {
-                totalWidth += TerminalTextUtils.getTrueWidth(model.getColumnName(i));
+                int max = TerminalTextUtils.getTrueWidth(model.getColumnName(i));
+                int rowCount = model.getRowCount();
+                for (int r = 0; r < rowCount; r++) {
+                    max = Math.max(max, TerminalTextUtils.getTrueWidth(model.getValueAt(r, i)));
+                }
+                totalWidth += max;
             }
         }
         int rowCount = model == null ? 0 : model.getRowCount();
