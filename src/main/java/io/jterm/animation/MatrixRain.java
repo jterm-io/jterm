@@ -52,7 +52,7 @@ public class MatrixRain extends AbstractComponent implements AnimatedBackground 
     private Color backgroundColor;
 
     public MatrixRain(TerminalSize preferredSize) {
-        this(preferredSize, true, true);
+        this(preferredSize, false, true);
     }
 
     public MatrixRain(TerminalSize preferredSize, boolean unicodeMode, boolean allowColorVariants) {

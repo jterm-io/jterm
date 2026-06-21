@@ -72,7 +72,8 @@ class WarpStarfieldTest {
         var bg = new WarpStarfield(new TerminalSize(40, 20));
         assertEquals('.', bg.glyphForDepth(8.0));
         assertEquals('+', bg.glyphForDepth(5.0));
-        assertEquals('\u2727', bg.glyphForDepth(2.0));
+        assertEquals('*', bg.glyphForDepth(2.0));
+        assertEquals('#', bg.glyphForDepth(0.5));
     }
 
     @Test

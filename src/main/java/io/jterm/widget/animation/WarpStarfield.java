@@ -228,8 +228,8 @@ public class WarpStarfield extends AbstractComponent implements AnimatedBackgrou
     public char glyphForDepth(double z) {
         if (z > 7.0) return '.';
         if (z > 3.0) return '+';
-        if (z > 1.0) return '\u2727';
-        return '\u2605';
+        if (z > 1.0) return '*';
+        return '#';
     }
 
     /** Move a star toward the viewer; respawn it once it passes through. */

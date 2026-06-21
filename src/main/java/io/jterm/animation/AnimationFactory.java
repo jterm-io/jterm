@@ -18,7 +18,7 @@ public final class AnimationFactory {
     private static final TerminalSize DEFAULT_SIZE = new TerminalSize(80, 24);
 
     private static final List<Supplier<AnimatedBackground>> FACTORIES = List.of(
-            TwinkleStarfield::new,
+            () -> new TwinkleStarfield(new Random(), true),
             () -> new WarpStarfield(DEFAULT_SIZE),
             () -> new MatrixRain(DEFAULT_SIZE),
             () -> new PlasmaWash(DEFAULT_SIZE),
