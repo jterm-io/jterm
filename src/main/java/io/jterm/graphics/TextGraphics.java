@@ -69,22 +69,20 @@ public class TextGraphics {
         }
     }
 
+    /** Sub-cell resolution for shape-vector line drawing. */
+    private static final int SS_W = 20;  // sub-pixel columns per cell
+    private static final int SS_H = 30;  // sub-pixel rows per cell (taller, like monospace)
+
     /**
-     * Draws a line with ASCII "anti-aliasing": instead of placing the same
-     * character at every Bresenham point, picks a glyph whose visual position
-     * within the cell approximates where the ideal line passes through.
+     * Draws a line using shape-vector-based character selection. Instead of
+     * placing the same character at every Bresenham point, this method computes
+     * a 6D sampling vector for each cell the line passes through (representing
+     * how the line occupies 6 sub-regions of the cell), then finds the ASCII
+     * character whose shape best matches.
      *
-     * <p>Character selection is based on the entry and exit direction of the
-     * line at each cell:
-     * <ul>
-     *   <li>Straight horizontal segment → {@code -}</li>
-     *   <li>Straight vertical segment → {@code |}</li>
-     *   <li>Diagonal segment → {@code \} or {@code /}</li>
-     *   <li>Corner (horizontal↔vertical transition) → {@code .} (bottom) or
-     *       {@code '} (top), depending on which part of the cell the line clips</li>
-     *   <li>Diagonal↔straight transition → {@code .} or {@code '}</li>
-     *   <li>General fallback → {@code *}</li>
-     * </ul>
+     * <p>This produces smoother diagonal lines that follow the contour of the
+     * line, similar to the technique described in
+     * <a href="https://alexharri.com/blog/ascii-rendering">Alex Harri's ASCII rendering blog post</a>.
      *
      * @param x0   start column
      * @param y0   start row
@@ -93,7 +91,7 @@ public class TextGraphics {
      * @param cell template cell (character is overridden per-point; fg/bg preserved)
      */
     public void drawLineSmooth(int x0, int y0, int x1, int y1, TextCell cell) {
-        // Collect Bresenham path first so we can look at neighbours
+        // Collect Bresenham path
         java.util.List<int[]> path = new java.util.ArrayList<>();
         int dx = Math.abs(x1 - x0);
         int dy = Math.abs(y1 - y0);
@@ -108,69 +106,117 @@ public class TextGraphics {
             if (e2 > -dy) { err -= dy; cx += sx; }
             if (e2 < dx) { err += dx; cy += sy; }
         }
-        // Draw each point with a context-aware character
+
+        var table = ShapeVectorTable.instance();
+
         for (int i = 0; i < path.size(); i++) {
             int[] pt = path.get(i);
             int[] prev = i > 0 ? path.get(i - 1) : null;
             int[] next = i < path.size() - 1 ? path.get(i + 1) : null;
-            char ch = smoothLineChar(pt, prev, next);
+
+            double[] samplingVec = computeLineSamplingVector(pt, prev, next);
+            char ch = table.findBestChar(samplingVec, 0.01);
             buffer.setCell(pt[0], pt[1], cell.withCharacter(ch));
         }
     }
 
     /**
-     * Picks a glyph for a Bresenham point based on the entry and exit
-     * directions of the line through that cell.
+     * Computes a 6D sampling vector for a Bresenham point by supersampling
+     * the line segment (from prev to next, passing through pt) at sub-cell
+     * resolution and counting coverage per sub-region.
+     *
+     * The 6 sub-regions are arranged as a 2×3 grid:
+     * <pre>
+     *  ┌─────┬─────┐
+     *  │  0  │  1  │   top
+     *  ├─────┼─────┤
+     *  │  2  │  3  │   middle
+     *  ├─────┼─────┤
+     *  │  4  │  5  │   bottom
+     *  └─────┴─────┘
+     * </pre>
      */
-    static char smoothLineChar(int[] pt, int[] prev, int[] next) {
-        // Entry / exit direction vectors
-        int enDx = prev != null ? Integer.compare(pt[0], prev[0]) : 0;
-        int enDy = prev != null ? Integer.compare(pt[1], prev[1]) : 0;
-        int exDx = next != null ? Integer.compare(next[0], pt[0]) : 0;
-        int exDy = next != null ? Integer.compare(next[1], pt[1]) : 0;
-
-        // Endpoints: use the single direction
-        if (prev == null) return dirChar(exDx, exDy, exDx, exDy);
-        if (next == null) return dirChar(enDx, enDy, enDx, enDy);
-
-        boolean enH = enDx != 0 && enDy == 0;  // entry horizontal
-        boolean enV = enDx == 0 && enDy != 0;  // entry vertical
-        boolean enD = enDx != 0 && enDy != 0;  // entry diagonal
-        boolean exH = exDx != 0 && exDy == 0;
-        boolean exV = exDx == 0 && exDy != 0;
-        boolean exD = exDx != 0 && exDy != 0;
-
-        // Straight through — same type in and out
-        if (enH && exH) return '-';
-        if (enV && exV) return '|';
-        if (enD && exD && enDx == exDx && enDy == exDy)
-            return (exDx * exDy > 0) ? '\\' : '/';
-
-        // Corner: horizontal ↔ vertical transition
-        if ((enH && exV) || (enV && exH)) {
-            // Line clips a corner of the cell.
-            // If it trends downward → line passes through bottom → '.'
-            // If it trends upward  → line passes through top    → '''
-            if (exDy > 0 || enDy > 0) return '.';
-            return '\'';
+    static double[] computeLineSamplingVector(int[] pt, int[] prev, int[] next) {
+        // Determine the line segment that passes through this cell.
+        // We use prev→next (or pt→next for start, prev→pt for end) to get
+        // the direction of the line through the cell.
+        double segX0, segY0, segX1, segY1;
+        if (prev != null && next != null) {
+            segX0 = prev[0]; segY0 = prev[1];
+            segX1 = next[0]; segY1 = next[1];
+        } else if (prev != null) {
+            segX0 = prev[0]; segY0 = prev[1];
+            segX1 = pt[0];   segY1 = pt[1];
+        } else if (next != null) {
+            segX0 = pt[0];   segY0 = pt[1];
+            segX1 = next[0]; segY1 = next[1];
+        } else {
+            // Single point — fill center
+            double[] vec = new double[6];
+            vec[2] = vec[3] = 0.5;
+            return vec;
         }
 
-        // Diagonal ↔ straight transition: light character at the boundary
-        if (enD || exD) {
-            if (exDy > 0 || enDy > 0) return '.';
-            if (exDy < 0 || enDy < 0) return '\'';
-            return '*';
+        // Convert to sub-cell coordinates relative to pt (the cell origin).
+        // Bresenham cell (cx, cy) corresponds to the cell area [cx, cx+1) × [cy, cy+1)
+        // in continuous space. The line passes through the center of each cell,
+        // so we offset by +0.5 cell units to center the line in the sub-cell grid.
+        double lx0 = (segX0 - pt[0] + 0.5) * SS_W;
+        double ly0 = (segY0 - pt[1] + 0.5) * SS_H;
+        double lx1 = (segX1 - pt[0] + 0.5) * SS_W;
+        double ly1 = (segY1 - pt[1] + 0.5) * SS_H;
+
+        // Rasterize the line segment into the sub-cell grid and count hits per region
+        // We use a supersampling approach: walk the line at fine granularity
+        double[] vec = new double[6];
+        int[] counts = new int[6];
+        int totalSamples = 0;
+
+        // Number of samples along the segment — enough for good coverage
+        double segLen = Math.sqrt((lx1 - lx0) * (lx1 - lx0) + (ly1 - ly0) * (ly1 - ly0));
+        int numSamples = Math.max(SS_W + SS_H, (int) Math.ceil(segLen * 3));
+        // Also sample a thick line for better coverage — but keep it thin
+        // to match the visual weight of ASCII characters like '-', '/', etc.
+        int lineRadius = 1;
+
+        // Sample a 1-pixel-wide line (no radius) to match the thinness of
+        // characters like '-', '/', '|'.
+        for (int s = 0; s <= numSamples; s++) {
+            double t = (double) s / numSamples;
+            double px = lx0 + (lx1 - lx0) * t;
+            double py = ly0 + (ly1 - ly0) * t;
+
+            int ix = (int) Math.round(px);
+            int iy = (int) Math.round(py);
+            if (ix < 0 || ix >= SS_W || iy < 0 || iy >= SS_H) continue;
+
+            int regionIdx = subRegionIndex(ix, iy);
+            counts[regionIdx]++;
+            totalSamples++;
         }
 
-        return '*';
+        // Normalize: coverage of each region = fraction of sub-pixels in that
+        // region that the line touches. Each region has (SS_W/2)*(SS_H/3) pixels.
+        int regionPixels = (SS_W / 2) * (SS_H / 3);
+        if (regionPixels > 0) {
+            for (int d = 0; d < 6; d++) {
+                vec[d] = Math.min(1.0, (double) counts[d] / regionPixels);
+            }
+        }
+
+        return vec;
     }
 
-    /** Returns the character for a straight segment in the given direction. */
-    static char dirChar(int dx, int dy, int sdx, int sdy) {
-        if (dx != 0 && dy == 0) return '-';
-        if (dx == 0 && dy != 0) return '|';
-        if (dx != 0 && dy != 0) return (dx * dy > 0) ? '\\' : '/';
-        return '*';
+    /**
+     * Maps a sub-pixel coordinate to one of the 6 sub-regions.
+     * Grid: 2 columns × 3 rows
+     */
+    private static int subRegionIndex(int sx, int sy) {
+        int col = (sx * 2) / SS_W;      // 0 or 1
+        int row = (sy * 3) / SS_H;      // 0, 1, or 2
+        col = Math.min(1, Math.max(0, col));
+        row = Math.min(2, Math.max(0, row));
+        return row * 2 + col;
     }
 
     public void drawString(int x, int y, String text, TextCell template) {
