@@ -87,25 +87,17 @@ public final class ShapeVectorTable {
 
         g.dispose();
 
-        // Compute max per dimension for normalization
-        maxPerDim = new double[DIMENSIONS];
-        for (double[] vec : rawVectors) {
-            for (int d = 0; d < DIMENSIONS; d++) {
-                if (vec[d] > maxPerDim[d]) maxPerDim[d] = vec[d];
-            }
-        }
-        // Avoid division by zero
-        for (int d = 0; d < DIMENSIONS; d++) {
-            if (maxPerDim[d] < 1e-9) maxPerDim[d] = 1.0;
-        }
-
-        // Normalize
+        // Shape vectors are distributions (fraction of total ink per region),
+        // same space as sampling vectors (fraction of line per region).
+        // No per-dimension normalization needed — both already sum to ~1.0.
         vectors = new double[rawVectors.size()][DIMENSIONS];
         for (int i = 0; i < rawVectors.size(); i++) {
             for (int d = 0; d < DIMENSIONS; d++) {
-                vectors[i][d] = rawVectors.get(i)[d] / maxPerDim[d];
+                vectors[i][d] = rawVectors.get(i)[d];
             }
         }
+        // maxPerDim not used but kept for compatibility
+        maxPerDim = new double[DIMENSIONS];
     }
 
     private String buildCharset() {
@@ -148,36 +140,46 @@ public final class ShapeVectorTable {
         y = Math.max(fm.getAscent(), Math.min(y, CELL_H - fm.getDescent()));
         g.drawString(String.valueOf(c), x, y);
 
-        // Sample 6 sub-regions
-        double[] vec = new double[DIMENSIONS];
+        // Sample 6 sub-regions: count dark pixels per region
+        int[] darkCounts = new int[DIMENSIONS];
         int idx = 0;
         for (int row = 0; row < 3; row++) {
             for (int col = 0; col < 2; col++) {
                 int x0 = col * SUPER_W;
                 int y0 = row * SUPER_H;
-                vec[idx++] = sampleRegion(img, x0, y0, SUPER_W, SUPER_H);
+                darkCounts[idx++] = countDarkPixels(img, x0, y0, SUPER_W, SUPER_H);
+            }
+        }
+
+        // Convert to distribution: fraction of total ink in each region.
+        // This makes shape vectors comparable to sampling vectors (which
+        // also represent distribution of the line across regions).
+        int totalDark = 0;
+        for (int d = 0; d < DIMENSIONS; d++) totalDark += darkCounts[d];
+        double[] vec = new double[DIMENSIONS];
+        if (totalDark > 0) {
+            for (int d = 0; d < DIMENSIONS; d++) {
+                vec[d] = (double) darkCounts[d] / totalDark;
             }
         }
         return vec;
     }
 
     /**
-     * Counts dark pixels in the given region and returns the fraction (0.0–1.0).
+     * Counts dark pixels in the given region.
      */
-    private double sampleRegion(BufferedImage img, int x0, int y0, int w, int h) {
+    private int countDarkPixels(BufferedImage img, int x0, int y0, int w, int h) {
         int dark = 0;
-        int total = w * h;
         for (int y = y0; y < y0 + h && y < img.getHeight(); y++) {
             for (int x = x0; x < x0 + w && x < img.getWidth(); x++) {
                 int rgb = img.getRGB(x, y);
-                // Check if pixel is dark (R+G+B < 384, i.e. average < 128)
                 int r = (rgb >> 16) & 0xFF;
                 int g = (rgb >> 8) & 0xFF;
                 int b = rgb & 0xFF;
                 if (r + g + b < 384) dark++;
             }
         }
-        return total == 0 ? 0.0 : (double) dark / total;
+        return dark;
     }
 
     /**

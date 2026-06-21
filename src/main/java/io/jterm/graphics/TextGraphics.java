@@ -158,49 +158,60 @@ public class TextGraphics {
         }
 
         // Convert to sub-cell coordinates relative to pt (the cell origin).
-        // Bresenham cell (cx, cy) corresponds to the cell area [cx, cx+1) × [cy, cy+1)
-        // in continuous space. The line passes through the center of each cell,
-        // so we offset by +0.5 cell units to center the line in the sub-cell grid.
-        double lx0 = (segX0 - pt[0] + 0.5) * SS_W;
-        double ly0 = (segY0 - pt[1] + 0.5) * SS_H;
-        double lx1 = (segX1 - pt[0] + 0.5) * SS_W;
-        double ly1 = (segY1 - pt[1] + 0.5) * SS_H;
+        // Bresenham cell (cx, cy) corresponds to the cell area [cx, cx+1) x [cy, cy+1)
+        // in continuous space. The line passes through the center of each cell.
+        // We use +0.5 for cell centering, then -0.5 for sub-pixel centering
+        // so that the line falls between sub-pixels (at x=9.5, y=14.5) rather
+        // than on a sub-pixel boundary. This ensures symmetric sampling across
+        // sub-region boundaries, matching how centered characters like '|' and
+        // '-' render.
+        double lx0 = (segX0 - pt[0] + 0.5) * SS_W - 0.5;
+        double ly0 = (segY0 - pt[1] + 0.5) * SS_H - 0.5;
+        double lx1 = (segX1 - pt[0] + 0.5) * SS_W - 0.5;
+        double ly1 = (segY1 - pt[1] + 0.5) * SS_H - 0.5;
 
-        // Rasterize the line segment into the sub-cell grid and count hits per region
-        // We use a supersampling approach: walk the line at fine granularity
+        // Sample the line at sub-cell resolution. For each point on the line
+        // that falls within the cell, we record which sub-region it hits.
+        // The coverage vector represents the fraction of the line's length
+        // that passes through each sub-region — this matches how the shape
+        // vectors were computed (fraction of the character's ink in each region).
         double[] vec = new double[6];
         int[] counts = new int[6];
         int totalSamples = 0;
 
-        // Number of samples along the segment — enough for good coverage
         double segLen = Math.sqrt((lx1 - lx0) * (lx1 - lx0) + (ly1 - ly0) * (ly1 - ly0));
-        int numSamples = Math.max(SS_W + SS_H, (int) Math.ceil(segLen * 3));
-        // Also sample a thick line for better coverage — but keep it thin
-        // to match the visual weight of ASCII characters like '-', '/', etc.
-        int lineRadius = 1;
+        // Use enough samples for good spatial resolution
+        int numSamples = Math.max(SS_W * 4, (int) Math.ceil(segLen * 4));
 
-        // Sample a 1-pixel-wide line (no radius) to match the thinness of
-        // characters like '-', '/', '|'.
         for (int s = 0; s <= numSamples; s++) {
             double t = (double) s / numSamples;
             double px = lx0 + (lx1 - lx0) * t;
             double py = ly0 + (ly1 - ly0) * t;
 
-            int ix = (int) Math.round(px);
-            int iy = (int) Math.round(py);
-            if (ix < 0 || ix >= SS_W || iy < 0 || iy >= SS_H) continue;
-
-            int regionIdx = subRegionIndex(ix, iy);
-            counts[regionIdx]++;
-            totalSamples++;
+            // Sample a small disk around each point. The disk radius is chosen
+            // so that a centered line (vertical or horizontal) straddles the
+            // sub-region boundaries, matching how characters like '|' and '-'
+            // render across both sub-regions of their axis.
+            for (int dy = -2; dy <= 2; dy++) {
+                for (int dx = -2; dx <= 2; dx++) {
+                    if (dx * dx + dy * dy > 6) continue; // approx disk of radius ~2.4
+                    int ix = (int) Math.floor(px) + dx;
+                    int iy = (int) Math.floor(py) + dy;
+                    if (ix < 0 || ix >= SS_W || iy < 0 || iy >= SS_H) continue;
+                    int regionIdx = subRegionIndex(ix, iy);
+                    counts[regionIdx]++;
+                    totalSamples++;
+                }
+            }
         }
 
-        // Normalize: coverage of each region = fraction of sub-pixels in that
-        // region that the line touches. Each region has (SS_W/2)*(SS_H/3) pixels.
-        int regionPixels = (SS_W / 2) * (SS_H / 3);
-        if (regionPixels > 0) {
+        // Normalize: the sampling vector represents what fraction of the
+        // line's visible portion passes through each sub-region. This is
+        // analogous to the shape vector (what fraction of the character's
+        // ink is in each sub-region).
+        if (totalSamples > 0) {
             for (int d = 0; d < 6; d++) {
-                vec[d] = Math.min(1.0, (double) counts[d] / regionPixels);
+                vec[d] = (double) counts[d] / totalSamples;
             }
         }
 
@@ -212,8 +223,12 @@ public class TextGraphics {
      * Grid: 2 columns × 3 rows
      */
     private static int subRegionIndex(int sx, int sy) {
-        int col = (sx * 2) / SS_W;      // 0 or 1
-        int row = (sy * 3) / SS_H;      // 0, 1, or 2
+        // Use floor division so the center of the cell (x=SS_W/2) falls in
+        // the left region, not on the boundary. This ensures a centered
+        // vertical line samples both columns symmetrically when combined
+        // with the -0.5 sub-pixel offset.
+        int col = (sx < SS_W / 2) ? 0 : 1;
+        int row = sy * 3 / SS_H;
         col = Math.min(1, Math.max(0, col));
         row = Math.min(2, Math.max(0, row));
         return row * 2 + col;
