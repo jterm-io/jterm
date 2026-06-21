@@ -21,6 +21,7 @@ import io.jterm.style.ThemeManager;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Comparator;
 import java.util.List;
 import java.util.concurrent.CopyOnWriteArrayList;
 
@@ -46,9 +47,11 @@ public class DefaultTextGUI implements TextGUI, WindowManager {
     @Override
     public void addWindow(Window window) {
         windows.add(window);
-        activeWindow = window;
+        if (!window.getHints().contains(WindowHint.BACKGROUND)) {
+            activeWindow = window;
+            focusFirst(window.getContents());
+        }
         sizeWindow(window);
-        focusFirst(window.getContents());
         needsRefresh = true;
         forceComplete = true;
     }
@@ -59,7 +62,7 @@ public class DefaultTextGUI implements TextGUI, WindowManager {
         if (activeWindow == window) {
             var remaining = new ArrayList<>(windows);
             remaining.removeAll(windowsToRemove);
-            activeWindow = remaining.isEmpty() ? null : remaining.get(remaining.size() - 1);
+            activeWindow = remaining.isEmpty() ? null : findTopmostNonBackground(remaining);
             focusManager.clearFocus();
             if (activeWindow != null) focusFirst(activeWindow.getContents());
         }
@@ -132,6 +135,9 @@ public class DefaultTextGUI implements TextGUI, WindowManager {
             if (modal != null && activeWindow != null && !modal.equals(activeWindow)) {
                 return true;
             }
+            if (activeWindow != null && activeWindow.getHints().contains(WindowHint.BACKGROUND)) {
+                activeWindow = findTopmostNonBackground(new ArrayList<>(windows));
+            }
             var focused = activeWindow != null ? activeWindow.getFocusedComponent() : null;
             if (focused != null) {
                 focused.handleKeyStroke(ks);
@@ -170,7 +176,7 @@ public class DefaultTextGUI implements TextGUI, WindowManager {
             var fillCell = new io.jterm.style.TextCell(' ', theme.foreground(), theme.background());
             var buf = new io.jterm.screen.ScreenBuffer(screen.getTerminalSize(), fillCell);
             var g = new io.jterm.graphics.TextGraphics(buf);
-            for (var window : windows) {
+            for (var window : sortedWindows()) {
                 if (windowsToRemove.contains(window)) continue;
                 sizeWindow(window);
                 var sub = io.jterm.graphics.TextGraphicsExtensions.subGraphics(g, window.getPosition(), window.getSize());
@@ -216,12 +222,26 @@ public class DefaultTextGUI implements TextGUI, WindowManager {
         screen.close();
     }
 
+    private Window findTopmostNonBackground(List<Window> list) {
+        for (int i = list.size() - 1; i >= 0; i--) {
+            if (!list.get(i).getHints().contains(WindowHint.BACKGROUND)) return list.get(i);
+        }
+        return null;
+    }
+
     private Window modalWindow() {
         for (int i = windows.size() - 1; i >= 0; i--) {
             var w = windows.get(i);
             if (!windowsToRemove.contains(w) && w.getHints().contains(WindowHint.MODAL)) return w;
         }
         return null;
+    }
+
+    private List<Window> sortedWindows() {
+        return windows.stream()
+                .sorted(Comparator.comparingInt((Window w) -> w.getHints().contains(WindowHint.BACKGROUND) ? 0 : 1)
+                        .thenComparingInt(windows::indexOf))
+                .toList();
     }
 
     private void sizeWindow(Window window) {

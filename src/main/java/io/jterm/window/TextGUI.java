@@ -16,6 +16,7 @@ public interface TextGUI extends AutoCloseable {
     boolean processInput() throws IOException;
     void waitForInput() throws IOException;
     void updateScreen() throws IOException;
+    void requestRefresh();
     void close() throws IOException;
     Collection<Window> getWindows();
 }
