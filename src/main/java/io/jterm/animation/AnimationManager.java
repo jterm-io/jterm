@@ -104,6 +104,8 @@ public class AnimationManager {
         for (var bg : backgrounds) {
             if (bg instanceof StarfieldBackground sfb) {
                 sfb.tick(nowNanos);
+            } else if (bg instanceof TypewriterEffect tw) {
+                tw.tick(nowNanos);
             }
         }
     }
