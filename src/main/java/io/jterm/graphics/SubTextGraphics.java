@@ -65,6 +65,11 @@ public class SubTextGraphics extends TextGraphics {
     }
 
     @Override
+    public void drawLineSmooth(int x0, int y0, int x1, int y1, TextCell cell) {
+        parent.drawLineSmooth(this.x + x0, this.y + y0, this.x + x1, this.y + y1, cell);
+    }
+
+    @Override
     public void drawString(int x, int y, String text, TextCell template) {
         parent.drawString(this.x + x, this.y + y, text, template);
     }

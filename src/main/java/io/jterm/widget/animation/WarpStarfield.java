@@ -204,7 +204,7 @@ public class WarpStarfield extends AbstractComponent implements AnimatedBackgrou
                     : new TextCell(glyph, fg, bg);
 
             if (previous.isValid(size) && current.isValid(size)) {
-                graphics.drawLine(previous.column(), previous.row(),
+                graphics.drawLineSmooth(previous.column(), previous.row(),
                         current.column(), current.row(), cell);
             } else if (current.isValid(size)) {
                 graphics.setCell(current.column(), current.row(), cell);
