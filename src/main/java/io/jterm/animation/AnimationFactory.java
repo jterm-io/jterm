@@ -32,7 +32,10 @@ public final class AnimationFactory {
             () -> new Fireworks(DEFAULT_SIZE),
             () -> new DNAHelix(DEFAULT_SIZE),
             () -> new VoronoiCells(DEFAULT_SIZE),
-            () -> new PhosphorDecay(DEFAULT_SIZE)
+            () -> new PhosphorDecay(DEFAULT_SIZE),
+            () -> new Scanlines(DEFAULT_SIZE),
+            () -> new MoirePatterns(DEFAULT_SIZE),
+            () -> new Spirograph(DEFAULT_SIZE)
     );
 
     private AnimationFactory() {}
