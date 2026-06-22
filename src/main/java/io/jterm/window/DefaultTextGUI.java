@@ -201,6 +201,10 @@ public class DefaultTextGUI implements TextGUI, WindowManager {
                 screen.refresh();
             }
             needsRefresh = false;
+            // Call close() on windows being removed so they can clean up listeners/resources
+            for (var w : windowsToRemove) {
+                w.close();
+            }
             windows.removeAll(windowsToRemove);
             windowsToRemove.clear();
         }

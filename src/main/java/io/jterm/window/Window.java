@@ -29,4 +29,11 @@ public interface Window {
      * @param keyStroke the key stroke to handle
      */
     default void handleKeyStroke(io.jterm.core.input.KeyStroke keyStroke) {}
+
+    /**
+     * Called when the window is being removed from the GUI (user navigates away,
+     * disconnects, or the session ends). Override to unregister listeners, release
+     * resources, or perform cleanup. Default implementation does nothing.
+     */
+    default void close() {}
 }
