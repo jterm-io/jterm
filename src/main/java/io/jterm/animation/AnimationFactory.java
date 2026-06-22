@@ -35,7 +35,9 @@ public final class AnimationFactory {
             () -> new PhosphorDecay(DEFAULT_SIZE),
             () -> new Scanlines(DEFAULT_SIZE),
             () -> new MoirePatterns(DEFAULT_SIZE),
-            () -> new Spirograph(DEFAULT_SIZE)
+            () -> new Spirograph(DEFAULT_SIZE),
+            () -> new MandelbrotZoom(DEFAULT_SIZE),
+            () -> new DvdLogo(DEFAULT_SIZE)
     );
 
     private AnimationFactory() {}

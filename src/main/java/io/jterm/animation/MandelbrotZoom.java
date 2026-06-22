@@ -1,0 +1,178 @@
+package io.jterm.animation;
+
+import io.jterm.core.TerminalSize;
+import io.jterm.graphics.TextGraphics;
+import io.jterm.style.AnsiColor;
+import io.jterm.style.Color;
+import io.jterm.style.SGR;
+import io.jterm.style.TextCell;
+
+/**
+ * Animated Mandelbrot set zoom background.
+ *
+ * <p>Renders the Mandelbrot set at a fixed terminal resolution and slowly zooms
+ * into the well-known minibrot near (-0.745, 0.113). After zooming deeply the
+ * view resets and the cycle repeats. Iteration count drives both a character
+ * ramp and an ANSI color ramp, keeping CPU usage modest at terminal sizes.</p>
+ */
+public class MandelbrotZoom implements AnimatedBackground {
+
+    private static final int TARGET_FPS = 10;
+
+    // Character ramp from outside (space) to inside (#) of the set.
+    private static final char[] GLYPHS = {' ', '.', ':', '-', '=', '+', '*', '#'};
+
+    private static final int MAX_ITERATIONS = 40;
+
+    // Interesting point with a small minibrot.
+    private static final double CENTER_X = -0.745;
+    private static final double CENTER_Y = 0.113;
+
+    // Initial viewport width in the complex plane.
+    private static final double INITIAL_RANGE = 2.5;
+
+    // How much the range shrinks per frame (very slow zoom).
+    private static final double ZOOM_FACTOR = 0.96;
+
+    // After the view gets this narrow, reset.
+    private static final double MIN_RANGE = 0.0005;
+
+    private volatile boolean running;
+    private volatile TerminalSize lastSize;
+
+    private double range;
+
+    public MandelbrotZoom(TerminalSize preferredSize) {
+        onResize(preferredSize);
+        this.range = INITIAL_RANGE;
+    }
+
+    @Override
+    public void renderFrame(TextGraphics graphics, TerminalSize size) {
+        lastSize = size;
+        if (size.columns() <= 0 || size.rows() <= 0) {
+            return;
+        }
+
+        // To avoid extreme aspect ratio distortion, keep the visible region
+        // square and centered on the terminal, using the smaller dimension.
+        int cols = size.columns();
+        int rows = size.rows();
+        int dim = Math.min(cols, rows);
+        int xOffset = (cols - dim) / 2;
+        int yOffset = (rows - dim) / 2;
+
+        double halfRange = range / 2.0;
+        double minX = CENTER_X - halfRange;
+        double maxX = CENTER_X + halfRange;
+        double minY = CENTER_Y - halfRange;
+        double maxY = CENTER_Y + halfRange;
+
+        for (int y = 0; y < rows; y++) {
+            for (int x = 0; x < cols; x++) {
+                // Center the square viewport; border cells are left black.
+                if (x < xOffset || x >= xOffset + dim || y < yOffset || y >= yOffset + dim) {
+                    graphics.setCell(x, y, new TextCell(' ', AnsiColor.BLACK, AnsiColor.BLACK));
+                    continue;
+                }
+
+                double cx = map(x - xOffset, 0, dim - 1, minX, maxX);
+                double cy = map(y - yOffset, 0, dim - 1, minY, maxY);
+
+                int iterations = mandelbrotIterations(cx, cy, MAX_ITERATIONS);
+                graphics.setCell(x, y, cellFor(iterations));
+            }
+        }
+
+        range *= ZOOM_FACTOR;
+        if (range < MIN_RANGE) {
+            range = INITIAL_RANGE;
+        }
+    }
+
+    private static int mandelbrotIterations(double cr, double ci, int maxIterations) {
+        double zr = 0.0;
+        double zi = 0.0;
+        for (int i = 0; i < maxIterations; i++) {
+            double zr2 = zr * zr;
+            double zi2 = zi * zi;
+            if (zr2 + zi2 > 4.0) {
+                return i;
+            }
+            zi = 2.0 * zr * zi + ci;
+            zr = zr2 - zi2 + cr;
+        }
+        return maxIterations;
+    }
+
+    private static TextCell cellFor(int iterations) {
+        // Inside the set (hit max iterations) uses the brightest glyph/color.
+        int level = Math.min(GLYPHS.length - 1, iterations / (MAX_ITERATIONS / GLYPHS.length + 1));
+        if (iterations == MAX_ITERATIONS) {
+            level = GLYPHS.length - 1;
+        }
+
+        char ch = GLYPHS[level];
+        Color fg = switch (level) {
+            case 0 -> AnsiColor.BLACK;
+            case 1 -> AnsiColor.BLUE;
+            case 2 -> AnsiColor.CYAN;
+            case 3 -> AnsiColor.GREEN;
+            case 4 -> AnsiColor.YELLOW;
+            case 5 -> AnsiColor.BRIGHT_YELLOW;
+            case 6 -> AnsiColor.BRIGHT_RED;
+            default -> AnsiColor.BRIGHT_WHITE;
+        };
+
+        SGR sgr = (level >= GLYPHS.length / 2) ? SGR.BOLD : SGR.DIM;
+        return new TextCell(ch, fg, AnsiColor.BLACK, sgr);
+    }
+
+    private static double map(int value, int srcMin, int srcMax, double dstMin, double dstMax) {
+        if (srcMax == srcMin) {
+            return (dstMin + dstMax) / 2.0;
+        }
+        double t = (value - srcMin) / (double) (srcMax - srcMin);
+        return dstMin + t * (dstMax - dstMin);
+    }
+
+    @Override
+    public void onResize(TerminalSize newSize) {
+        this.lastSize = newSize;
+    }
+
+    @Override
+    public void start() {
+        running = true;
+    }
+
+    @Override
+    public void stop() {
+        running = false;
+    }
+
+    @Override
+    public boolean isRunning() {
+        return running;
+    }
+
+    @Override
+    public int targetFps() {
+        return TARGET_FPS;
+    }
+
+    @Override
+    public TerminalSize lastSize() {
+        return lastSize;
+    }
+
+    /** Visible for tests: set viewport range directly. */
+    public void setRange(double range) {
+        this.range = range;
+    }
+
+    /** Visible for tests: current viewport range in the complex plane. */
+    public double getRange() {
+        return range;
+    }
+}

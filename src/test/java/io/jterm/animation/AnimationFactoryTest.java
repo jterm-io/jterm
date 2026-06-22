@@ -40,9 +40,9 @@ class AnimationFactoryTest {
     @DisplayName("factoryCount returns expected number of registered animations")
     void factoryCountMatches() {
         // 5 pre-existing (TwinkleStarfield, WarpStarfield, PlasmaWash,
-        // CircuitBoard, StarfieldBackground) + 12 new = 17
-        assertEquals(17, AnimationFactory.factoryCount(),
-                "expected exactly 17 animation factories, got " + AnimationFactory.factoryCount());
+        // CircuitBoard, StarfieldBackground) + 14 new = 19
+        assertEquals(19, AnimationFactory.factoryCount(),
+                "expected exactly 19 animation factories, got " + AnimationFactory.factoryCount());
     }
 
     @Test
