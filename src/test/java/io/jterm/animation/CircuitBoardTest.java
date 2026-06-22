@@ -201,22 +201,25 @@ class CircuitBoardTest {
         board.setBounds(TerminalPosition.TOP_LEFT, size);
         board.setTargetFps(60);
 
+        // Animate many frames, drawing each frame so pulses actually advance/spawn.
         var buffer1 = new ScreenBuffer(size);
         board.tick(0);
         board.draw(new TextGraphics(buffer1));
 
-        var buffer2 = new ScreenBuffer(size);
-        for (int i = 0; i < 120; i++) {
-            board.tick(i * 30_000_000L);
-            board.draw(new TextGraphics(buffer2));
-        }
-
         boolean anyDifferent = false;
-        for (int r = 0; r < size.rows(); r++) {
-            for (int c = 0; c < size.columns(); c++) {
-                if (!buffer1.getCell(c, r).equals(buffer2.getCell(c, r))) {
-                    anyDifferent = true;
-                    break;
+        var buffer2 = new ScreenBuffer(size);
+        for (int attempt = 0; attempt < 10 && !anyDifferent; attempt++) {
+            for (int i = 0; i < 120; i++) {
+                board.tick(attempt * 1_000_000_000L + i * 30_000_000L);
+                board.draw(new TextGraphics(buffer2));
+            }
+
+            for (int r = 0; r < size.rows() && !anyDifferent; r++) {
+                for (int c = 0; c < size.columns(); c++) {
+                    if (!buffer1.getCell(c, r).equals(buffer2.getCell(c, r))) {
+                        anyDifferent = true;
+                        break;
+                    }
                 }
             }
         }

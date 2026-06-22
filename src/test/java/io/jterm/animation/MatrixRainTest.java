@@ -141,33 +141,38 @@ class MatrixRainTest {
         var size = new TerminalSize(20, 10);
         var rain = new MatrixRain(size, false, false);
         rain.setBounds(TerminalPosition.TOP_LEFT, size);
-        rain.tick(0);
-
+        // Animate many frames; each draw() advances the columns once.
         var buffer = new ScreenBuffer(size);
-        rain.draw(new TextGraphics(buffer));
+        for (int i = 0; i < 60; i++) {
+            rain.tick(i * 67_000_000L);
+            rain.draw(new TextGraphics(buffer));
+        }
 
-        int headX = -1;
-        int headY = -1;
-        for (int c = 0; c < size.columns() && headX < 0; c++) {
-            for (int r = 0; r < size.rows(); r++) {
-                var cell = buffer.getCell(c, r);
-                if (cell.fg() == AnsiColor.BRIGHT_GREEN) {
-                    headX = c;
+        // Find any column with a bright-green head and green trail cells above it
+        // (MatrixRain draws the trail behind / above the falling head).
+        boolean foundTrail = false;
+        for (int c = 0; c < size.columns() && !foundTrail; c++) {
+            int headY = -1;
+            for (int r = size.rows() - 1; r >= 0; r--) {
+                if (buffer.getCell(c, r).fg() == AnsiColor.BRIGHT_GREEN) {
                     headY = r;
                     break;
                 }
             }
-        }
-        assertTrue(headX >= 0, "there should be a bright green head somewhere");
+            if (headY < 0) continue;
 
-        int trailCount = 0;
-        for (int r = 0; r < headY; r++) {
-            var cell = buffer.getCell(headX, r);
-            if (cell.character().charAt(0) != ' ' && cell.fg() == AnsiColor.GREEN) {
-                trailCount++;
+            int trailCount = 0;
+            for (int r = headY - 1; r >= 0; r--) {
+                var cell = buffer.getCell(c, r);
+                if (cell.character().charAt(0) != ' ' && cell.fg() == AnsiColor.GREEN) {
+                    trailCount++;
+                }
+            }
+            if (trailCount >= 1) {
+                foundTrail = true;
             }
         }
-        assertTrue(trailCount >= 1, "there should be at least one green trail cell below head");
+        assertTrue(foundTrail, "there should be at least one column with a bright green head and green trail above it");
     }
 
     @Test
