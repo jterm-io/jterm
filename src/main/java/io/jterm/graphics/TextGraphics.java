@@ -69,20 +69,15 @@ public class TextGraphics {
         }
     }
 
-    /** Sub-cell resolution for shape-vector line drawing. */
-    private static final int SS_W = 20;  // sub-pixel columns per cell
-    private static final int SS_H = 30;  // sub-pixel rows per cell (taller, like monospace)
-
     /**
-     * Draws a line using shape-vector-based character selection. Instead of
-     * placing the same character at every Bresenham point, this method computes
-     * a 6D sampling vector for each cell the line passes through (representing
-     * how the line occupies 6 sub-regions of the cell), then finds the ASCII
-     * character whose shape best matches.
+     * Draws a line using direction-based character selection. For each
+     * Bresenham point, the incoming and outgoing directions (from prev/next
+     * points in the path) determine the character. Straight segments use
+     * directional chars (-, |, \\, /); corners use anti-aliased chars that
+     * connect the two directions smoothly.
      *
-     * <p>This produces smoother diagonal lines that follow the contour of the
-     * line, similar to the technique described in
-     * <a href="https://alexharri.com/blog/ascii-rendering">Alex Harri's ASCII rendering blog post</a>.
+     * <p>Inspired by the code-golf ASCII anti-aliasing challenge
+     * (https://codegolf.stackexchange.com/questions/5450).
      *
      * @param x0   start column
      * @param y0   start row
@@ -91,7 +86,6 @@ public class TextGraphics {
      * @param cell template cell (character is overridden per-point; fg/bg preserved)
      */
     public void drawLineSmooth(int x0, int y0, int x1, int y1, TextCell cell) {
-        // Collect Bresenham path
         java.util.List<int[]> path = new java.util.ArrayList<>();
         int dx = Math.abs(x1 - x0);
         int dy = Math.abs(y1 - y0);
@@ -107,131 +101,135 @@ public class TextGraphics {
             if (e2 < dx) { err += dx; cy += sy; }
         }
 
-        var table = ShapeVectorTable.instance();
-
         for (int i = 0; i < path.size(); i++) {
             int[] pt = path.get(i);
             int[] prev = i > 0 ? path.get(i - 1) : null;
             int[] next = i < path.size() - 1 ? path.get(i + 1) : null;
-
-            double[] samplingVec = computeLineSamplingVector(pt, prev, next);
-            char ch = table.findBestChar(samplingVec, 0.01);
+            char ch = lineCharFor(pt, prev, next);
             buffer.setCell(pt[0], pt[1], cell.withCharacter(ch));
         }
     }
 
-    /**
-     * Computes a 6D sampling vector for a Bresenham point by supersampling
-     * the line segment (from prev to next, passing through pt) at sub-cell
-     * resolution and counting coverage per sub-region.
-     *
-     * The 6 sub-regions are arranged as a 2×3 grid:
-     * <pre>
-     *  ┌─────┬─────┐
-     *  │  0  │  1  │   top
-     *  ├─────┼─────┤
-     *  │  2  │  3  │   middle
-     *  ├─────┼─────┤
-     *  │  4  │  5  │   bottom
-     *  └─────┴─────┘
-     * </pre>
-     */
-    static double[] computeLineSamplingVector(int[] pt, int[] prev, int[] next) {
-        // Determine the line segment that passes through this cell.
-        // We use prev→next (or pt→next for start, prev→pt for end) to get
-        // the direction of the line through the cell.
-        double segX0, segY0, segX1, segY1;
-        if (prev != null && next != null) {
-            segX0 = prev[0]; segY0 = prev[1];
-            segX1 = next[0]; segY1 = next[1];
-        } else if (prev != null) {
-            segX0 = prev[0]; segY0 = prev[1];
-            segX1 = pt[0];   segY1 = pt[1];
-        } else if (next != null) {
-            segX0 = pt[0];   segY0 = pt[1];
-            segX1 = next[0]; segY1 = next[1];
-        } else {
-            // Single point — fill center
-            double[] vec = new double[6];
-            vec[2] = vec[3] = 0.5;
-            return vec;
-        }
-
-        // Convert to sub-cell coordinates relative to pt (the cell origin).
-        // Bresenham cell (cx, cy) corresponds to the cell area [cx, cx+1) x [cy, cy+1)
-        // in continuous space. The line passes through the center of each cell.
-        // We use +0.5 for cell centering, then -0.5 for sub-pixel centering
-        // so that the line falls between sub-pixels (at x=9.5, y=14.5) rather
-        // than on a sub-pixel boundary. This ensures symmetric sampling across
-        // sub-region boundaries, matching how centered characters like '|' and
-        // '-' render.
-        double lx0 = (segX0 - pt[0] + 0.5) * SS_W - 0.5;
-        double ly0 = (segY0 - pt[1] + 0.5) * SS_H - 0.5;
-        double lx1 = (segX1 - pt[0] + 0.5) * SS_W - 0.5;
-        double ly1 = (segY1 - pt[1] + 0.5) * SS_H - 0.5;
-
-        // Sample the line at sub-cell resolution. For each point on the line
-        // that falls within the cell, we record which sub-region it hits.
-        // The coverage vector represents the fraction of the line's length
-        // that passes through each sub-region — this matches how the shape
-        // vectors were computed (fraction of the character's ink in each region).
-        double[] vec = new double[6];
-        int[] counts = new int[6];
-        int totalSamples = 0;
-
-        double segLen = Math.sqrt((lx1 - lx0) * (lx1 - lx0) + (ly1 - ly0) * (ly1 - ly0));
-        // Use enough samples for good spatial resolution
-        int numSamples = Math.max(SS_W * 4, (int) Math.ceil(segLen * 4));
-
-        for (int s = 0; s <= numSamples; s++) {
-            double t = (double) s / numSamples;
-            double px = lx0 + (lx1 - lx0) * t;
-            double py = ly0 + (ly1 - ly0) * t;
-
-            // Sample a small disk around each point. The disk radius is chosen
-            // so that a centered line (vertical or horizontal) straddles the
-            // sub-region boundaries, matching how characters like '|' and '-'
-            // render across both sub-regions of their axis.
-            for (int dy = -2; dy <= 2; dy++) {
-                for (int dx = -2; dx <= 2; dx++) {
-                    if (dx * dx + dy * dy > 6) continue; // approx disk of radius ~2.4
-                    int ix = (int) Math.floor(px) + dx;
-                    int iy = (int) Math.floor(py) + dy;
-                    if (ix < 0 || ix >= SS_W || iy < 0 || iy >= SS_H) continue;
-                    int regionIdx = subRegionIndex(ix, iy);
-                    counts[regionIdx]++;
-                    totalSamples++;
-                }
-            }
-        }
-
-        // Normalize: the sampling vector represents what fraction of the
-        // line's visible portion passes through each sub-region. This is
-        // analogous to the shape vector (what fraction of the character's
-        // ink is in each sub-region).
-        if (totalSamples > 0) {
-            for (int d = 0; d < 6; d++) {
-                vec[d] = (double) counts[d] / totalSamples;
-            }
-        }
-
-        return vec;
+    // Direction codes: 0=E, 1=SE, 2=S, 3=SW, 4=W, 5=NW, 6=N, 7=NE
+    private static int dirCode(int dx, int dy) {
+        if (dx > 0 && dy == 0) return 0;  // E
+        if (dx > 0 && dy > 0) return 1;   // SE
+        if (dx == 0 && dy > 0) return 2;  // S
+        if (dx < 0 && dy > 0) return 3;   // SW
+        if (dx < 0 && dy == 0) return 4;  // W
+        if (dx < 0 && dy < 0) return 5;   // NW
+        if (dx == 0 && dy < 0) return 6;  // N
+        if (dx > 0 && dy < 0) return 7;   // NE
+        return -1;
     }
 
     /**
-     * Maps a sub-pixel coordinate to one of the 6 sub-regions.
-     * Grid: 2 columns × 3 rows
+     * Character lookup: [fromDir][toDir] where fromDir is the side where prev is
+     * and toDir is the side where next is. Directions: 0=E,1=SE,2=S,3=SW,
+     * 4=W,5=NW,6=N,7=NE. The "from" direction is where the line came FROM
+     * (i.e., the side of the cell where prev is located).
      */
-    private static int subRegionIndex(int sx, int sy) {
-        // Use floor division so the center of the cell (x=SS_W/2) falls in
-        // the left region, not on the boundary. This ensures a centered
-        // vertical line samples both columns symmetrically when combined
-        // with the -0.5 sub-pixel offset.
-        int col = (sx < SS_W / 2) ? 0 : 1;
-        int row = sy * 3 / SS_H;
-        col = Math.min(1, Math.max(0, col));
-        row = Math.min(2, Math.max(0, row));
-        return row * 2 + col;
+    private static final char[][] LINE_CHARS = new char[8][8];
+    static {
+        // Default: use '#' for unexpected combinations
+        for (char[] row : LINE_CHARS) java.util.Arrays.fill(row, '#');
+
+        // Straight lines (from = opposite of to)
+        LINE_CHARS[0][4] = '-';  // E→W = horizontal
+        LINE_CHARS[4][0] = '-';  // W→E = horizontal
+        LINE_CHARS[6][2] = '|';  // N→S = vertical
+        LINE_CHARS[2][6] = '|';  // S→N = vertical
+        LINE_CHARS[5][1] = '\\'; // NW→SE = diagonal
+        LINE_CHARS[1][5] = '\\'; // SE→NW = diagonal
+        LINE_CHARS[7][3] = '/';  // NE→SW = diagonal
+        LINE_CHARS[3][7] = '/';  // SW→NE = diagonal
+
+        // Cardinal corners (code-golf anti-aliased chars)
+        // 'd' = right+down, 'b' = left+down, 'Y' = right+up, 'F' = left+up
+        LINE_CHARS[0][2] = 'd';  // from E, to S: right+down → 'd'
+        LINE_CHARS[2][0] = 'd';  // from S, to E: right+down → 'd'
+        LINE_CHARS[4][2] = 'b';  // from W, to S: left+down → 'b'
+        LINE_CHARS[2][4] = 'b';  // from S, to W: left+down → 'b'
+        LINE_CHARS[0][6] = 'Y';  // from E, to N: right+up → 'Y'
+        LINE_CHARS[6][0] = 'Y';  // from N, to E: right+up → 'Y'
+        LINE_CHARS[4][6] = 'F';  // from W, to N: left+up → 'F'
+        LINE_CHARS[6][4] = 'F';  // from N, to W: left+up → 'F'
+
+        // Cardinal→diagonal transitions: use the code-golf char for the
+        // nearest cardinal corner. The diagonal adds one new cardinal
+        // component to the existing cardinal direction.
+        // E→SE (0→1): adds S to E → like E→S = 'd'
+        LINE_CHARS[0][1] = 'd';  // E→SE
+        LINE_CHARS[1][0] = 'Y';  // SE→E (removes S, levels to E: from NW, to E = 'Y')
+        LINE_CHARS[0][7] = 'Y';  // E→NE (adds N to E: like E→N = 'Y')
+        LINE_CHARS[7][0] = 'd';  // NE→E (removes N, levels to E: from SW, to E = 'd')
+        LINE_CHARS[4][3] = 'b';  // W→SW (adds S to W: like W→S = 'b')
+        LINE_CHARS[3][4] = 'F';  // SW→W (removes S, levels to W: from NE, to W = 'F')
+        LINE_CHARS[4][5] = 'F';  // W→NW (adds N to W: like W→N = 'F')
+        LINE_CHARS[5][4] = 'b';  // NW→W (removes N, levels to W: from SE, to W = 'b')
+
+        // S→SE (2→1): adds E to S → like S→E = 'd'
+        LINE_CHARS[2][1] = 'd';  // S→SE
+        LINE_CHARS[1][2] = 'b';  // SE→S (removes E, levels to S: from NW, to S = 'b')
+        LINE_CHARS[2][3] = 'b';  // S→SW (adds W to S: like S→W = 'b')
+        LINE_CHARS[3][2] = 'd';  // SW→S (removes W, levels to S: from NE, to S = 'd')
+        LINE_CHARS[6][7] = 'Y';  // N→NE (adds E to N: like N→E = 'Y')
+        LINE_CHARS[7][6] = 'F';  // NE→N (removes E, levels to N: from SW, to N = 'F')
+        LINE_CHARS[6][5] = 'F';  // N→NW (adds W to N: like N→W = 'F')
+        LINE_CHARS[5][6] = 'Y';  // NW→N (removes W, levels to N: from SE, to N = 'Y')
+
+        // Diagonal→diagonal corners (direction reverses on one axis)
+        // SE→SW (1→3): from NW to E... wait. These are rare in Bresenham.
+        // Just use the outgoing direction's char as fallback.
+        LINE_CHARS[1][3] = 'b';  // SE→SW: goes from down-right to down-left → 'b' (left+down)
+        LINE_CHARS[3][1] = 'd';  // SW→SE: goes from down-left to down-right → 'd' (right+down)
+        LINE_CHARS[5][7] = 'Y';  // NW→NE: goes from up-left to up-right → 'Y' (right+up)
+        LINE_CHARS[7][5] = 'F';  // NE→NW: goes from up-right to up-left → 'F' (left+up)
+        LINE_CHARS[1][7] = '-';  // SE→NE: goes from down-right to up-right → vertical flip, use '|'? 
+        LINE_CHARS[7][1] = '-';  // NE→SE: similar
+        LINE_CHARS[3][5] = '-';  // SW→NW: similar
+        LINE_CHARS[5][3] = '-';  // NW→SW: similar
+    }
+
+    /**
+     * Picks a character for a Bresenham point based on the incoming direction
+     * (from prev) and outgoing direction (to next).
+     */
+    static char lineCharFor(int[] pt, int[] prev, int[] next) {
+        // Single point
+        if (prev == null && next == null) return '@';
+
+        // Endpoint — use the one direction we have
+        if (prev == null) {
+            int outDx = Integer.signum(next[0] - pt[0]);
+            int outDy = Integer.signum(next[1] - pt[1]);
+            return dirChar(outDx, outDy);
+        }
+        if (next == null) {
+            int inDx = Integer.signum(pt[0] - prev[0]);
+            int inDy = Integer.signum(pt[1] - prev[1]);
+            return dirChar(inDx, inDy);
+        }
+
+        // Interior point: determine from/to directions
+        int inDx = Integer.signum(pt[0] - prev[0]);
+        int inDy = Integer.signum(pt[1] - prev[1]);
+        int outDx = Integer.signum(next[0] - pt[0]);
+        int outDy = Integer.signum(next[1] - pt[1]);
+
+        int fromDir = dirCode(-inDx, -inDy); // "from" = opposite of incoming = where prev is
+        int toDir = dirCode(outDx, outDy);   // "to" = where next is
+
+        if (fromDir < 0 || toDir < 0) return '@';
+        return LINE_CHARS[fromDir][toDir];
+    }
+
+    /** Character for a single direction (used at endpoints). */
+    private static char dirChar(int dx, int dy) {
+        if (dy == 0) return '-';       // horizontal E/W
+        if (dx == 0) return '|';       // vertical N/S
+        if (dx == dy) return '\\';     // SE/NW
+        return '/';                     // NE/SW
     }
 
     public void drawString(int x, int y, String text, TextCell template) {

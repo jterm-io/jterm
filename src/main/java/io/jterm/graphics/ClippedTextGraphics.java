@@ -60,13 +60,11 @@ public class ClippedTextGraphics extends TextGraphics {
             if (e2 > -dy) { err -= dy; cx += sx; }
             if (e2 < dx) { err += dx; cy += sy; }
         }
-        var table = ShapeVectorTable.instance();
         for (int i = 0; i < path.size(); i++) {
             int[] pt = path.get(i);
             int[] prev = i > 0 ? path.get(i - 1) : null;
             int[] next = i < path.size() - 1 ? path.get(i + 1) : null;
-            double[] samplingVec = computeLineSamplingVector(pt, prev, next);
-            char ch = table.findBestChar(samplingVec, 0.01);
+            char ch = lineCharFor(pt, prev, next);
             setCell(pt[0], pt[1], cell.withCharacter(ch));
         }
     }
