@@ -79,9 +79,14 @@ class LavaLampTest {
 
         lamp.renderFrame(new TextGraphics(buffer), size);
 
+        // Fill clears the background to black everywhere
         assertEquals(AnsiColor.BLACK, buffer.getCell(0, 0).bg());
         assertEquals(AnsiColor.BLACK, buffer.getCell(10, 2).bg());
-        assertEquals(' ', buffer.getCell(10, 2).character().charAt(0));
+        // The pre-set 'X' must be gone — either cleared to space by the fill
+        // or overwritten by a lava glyph if a metaball overlaps this cell.
+        // Metaball positions are random, so we can't assume (10,2) is empty.
+        char ch = buffer.getCell(10, 2).character().charAt(0);
+        assertNotEquals('X', ch, "pre-set character should be cleared or overwritten by render");
     }
 
     @Test
