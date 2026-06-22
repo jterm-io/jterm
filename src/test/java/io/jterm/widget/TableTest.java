@@ -99,6 +99,69 @@ class TableTest {
     }
 
     @Test
+    void ctrlPUppercaseMovesSelectionUp() {
+        var table = new Table("A");
+        table.addRow("1");
+        table.addRow("2");
+        table.setBounds(TerminalPosition.TOP_LEFT, new TerminalSize(10, 5));
+        table.setSelectedRow(1);
+        table.handleKeyStroke(KeyStroke.character('P', true, false, false));
+        assertEquals(0, table.getSelectedRow());
+    }
+
+    @Test
+    void ctrlPLowercaseMovesSelectionUp() {
+        var table = new Table("A");
+        table.addRow("1");
+        table.addRow("2");
+        table.setBounds(TerminalPosition.TOP_LEFT, new TerminalSize(10, 5));
+        table.setSelectedRow(1);
+        table.handleKeyStroke(KeyStroke.character('p', true, false, false));
+        assertEquals(0, table.getSelectedRow());
+    }
+
+    @Test
+    void ctrlNUppercaseMovesSelectionDown() {
+        var table = new Table("A");
+        table.addRow("1");
+        table.addRow("2");
+        table.setBounds(TerminalPosition.TOP_LEFT, new TerminalSize(10, 5));
+        table.handleKeyStroke(KeyStroke.character('N', true, false, false));
+        assertEquals(1, table.getSelectedRow());
+    }
+
+    @Test
+    void ctrlNLowercaseMovesSelectionDown() {
+        var table = new Table("A");
+        table.addRow("1");
+        table.addRow("2");
+        table.setBounds(TerminalPosition.TOP_LEFT, new TerminalSize(10, 5));
+        table.handleKeyStroke(KeyStroke.character('n', true, false, false));
+        assertEquals(1, table.getSelectedRow());
+    }
+
+    @Test
+    void ctrlNStopsAtBottom() {
+        var table = new Table("A");
+        table.addRow("1");
+        table.addRow("2");
+        table.setBounds(TerminalPosition.TOP_LEFT, new TerminalSize(10, 5));
+        table.setSelectedRow(1);
+        table.handleKeyStroke(KeyStroke.character('N', true, false, false));
+        assertEquals(1, table.getSelectedRow());
+    }
+
+    @Test
+    void ctrlPStopsAtTop() {
+        var table = new Table("A");
+        table.addRow("1");
+        table.addRow("2");
+        table.setBounds(TerminalPosition.TOP_LEFT, new TerminalSize(10, 5));
+        table.handleKeyStroke(KeyStroke.character('P', true, false, false));
+        assertEquals(0, table.getSelectedRow());
+    }
+
+    @Test
     void drawsHeaderRow() {
         var buffer = new ScreenBuffer(new TerminalSize(20, 5));
         var table = new Table("Name", "Age");

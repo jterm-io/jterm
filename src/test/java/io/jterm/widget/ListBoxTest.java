@@ -78,6 +78,69 @@ class ListBoxTest {
     }
 
     @Test
+    void ctrlPUppercaseMovesSelectionUp() {
+        var list = new ListBox<String>();
+        list.addItem("A");
+        list.addItem("B");
+        list.setBounds(TerminalPosition.TOP_LEFT, new TerminalSize(5, 3));
+        list.setSelectedIndex(1);
+        list.handleKeyStroke(KeyStroke.character('P', true, false, false));
+        assertEquals(0, list.getSelectedIndex());
+    }
+
+    @Test
+    void ctrlPLowercaseMovesSelectionUp() {
+        var list = new ListBox<String>();
+        list.addItem("A");
+        list.addItem("B");
+        list.setBounds(TerminalPosition.TOP_LEFT, new TerminalSize(5, 3));
+        list.setSelectedIndex(1);
+        list.handleKeyStroke(KeyStroke.character('p', true, false, false));
+        assertEquals(0, list.getSelectedIndex());
+    }
+
+    @Test
+    void ctrlNUppercaseMovesSelectionDown() {
+        var list = new ListBox<String>();
+        list.addItem("A");
+        list.addItem("B");
+        list.setBounds(TerminalPosition.TOP_LEFT, new TerminalSize(5, 3));
+        list.handleKeyStroke(KeyStroke.character('N', true, false, false));
+        assertEquals(1, list.getSelectedIndex());
+    }
+
+    @Test
+    void ctrlNLowercaseMovesSelectionDown() {
+        var list = new ListBox<String>();
+        list.addItem("A");
+        list.addItem("B");
+        list.setBounds(TerminalPosition.TOP_LEFT, new TerminalSize(5, 3));
+        list.handleKeyStroke(KeyStroke.character('n', true, false, false));
+        assertEquals(1, list.getSelectedIndex());
+    }
+
+    @Test
+    void ctrlNStopsAtBottom() {
+        var list = new ListBox<String>();
+        list.addItem("A");
+        list.addItem("B");
+        list.setBounds(TerminalPosition.TOP_LEFT, new TerminalSize(5, 3));
+        list.setSelectedIndex(1);
+        list.handleKeyStroke(KeyStroke.character('N', true, false, false));
+        assertEquals(1, list.getSelectedIndex());
+    }
+
+    @Test
+    void ctrlPStopsAtTop() {
+        var list = new ListBox<String>();
+        list.addItem("A");
+        list.addItem("B");
+        list.setBounds(TerminalPosition.TOP_LEFT, new TerminalSize(5, 3));
+        list.handleKeyStroke(KeyStroke.character('P', true, false, false));
+        assertEquals(0, list.getSelectedIndex());
+    }
+
+    @Test
     void enterFiresSelectionListener() {
         var list = new ListBox<String>();
         list.addItem("A");

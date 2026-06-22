@@ -2,6 +2,7 @@ package io.jterm.widget;
 
 import io.jterm.core.TerminalPosition;
 import io.jterm.core.TerminalSize;
+import io.jterm.core.input.KeyType;
 import io.jterm.graphics.TextGraphics;
 import io.jterm.style.AnsiColor;
 import io.jterm.style.SGR;
@@ -193,6 +194,14 @@ public class Table extends AbstractComponent implements TableModelListener {
 
     @Override
     public void handleKeyStroke(io.jterm.core.input.KeyStroke keyStroke) {
+        // Emacs-style key bindings (Ctrl+letter arrives as CHARACTER with ctrl=true)
+        if (keyStroke.type() == KeyType.CHARACTER && keyStroke.ctrl()) {
+            switch (keyStroke.character()) {
+                case 'P', 'p' -> { setSelectedRow(selectedRow - 1); return; }
+                case 'N', 'n' -> { setSelectedRow(selectedRow + 1); return; }
+                default -> { return; }  // Ignore other Ctrl+letter combos
+            }
+        }
         switch (keyStroke.type()) {
             case ARROW_UP -> setSelectedRow(selectedRow - 1);
             case ARROW_DOWN -> setSelectedRow(selectedRow + 1);

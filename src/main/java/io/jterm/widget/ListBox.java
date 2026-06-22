@@ -211,6 +211,14 @@ public class ListBox<T> extends AbstractComponent implements ListDataListener {
 
     @Override
     public void handleKeyStroke(KeyStroke keyStroke) {
+        // Emacs-style key bindings (Ctrl+letter arrives as CHARACTER with ctrl=true)
+        if (keyStroke.type() == KeyType.CHARACTER && keyStroke.ctrl()) {
+            switch (keyStroke.character()) {
+                case 'P', 'p' -> { setSelectedIndex(selectedIndex - 1); return; }
+                case 'N', 'n' -> { setSelectedIndex(selectedIndex + 1); return; }
+                default -> { return; }  // Ignore other Ctrl+letter combos
+            }
+        }
         switch (keyStroke.type()) {
             case ARROW_UP -> setSelectedIndex(selectedIndex - 1);
             case ARROW_DOWN -> setSelectedIndex(selectedIndex + 1);
