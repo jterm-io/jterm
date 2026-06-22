@@ -15,6 +15,8 @@ import java.nio.charset.StandardCharsets;
 import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.CopyOnWriteArrayList;
+import java.util.concurrent.LinkedBlockingQueue;
+import java.util.concurrent.TimeUnit;
 
 /**
  * Terminal implementation that wraps a network socket's InputStream and OutputStream.
@@ -30,6 +32,15 @@ public class SocketTerminal implements Terminal {
     private final List<TerminalResizeListener> resizeListeners = new CopyOnWriteArrayList<>();
     private volatile boolean cp437Mode = false;
 
+    // --- Blocking input pipeline ---
+    // A dedicated reader thread blocks on the InputStream, decodes keystrokes
+    // via InputDecoder, and pushes them into this queue. This lets pollInput(timeout)
+    // use BlockingQueue.poll() for true blocking — sub-millisecond input latency
+    // instead of the old 16ms sleep loop.
+    private final LinkedBlockingQueue<KeyStroke> inputQueue = new LinkedBlockingQueue<>(256);
+    private Thread readerThread;
+    private volatile boolean inputClosed = false;
+
     /**
      * Construct a terminal from the socket's input and output streams, with an explicit size.
      * This is the constructor used for testing and for protocols where the terminal size is
@@ -41,6 +52,7 @@ public class SocketTerminal implements Terminal {
         this.decoder = new InputDecoder(in);
         this.fixedSize = size;
         this.currentSize = size;
+        startReaderThread();
     }
 
     /**
@@ -166,21 +178,64 @@ public class SocketTerminal implements Terminal {
 
     @Override
     public Optional<KeyStroke> pollInput() throws IOException {
-        return decoder.poll();
+        if (inputClosed && inputQueue.isEmpty()) return Optional.empty();
+        return Optional.ofNullable(inputQueue.poll());
     }
 
     @Override
     public KeyStroke readInput() throws IOException {
-        while (true) {
-            var ks = decoder.poll();
-            if (ks.isPresent()) return ks.get();
-            try {
-                Thread.sleep(10);
-            } catch (InterruptedException e) {
-                Thread.currentThread().interrupt();
-                return new KeyStroke(io.jterm.core.input.KeyType.EOF);
-            }
+        try {
+            return inputQueue.take();
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+            return new KeyStroke(io.jterm.core.input.KeyType.EOF);
         }
+    }
+
+    @Override
+    public Optional<KeyStroke> pollInput(long timeoutMillis) throws IOException {
+        if (timeoutMillis <= 0) return pollInput();
+        try {
+            var ks = inputQueue.poll(timeoutMillis, TimeUnit.MILLISECONDS);
+            return Optional.ofNullable(ks);
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+            return Optional.empty();
+        }
+    }
+
+    /**
+     * Background reader thread: blocks on the InputStream, decodes keystrokes
+     * via InputDecoder, and pushes them into the inputQueue. This decouples
+     * the event loop from InputStream blocking — the event loop can use
+     * BlockingQueue.poll(timeout) for near-instant input delivery.
+     */
+    private void startReaderThread() {
+        readerThread = Thread.ofVirtual().name("socket-input-reader").start(() -> {
+            try {
+                while (!inputClosed && !Thread.currentThread().isInterrupted()) {
+                    var ks = decoder.poll();
+                    if (ks.isPresent()) {
+                        inputQueue.put(ks.get());
+                    } else {
+                        // No data available — check if the stream is still open
+                        // by probing available(). If the stream is exhausted, exit.
+                        if (in.available() == 0) {
+                            // Brief sleep to avoid busy-spin when no data.
+                            // The decoder.poll() already checks available(),
+                            // so this is only hit when the stream is idle.
+                            Thread.sleep(1);
+                        }
+                    }
+                }
+            } catch (InterruptedException e) {
+                // Normal shutdown
+            } catch (IOException e) {
+                // Stream closed or error — push EOF so readers can detect it
+                inputQueue.offer(new KeyStroke(io.jterm.core.input.KeyType.EOF));
+            }
+            inputClosed = true;
+        });
     }
 
     @Override
@@ -195,6 +250,8 @@ public class SocketTerminal implements Terminal {
 
     @Override
     public void close() throws IOException {
+        inputClosed = true;
+        if (readerThread != null) readerThread.interrupt();
         exitPrivateMode();
         in.close();
         out.close();

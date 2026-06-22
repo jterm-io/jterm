@@ -15,35 +15,47 @@ import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
+import java.util.concurrent.LinkedBlockingQueue;
+import java.util.concurrent.TimeUnit;
 
 /** Unix ANSI terminal implementation. Supports raw mode, alt screen, and escape sequences. */
 public class AnsiTerminal implements Terminal {
     private final OutputStream out;
     private final InputDecoder decoder;
+    private final InputStream in;
     private final TerminalSize fixedSize;
     private final List<TerminalResizeListener> resizeListeners = new java.util.concurrent.CopyOnWriteArrayList<>();
     private final String originalStty;
     private final boolean ownStty;
     private TerminalSize lastSize;
 
+    // --- Blocking input pipeline (same as SocketTerminal) ---
+    private final LinkedBlockingQueue<KeyStroke> inputQueue = new LinkedBlockingQueue<>(256);
+    private Thread readerThread;
+    private volatile boolean inputClosed = false;
+
     /** Construct terminal using provided streams and size (useful for tests). */
     public AnsiTerminal(OutputStream out, InputStream in, TerminalSize size) {
         this.out = new BufferedOutputStream(out, 4096);
+        this.in = in;
         this.decoder = new InputDecoder(in);
         this.fixedSize = size;
         this.lastSize = size;
         this.originalStty = null;
         this.ownStty = false;
+        startReaderThread();
     }
 
     /** Construct terminal using System.in/out and querying real terminal size. */
     public AnsiTerminal() throws IOException {
         this.out = new BufferedOutputStream(System.out, 4096);
+        this.in = System.in;
         this.decoder = new InputDecoder(System.in);
         this.fixedSize = null;
         this.lastSize = queryTerminalSize();
         this.originalStty = captureStty();
         this.ownStty = true;
+        startReaderThread();
     }
 
     private static String captureStty() throws IOException {
@@ -167,21 +179,52 @@ public class AnsiTerminal implements Terminal {
 
     @Override
     public Optional<KeyStroke> pollInput() throws IOException {
-        return decoder.poll();
+        if (inputClosed && inputQueue.isEmpty()) return Optional.empty();
+        return Optional.ofNullable(inputQueue.poll());
     }
 
     @Override
     public KeyStroke readInput() throws IOException {
-        while (true) {
-            var ks = decoder.poll();
-            if (ks.isPresent()) return ks.get();
-            try {
-                Thread.sleep(10);
-            } catch (InterruptedException e) {
-                Thread.currentThread().interrupt();
-                return new KeyStroke(io.jterm.core.input.KeyType.EOF);
-            }
+        try {
+            return inputQueue.take();
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+            return new KeyStroke(io.jterm.core.input.KeyType.EOF);
         }
+    }
+
+    @Override
+    public Optional<KeyStroke> pollInput(long timeoutMillis) throws IOException {
+        if (timeoutMillis <= 0) return pollInput();
+        try {
+            var ks = inputQueue.poll(timeoutMillis, TimeUnit.MILLISECONDS);
+            return Optional.ofNullable(ks);
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+            return Optional.empty();
+        }
+    }
+
+    private void startReaderThread() {
+        readerThread = Thread.ofVirtual().name("ansi-input-reader").start(() -> {
+            try {
+                while (!inputClosed && !Thread.currentThread().isInterrupted()) {
+                    var ks = decoder.poll();
+                    if (ks.isPresent()) {
+                        inputQueue.put(ks.get());
+                    } else {
+                        if (in.available() == 0) {
+                            Thread.sleep(1);
+                        }
+                    }
+                }
+            } catch (InterruptedException e) {
+                // Normal shutdown
+            } catch (IOException e) {
+                inputQueue.offer(new KeyStroke(io.jterm.core.input.KeyType.EOF));
+            }
+            inputClosed = true;
+        });
     }
 
     @Override
@@ -196,6 +239,8 @@ public class AnsiTerminal implements Terminal {
 
     @Override
     public void close() throws IOException {
+        inputClosed = true;
+        if (readerThread != null) readerThread.interrupt();
         exitPrivateMode();
     }
 

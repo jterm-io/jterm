@@ -486,13 +486,15 @@ class AnsiTerminalTest {
     @Test
     void pollInputReturnsEmptyWhenNoData() throws Exception {
         var t = newTerminal(null);
+        // Give the reader thread a moment to discover the stream is empty
+        Thread.sleep(10);
         assertEquals(Optional.empty(), t.terminal.pollInput());
     }
 
     @Test
     void pollInputReturnsCharacter() throws Exception {
         var t = newTerminal("a".getBytes(StandardCharsets.UTF_8));
-        var ks = t.terminal.pollInput();
+        var ks = t.terminal.pollInput(200);
         assertTrue(ks.isPresent());
         assertEquals(KeyType.CHARACTER, ks.get().type());
         assertEquals('a', ks.get().character());
@@ -501,7 +503,7 @@ class AnsiTerminalTest {
     @Test
     void pollInputReturnsEscape() throws Exception {
         var t = newTerminal(new byte[]{0x1b});
-        var ks = t.terminal.pollInput();
+        var ks = t.terminal.pollInput(200);
         assertTrue(ks.isPresent());
         assertEquals(KeyType.ESCAPE, ks.get().type());
     }
@@ -509,7 +511,7 @@ class AnsiTerminalTest {
     @Test
     void pollInputReturnsArrowUp() throws Exception {
         var t = newTerminal("\033[A".getBytes(StandardCharsets.UTF_8));
-        var ks = t.terminal.pollInput();
+        var ks = t.terminal.pollInput(200);
         assertTrue(ks.isPresent());
         assertEquals(KeyType.ARROW_UP, ks.get().type());
     }
@@ -525,7 +527,8 @@ class AnsiTerminalTest {
     @Test
     void pollInputAfterConsumingAllReturnsEmpty() throws Exception {
         var t = newTerminal("a".getBytes(StandardCharsets.UTF_8));
-        t.terminal.pollInput();
+        t.terminal.pollInput(200);
+        Thread.sleep(10); // give reader thread time to finish
         assertEquals(Optional.empty(), t.terminal.pollInput());
     }
 

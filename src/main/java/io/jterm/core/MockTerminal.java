@@ -120,6 +120,8 @@ public class MockTerminal implements Terminal {
         }
     }
 
+    // MockTerminal uses the default pollInput(timeout) from the interface (poll+sleep).
+
     @Override
     public void addResizeListener(TerminalResizeListener listener) {
         listeners.add(listener);

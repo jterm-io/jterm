@@ -29,6 +29,28 @@ public interface Terminal extends AutoCloseable {
     Optional<KeyStroke> pollInput() throws IOException;
     KeyStroke readInput() throws IOException;
 
+    /**
+     * Polls for input with a timeout. Returns the next keystroke if available
+     * within {@code timeoutMillis}, or an empty Optional if the timeout elapses.
+     * A timeout of 0 behaves like {@link #pollInput()} (non-blocking).
+     */
+    default Optional<KeyStroke> pollInput(long timeoutMillis) throws IOException {
+        // Default implementation: poll once, then sleep in small increments
+        // Real implementations should override with a BlockingQueue for true blocking.
+        var ks = pollInput();
+        if (ks.isPresent()) return ks;
+        if (timeoutMillis <= 0) return Optional.empty();
+        long deadline = System.currentTimeMillis() + timeoutMillis;
+        while (ks.isEmpty() && System.currentTimeMillis() < deadline) {
+            try { Thread.sleep(1); } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
+                return Optional.empty();
+            }
+            ks = pollInput();
+        }
+        return ks;
+    }
+
     void addResizeListener(TerminalResizeListener listener);
     void removeResizeListener(TerminalResizeListener listener);
 

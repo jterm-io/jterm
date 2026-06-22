@@ -15,6 +15,7 @@ import java.io.OutputStream;
 import java.io.PipedInputStream;
 import java.io.PipedOutputStream;
 import java.nio.charset.StandardCharsets;
+import java.util.Optional;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
@@ -46,7 +47,8 @@ class SocketTerminalTest {
         var in = new ByteArrayInputStream(new byte[] {'A'});
         var out = new ByteArrayOutputStream();
         var term = new SocketTerminal(in, out, new TerminalSize(80, 24));
-        var ks = term.pollInput();
+        // With the blocking queue reader thread, give it a moment to decode
+        var ks = waitForInput(term, 100);
         assertTrue(ks.isPresent());
         assertEquals('A', ks.get().character());
         assertTrue(ks.get().isCharacter());
@@ -164,9 +166,11 @@ class SocketTerminalTest {
 
     @Test
     @DisplayName("pollInput returns empty when no input available")
-    void pollInputEmptyWhenNoInput() throws IOException {
+    void pollInputEmptyWhenNoInput() throws Exception {
         var out = new ByteArrayOutputStream();
         var term = new SocketTerminal(new ByteArrayInputStream(new byte[0]), out, new TerminalSize(80, 24));
+        // Give the reader thread a moment to discover the stream is empty
+        Thread.sleep(10);
         var ks = term.pollInput();
         assertNotNull(ks);
         assertTrue(ks.isEmpty());
@@ -178,7 +182,7 @@ class SocketTerminalTest {
         var in = new ByteArrayInputStream(new byte[] {'\r'});
         var out = new ByteArrayOutputStream();
         var term = new SocketTerminal(in, out, new TerminalSize(80, 24));
-        var ks = term.pollInput();
+        var ks = waitForInput(term, 100);
         assertTrue(ks.isPresent());
         assertEquals(KeyType.ENTER, ks.get().type());
     }
@@ -189,7 +193,7 @@ class SocketTerminalTest {
         var in = new ByteArrayInputStream(new byte[] {'\t'});
         var out = new ByteArrayOutputStream();
         var term = new SocketTerminal(in, out, new TerminalSize(80, 24));
-        var ks = term.pollInput();
+        var ks = waitForInput(term, 100);
         assertTrue(ks.isPresent());
         assertEquals(KeyType.TAB, ks.get().type());
     }
@@ -200,7 +204,7 @@ class SocketTerminalTest {
         var in = new ByteArrayInputStream(new byte[] {0x7f});
         var out = new ByteArrayOutputStream();
         var term = new SocketTerminal(in, out, new TerminalSize(80, 24));
-        var ks = term.pollInput();
+        var ks = waitForInput(term, 100);
         assertTrue(ks.isPresent());
         assertEquals(KeyType.BACKSPACE, ks.get().type());
     }
@@ -211,7 +215,7 @@ class SocketTerminalTest {
         var in = new ByteArrayInputStream(new byte[] {0x1b});
         var out = new ByteArrayOutputStream();
         var term = new SocketTerminal(in, out, new TerminalSize(80, 24));
-        var ks = term.pollInput();
+        var ks = waitForInput(term, 200);
         assertTrue(ks.isPresent());
         assertEquals(KeyType.ESCAPE, ks.get().type());
     }
@@ -223,10 +227,10 @@ class SocketTerminalTest {
         // ESC [ A = Up, ESC [ B = Down, ESC [ C = Right, ESC [ D = Left
         var in = new ByteArrayInputStream(new byte[] {0x1b, '[', 'A', 0x1b, '[', 'B', 0x1b, '[', 'C', 0x1b, '[', 'D'});
         var term = new SocketTerminal(in, out, new TerminalSize(80, 24));
-        assertEquals(KeyType.ARROW_UP, term.pollInput().get().type());
-        assertEquals(KeyType.ARROW_DOWN, term.pollInput().get().type());
-        assertEquals(KeyType.ARROW_RIGHT, term.pollInput().get().type());
-        assertEquals(KeyType.ARROW_LEFT, term.pollInput().get().type());
+        assertEquals(KeyType.ARROW_UP, waitForInput(term, 200).get().type());
+        assertEquals(KeyType.ARROW_DOWN, waitForInput(term, 200).get().type());
+        assertEquals(KeyType.ARROW_RIGHT, waitForInput(term, 200).get().type());
+        assertEquals(KeyType.ARROW_LEFT, waitForInput(term, 200).get().type());
     }
 
     @Test
@@ -713,5 +717,10 @@ class SocketTerminalTest {
         public boolean isClosed() {
             return closed;
         }
+    }
+
+    /** Helper: poll with timeout, retrying until input arrives or maxAttempts exhausted. */
+    private static Optional<KeyStroke> waitForInput(SocketTerminal term, int timeoutMs) throws IOException {
+        return term.pollInput(timeoutMs);
     }
 }
