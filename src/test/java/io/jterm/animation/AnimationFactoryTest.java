@@ -30,14 +30,14 @@ class AnimationFactoryTest {
     }
 
     @Test
-    void randomProducesAllSevenTypesOverManyPicks() {
+    void randomProducesAllFiveTypesOverManyPicks() {
         Set<Class<? extends AnimatedBackground>> seen = new HashSet<>();
         var rng = new Random(123);
         for (int i = 0; i < 200; i++) {
             seen.add(AnimationFactory.random(rng).getClass());
         }
-        // All 7 animation types should appear in 200 picks
-        assertEquals(7, seen.size(),
-                "expected all 7 animation types in 200 picks, got: " + seen);
+        // All 6 animation types should appear in 200 picks
+        assertEquals(6, seen.size(),
+                "expected all 6 animation types in 200 picks, got: " + seen);
     }
 }
