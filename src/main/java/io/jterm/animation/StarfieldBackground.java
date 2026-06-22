@@ -24,7 +24,7 @@ public class StarfieldBackground extends AbstractComponent implements AnimatedBa
 
     private final Random random = new Random();
     private TerminalSize preferredSize;
-    private volatile int targetFps = 30;
+    private volatile int targetFps = 10;
     private volatile Color themeColor = AnsiColor.BRIGHT_CYAN;
     private volatile boolean paused = false;
     private volatile boolean running = false;
@@ -33,6 +33,7 @@ public class StarfieldBackground extends AbstractComponent implements AnimatedBa
     private volatile long accumulatedNs;
     private volatile long frameElapsedMs;
     private volatile int frame;
+    private volatile boolean firstRender = true;
 
     private Star[] stars;
     private int starCount;
@@ -91,6 +92,7 @@ public class StarfieldBackground extends AbstractComponent implements AnimatedBa
         frame = 0;
         lastTickNanos = -1;
         accumulatedNs = 0;
+        firstRender = true;
     }
 
     /**
@@ -139,6 +141,7 @@ public class StarfieldBackground extends AbstractComponent implements AnimatedBa
         if (stars == null || stars.length != newSize.area()) {
             stars = new Star[newSize.area()];
             starCount = 0;
+            firstRender = true;
         }
     }
 
@@ -170,22 +173,26 @@ public class StarfieldBackground extends AbstractComponent implements AnimatedBa
             starCount = 0;
         }
 
-        int targetStars = Math.max(1, area / 20);
-        if (frame <= 1) {
+        int targetStars = Math.max(1, area / 16);
+        if (firstRender) {
             while (starCount < targetStars && starCount < area) {
                 int idx = random.nextInt(area);
                 if (stars[idx] == null) {
                     stars[idx] = new Star(idx % size.columns(), idx / size.columns(),
-                            1 + random.nextInt(4), random.nextDouble() < 0.15);
+                            1 + random.nextInt(4), random.nextDouble() < 0.15,
+                            random.nextInt(4));
                     starCount++;
                 }
             }
+            firstRender = false;
         } else {
             if (starCount < targetStars && random.nextInt(10) == 0) {
                 int idx = random.nextInt(area);
                 if (stars[idx] == null) {
-                    stars[idx] = new Star(0, idx / size.columns(),
-                            1 + random.nextInt(4), random.nextDouble() < 0.15);
+                    stars[idx] = new Star(random.nextInt(size.columns()),
+                            idx / size.columns(),
+                            1 + random.nextInt(4), random.nextDouble() < 0.15,
+                            random.nextInt(4));
                     starCount++;
                 }
             }
@@ -210,7 +217,7 @@ public class StarfieldBackground extends AbstractComponent implements AnimatedBa
                 fg = themeColor;
                 glyph = '*';
             } else {
-                int phase = (frame / star.speed) % 4;
+                int phase = (star.phase + frame / star.speed) % 4;
                 fg = phase < 2 ? medium : dim;
                 glyph = '.';
             }
@@ -247,12 +254,14 @@ public class StarfieldBackground extends AbstractComponent implements AnimatedBa
         final int y;
         final int speed;
         final boolean bright;
+        final int phase;
 
-        Star(int x, int y, int speed, boolean bright) {
+        Star(int x, int y, int speed, boolean bright, int phase) {
             this.x = x;
             this.y = y;
             this.speed = speed;
             this.bright = bright;
+            this.phase = phase;
         }
     }
 }

@@ -38,7 +38,7 @@ class CircuitBoardTest {
     void implementsAnimatedBackground() {
         var board = new CircuitBoard(new TerminalSize(10, 5));
         assertTrue(board instanceof AnimatedBackground);
-        assertEquals(6, board.targetFps());
+        assertEquals(10, board.targetFps());
         board.start();
         assertTrue(board.isRunning());
         board.stop();

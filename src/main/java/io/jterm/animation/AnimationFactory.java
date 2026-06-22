@@ -21,14 +21,9 @@ public final class AnimationFactory {
     private static final List<Supplier<AnimatedBackground>> FACTORIES = List.of(
             () -> new TwinkleStarfield(new Random(), true),
             () -> new WarpStarfield(DEFAULT_SIZE),
-            () -> new MatrixRain(DEFAULT_SIZE),
             () -> new PlasmaWash(DEFAULT_SIZE),
             () -> new CircuitBoard(DEFAULT_SIZE),
             () -> new StarfieldBackground(DEFAULT_SIZE),
-            () -> new TypewriterEffect(List.of(
-                    "JTerm BBS",
-                    "retro multi-user terminal community",
-                    "please identify yourself")),
             () -> new LavaLamp(DEFAULT_SIZE),
             () -> new OceanWaves(DEFAULT_SIZE),
             () -> new TerrainFlyover(DEFAULT_SIZE),
