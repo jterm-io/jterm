@@ -81,9 +81,14 @@ public class Table extends AbstractComponent implements TableModelListener {
                 selectedRow = Math.max(0, model.getRowCount() - 1);
             }
         }
+        // On STRUCTURE_CHANGED, clamp selection to valid range (already done
+        // above) but do NOT reset to row 0 — that discards the user's selection
+        // on every model refresh. Only reset scroll if the selection is now
+        // above the viewport.
         if (e.type() == TableModelEventType.STRUCTURE_CHANGED) {
-            selectedRow = 0;
-            scrollOffset = 0;
+            if (scrollOffset > selectedRow) {
+                scrollOffset = selectedRow;
+            }
         }
         ensureVisible();
         invalidate();

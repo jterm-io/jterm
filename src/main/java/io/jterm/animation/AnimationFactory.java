@@ -31,7 +31,8 @@ public final class AnimationFactory {
             () -> new RainStorm(DEFAULT_SIZE),
             () -> new Fireworks(DEFAULT_SIZE),
             () -> new DNAHelix(DEFAULT_SIZE),
-            () -> new VoronoiCells(DEFAULT_SIZE)
+            () -> new VoronoiCells(DEFAULT_SIZE),
+            () -> new PhosphorDecay(DEFAULT_SIZE)
     );
 
     private AnimationFactory() {}

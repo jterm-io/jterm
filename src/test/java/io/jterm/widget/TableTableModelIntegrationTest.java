@@ -135,7 +135,9 @@ class TableTableModelIntegrationTest {
     }
 
     @Test
-    void structureChangedResetsScrollAndSelection() {
+    void structureChangedPreservesSelectionWhenRowCountUnchanged() {
+        // STRUCTURE_CHANGED should no longer reset selectedRow to 0.
+        // The selection should only be clamped if it exceeds the row count.
         CustomTableModel model = new CustomTableModel("Name");
         for (int i = 0; i < 20; i++) {
             model.addRow("row-" + i);
@@ -144,7 +146,7 @@ class TableTableModelIntegrationTest {
         table.setBounds(TerminalPosition.TOP_LEFT, new TerminalSize(15, 5));
         table.setSelectedRow(19);
         model.changeStructure();
-        assertEquals(0, table.getSelectedRow());
+        assertEquals(19, table.getSelectedRow());
     }
 
     @Test

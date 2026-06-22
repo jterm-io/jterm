@@ -238,7 +238,7 @@ class TableTest {
     }
 
     @Test
-    void structureChangedResetsSelection() {
+    void structureChangedClampsSelectionToValidRange() {
         DefaultTableModel model = new DefaultTableModel("A");
         var table = new Table(model);
         table.setBounds(TerminalPosition.TOP_LEFT, new TerminalSize(10, 5));
@@ -248,6 +248,35 @@ class TableTest {
         table.setSelectedRow(19);
         model.clear();
         assertEquals(0, table.getSelectedRow());
+    }
+
+    @Test
+    void structureChangedPreservesSelectionWhenRowCountSame() {
+        // Simulates UserTableModel.refresh(): the model is rebuilt in-place
+        // (clear + reload) then fires a single STRUCTURE_CHANGED event.
+        // The table should NOT reset selectedRow to 0 — it should preserve
+        // the user's selection.
+        var model = new io.jterm.widget.model.AbstractTableModel() {
+            private final java.util.List<String> rows = new java.util.ArrayList<>();
+            @Override public int getRowCount() { return rows.size(); }
+            @Override public int getColumnCount() { return 1; }
+            @Override public String getColumnName(int col) { return "A"; }
+            @Override public String getValueAt(int row, int col) { return rows.get(row); }
+            public void rebuild(java.util.List<String> newRows) {
+                rows.clear();
+                rows.addAll(newRows);
+                fireStructureChanged();
+            }
+        };
+        var table = new Table(model);
+        table.setBounds(TerminalPosition.TOP_LEFT, new TerminalSize(10, 5));
+        // Populate model
+        model.rebuild(java.util.List.of("row0", "row1", "row2", "row3", "row4"));
+        table.setSelectedRow(3);
+        // Simulate refresh: rebuild with same data
+        model.rebuild(java.util.List.of("row0", "row1", "row2", "row3", "row4"));
+        // The selection should still be at row 3
+        assertEquals(3, table.getSelectedRow());
     }
 
     @Test
