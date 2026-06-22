@@ -19,7 +19,7 @@ import java.util.concurrent.CopyOnWriteArrayList;
  * <p>Attach an {@code AnimationManager} to a {@link DefaultTextGUI} and call
  * {@link #tick(long)} from the same render loop that already calls
  * {@link DefaultTextGUI#updateScreen()}. The manager throttles updates to the
- * target FPS and requests a screen refresh only when a frame actually advances.
+ * target FPS and requests a screen refresh only when a frame actually advances.</p>
  */
 public class AnimationManager {
     private static final int MIN_FPS = 1;
@@ -116,6 +116,10 @@ public class AnimationManager {
                 wf.tick(nowNanos);
             } else if (bg instanceof CircuitBoard cb) {
                 cb.tick(nowNanos);
+            } else if (bg instanceof OceanWaves ow) {
+                ow.tick(nowNanos);
+            } else if (bg instanceof LavaLamp ll) {
+                ll.tick(nowNanos);
             }
         }
     }

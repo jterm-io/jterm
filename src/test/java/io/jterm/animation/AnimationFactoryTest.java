@@ -2,6 +2,7 @@ package io.jterm.animation;
 
 import io.jterm.widget.animation.TwinkleStarfield;
 import io.jterm.widget.animation.WarpStarfield;
+import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
 import java.util.HashSet;
@@ -20,6 +21,7 @@ class AnimationFactoryTest {
     }
 
     @Test
+    @DisplayName("randomWithSeedReturnsConsistentResult")
     void randomWithSeedReturnsConsistentResult() {
         var rng1 = new Random(42);
         var rng2 = new Random(42);
@@ -30,14 +32,13 @@ class AnimationFactoryTest {
     }
 
     @Test
-    void randomProducesAllFiveTypesOverManyPicks() {
+    void randomProducesAllTypesOverManyPicks() {
         Set<Class<? extends AnimatedBackground>> seen = new HashSet<>();
         var rng = new Random(123);
-        for (int i = 0; i < 200; i++) {
+        for (int i = 0; i < 500; i++) {
             seen.add(AnimationFactory.random(rng).getClass());
         }
-        // All 6 animation types should appear in 200 picks
-        assertEquals(6, seen.size(),
-                "expected all 6 animation types in 200 picks, got: " + seen);
+        assertEquals(AnimationFactory.availableClasses(), seen,
+                "expected all animation types over many picks, got: " + seen);
     }
 }
