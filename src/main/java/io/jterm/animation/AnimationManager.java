@@ -120,6 +120,18 @@ public class AnimationManager {
                 ow.tick(nowNanos);
             } else if (bg instanceof LavaLamp ll) {
                 ll.tick(nowNanos);
+            } else if (bg instanceof TerrainFlyover tf) {
+                tf.tick(nowNanos);
+            } else if (bg instanceof Aurora aurora) {
+                aurora.tick(nowNanos);
+            } else if (bg instanceof RainStorm rs) {
+                rs.tick(nowNanos);
+            } else if (bg instanceof Fireworks fw) {
+                fw.tick(nowNanos);
+            } else if (bg instanceof DNAHelix dh) {
+                dh.tick(nowNanos);
+            } else if (bg instanceof VoronoiCells vc) {
+                vc.tick(nowNanos);
             }
         }
     }

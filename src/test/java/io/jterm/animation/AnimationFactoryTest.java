@@ -32,6 +32,15 @@ class AnimationFactoryTest {
     }
 
     @Test
+    @DisplayName("factoryCount returns expected number of registered animations")
+    void factoryCountMatches() {
+        // 7 pre-existing (TwinkleStarfield, WarpStarfield, MatrixRain, PlasmaWash,
+        // CircuitBoard, StarfieldBackground, TypewriterEffect) + 8 new = 15
+        assertTrue(AnimationFactory.factoryCount() >= 13,
+                "expected at least 13 animation factories, got " + AnimationFactory.factoryCount());
+    }
+
+    @Test
     void randomProducesAllTypesOverManyPicks() {
         Set<Class<? extends AnimatedBackground>> seen = new HashSet<>();
         var rng = new Random(123);

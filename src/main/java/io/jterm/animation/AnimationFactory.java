@@ -30,7 +30,13 @@ public final class AnimationFactory {
                     "retro multi-user terminal community",
                     "please identify yourself")),
             () -> new LavaLamp(DEFAULT_SIZE),
-            () -> new OceanWaves(DEFAULT_SIZE)
+            () -> new OceanWaves(DEFAULT_SIZE),
+            () -> new TerrainFlyover(DEFAULT_SIZE),
+            () -> new Aurora(DEFAULT_SIZE),
+            () -> new RainStorm(DEFAULT_SIZE),
+            () -> new Fireworks(DEFAULT_SIZE),
+            () -> new DNAHelix(DEFAULT_SIZE),
+            () -> new VoronoiCells(DEFAULT_SIZE)
     );
 
     private AnimationFactory() {}
