@@ -196,4 +196,29 @@ class RainStormTest {
         }
         assertTrue(nonBlank > 0, "renderFrame should produce visible output");
     }
+
+    @Test
+    @DisplayName("drops distribute across full screen width after many frames")
+    void dropsDistributeAcrossWidth() {
+        var storm = new RainStorm(new TerminalSize(80, 24));
+        var size = new TerminalSize(80, 24);
+
+        // Simulate 200 frames to let drops cycle through respawns.
+        for (int i = 0; i < 200; i++) {
+            var buffer = new ScreenBuffer(size);
+            storm.renderAtTime(new TextGraphics(buffer), size, i * 0.1);
+        }
+
+        // After cycling, drops should span the full width, not cluster on one side.
+        int minCol = Integer.MAX_VALUE;
+        int maxCol = Integer.MIN_VALUE;
+        for (var drop : storm.getDrops()) {
+            if (drop == null) continue;
+            minCol = Math.min(minCol, drop.screenX());
+            maxCol = Math.max(maxCol, drop.screenX());
+        }
+        // With 100 drops on an 80-col screen, they should cover at least 60% of width.
+        int spread = maxCol - minCol;
+        assertTrue(spread >= 48, "drops should spread across >= 60% of width, got spread=" + spread);
+    }
 }

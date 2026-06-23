@@ -152,6 +152,7 @@ public class RainStorm implements AnimatedBackground {
     public static final class Drop {
         private final int cols;
         private final int rows;
+        private final Random random;
         private int x;
         private int y;
         private int speed;     // 1-3
@@ -161,6 +162,7 @@ public class RainStorm implements AnimatedBackground {
         Drop(TerminalSize size, Random random) {
             this.cols = size.columns();
             this.rows = size.rows();
+            this.random = random;
             this.x = random.nextInt(Math.max(1, cols));
             this.y = random.nextInt(Math.max(1, rows));
             this.speed = 1 + random.nextInt(3);
@@ -176,14 +178,14 @@ public class RainStorm implements AnimatedBackground {
                 x--;
                 driftCounter = 0;
             }
-            // Respawn at top when reaching bottom.
+            // Respawn at random x at top when reaching bottom.
             if (y >= rows) {
                 y = 0;
-                x = cols - 1;
+                x = random.nextInt(Math.max(1, cols));
             }
-            // Respawn at right when drifting off left.
+            // Respawn at random x at top when drifting off left.
             if (x < 0) {
-                x = cols - 1;
+                x = random.nextInt(Math.max(1, cols));
                 y = 0;
             }
         }
