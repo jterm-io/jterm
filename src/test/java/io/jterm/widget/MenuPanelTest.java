@@ -12,14 +12,18 @@ import static org.junit.jupiter.api.Assertions.*;
 
 class MenuPanelTest {
 
+    // New format: "[M]" keys in brackets, left-aligned descriptions, vertical padding
+    // keyColWidth = max key width + 2 (brackets), GAP = 5, 1 leading + 1 trailing space
+    // rows = items + 2 (VERTICAL_PADDING * 2)
+
     @Test
     void preferredSizeForSingleItem() {
         var panel = new MenuPanel();
         panel.addItem("M", "Message Boards");
         var ps = panel.getPreferredSize();
-        // key width 1 + gap 3 + description 14 = 18 columns, 1 row
-        assertEquals(18, ps.columns());
-        assertEquals(1, ps.rows());
+        // 1 leading + keyCol 3 ("[M]") + gap 5 + desc 14 + 1 trailing = 24 cols, 3 rows (1+2 padding)
+        assertEquals(24, ps.columns());
+        assertEquals(3, ps.rows());
     }
 
     @Test
@@ -28,11 +32,12 @@ class MenuPanelTest {
         panel.addItem("A", "Short");
         panel.addItem("Enter", "A much longer description here");
         var ps = panel.getPreferredSize();
-        int keyCol = 5; // "Enter"
-        int gap = 3;
+        int keyCol = 7; // "[Enter]"
+        int gap = 5;
         int descWidth = 30; // "A much longer description here"
-        assertEquals(keyCol + gap + descWidth, ps.columns());
-        assertEquals(2, ps.rows());
+        // 1 + keyCol + gap + descWidth + 1
+        assertEquals(1 + keyCol + gap + descWidth + 1, ps.columns());
+        assertEquals(4, ps.rows()); // 2 items + 2 padding
     }
 
     @Test
@@ -40,7 +45,7 @@ class MenuPanelTest {
         var panel = new MenuPanel();
         var ps = panel.getPreferredSize();
         assertTrue(ps.columns() >= 2);
-        assertEquals(0, ps.rows());
+        assertEquals(2, ps.rows()); // VERTICAL_PADDING * 2
     }
 
     @Test
@@ -59,45 +64,52 @@ class MenuPanelTest {
         panel.addItem("M", "Message Boards");
         panel.clearItems();
         assertTrue(panel.getItems().isEmpty());
-        assertEquals(0, panel.getPreferredSize().rows());
+        assertEquals(2, panel.getPreferredSize().rows()); // just padding
     }
 
     @Test
-    void drawRightAlignsDescription() {
+    void drawLeftAlignsDescription() {
         var panel = new MenuPanel();
         panel.addItem("M", "Message Boards");
-        panel.setBounds(TerminalPosition.TOP_LEFT, new TerminalSize(18, 1));
-        var buf = new ScreenBuffer(new TerminalSize(18, 1));
+        // Preferred: 1 + 3 + 5 + 14 + 1 = 24 cols, 3 rows
+        panel.setBounds(TerminalPosition.TOP_LEFT, panel.getPreferredSize());
+        var buf = new ScreenBuffer(panel.getPreferredSize());
         panel.draw(new TextGraphics(buf));
-        // key "M" padded to keyCol=1, then gap 3 -> description starts at col 4
-        // description width 14, right-aligned in remaining 14 cols (cols 4..17)
-        assertEquals('M', buf.getCell(0, 0).character().charAt(0));
-        assertEquals('M', buf.getCell(4, 0).character().charAt(0));
-        assertEquals('s', buf.getCell(17, 0).character().charAt(0));
+        // Row 1 (first item, after 1 padding row)
+        // col 1: '[', col 2: 'M', col 3: ']'
+        assertEquals('[', buf.getCell(1, 1).character().charAt(0));
+        assertEquals('M', buf.getCell(2, 1).character().charAt(0));
+        assertEquals(']', buf.getCell(3, 1).character().charAt(0));
+        // Description starts at col 1 + 3 + 5 = 9
+        assertEquals('M', buf.getCell(9, 1).character().charAt(0));  // "Message"
+        assertEquals('s', buf.getCell(22, 1).character().charAt(0)); // last char of "Boards"
     }
 
     @Test
     void drawMultiCharKeyLeftPadded() {
         var panel = new MenuPanel();
         panel.addItem("Enter", "Submit");
-        panel.setBounds(TerminalPosition.TOP_LEFT, new TerminalSize(14, 1));
-        var buf = new ScreenBuffer(new TerminalSize(14, 1));
+        // keyCol = 7 ("[Enter]"), preferred = 1 + 7 + 5 + 6 + 1 = 20
+        panel.setBounds(TerminalPosition.TOP_LEFT, panel.getPreferredSize());
+        var buf = new ScreenBuffer(panel.getPreferredSize());
         panel.draw(new TextGraphics(buf));
-        // keyCol=5, gap=3, desc "Submit" (6) right-aligned in remaining 6 cols (cols 8..13)
-        assertEquals('E', buf.getCell(0, 0).character().charAt(0));
-        assertEquals('r', buf.getCell(4, 0).character().charAt(0));
-        assertEquals('S', buf.getCell(8, 0).character().charAt(0));
-        assertEquals('t', buf.getCell(13, 0).character().charAt(0));
+        // Row 1: col 1 = '[', col 2 = 'E', ..., col 7 = ']'
+        assertEquals('[', buf.getCell(1, 1).character().charAt(0));
+        assertEquals('E', buf.getCell(2, 1).character().charAt(0));
+        assertEquals(']', buf.getCell(7, 1).character().charAt(0));
+        // Description starts at col 1 + 7 + 5 = 13
+        assertEquals('S', buf.getCell(13, 1).character().charAt(0));
     }
 
     @Test
     void drawHighlightsKey() {
         var panel = new MenuPanel();
         panel.addItem("M", "Message Boards");
-        panel.setBounds(TerminalPosition.TOP_LEFT, new TerminalSize(20, 1));
-        var buf = new ScreenBuffer(new TerminalSize(20, 1));
+        panel.setBounds(TerminalPosition.TOP_LEFT, new TerminalSize(24, 3));
+        var buf = new ScreenBuffer(new TerminalSize(24, 3));
         panel.draw(new TextGraphics(buf));
-        assertTrue(buf.getCell(0, 0).modifiers().contains(SGR.BOLD));
+        // Key is at row 1, col 1 (the '[' of "[M]")
+        assertTrue(buf.getCell(1, 1).modifiers().contains(SGR.BOLD));
     }
 
     @Test
@@ -105,13 +117,18 @@ class MenuPanelTest {
         var panel = new MenuPanel();
         panel.addItem("M", "Boards");
         panel.addItem("C", "Chat");
-        panel.setBounds(TerminalPosition.TOP_LEFT, new TerminalSize(14, 2));
-        var buf = new ScreenBuffer(new TerminalSize(14, 2));
+        // keyCol=3, preferred = 1 + 3 + 5 + 6 + 1 = 16 cols, 4 rows
+        panel.setBounds(TerminalPosition.TOP_LEFT, panel.getPreferredSize());
+        var buf = new ScreenBuffer(panel.getPreferredSize());
         panel.draw(new TextGraphics(buf));
-        assertEquals('M', buf.getCell(0, 0).character().charAt(0));
-        assertEquals('C', buf.getCell(0, 1).character().charAt(0));
-        assertEquals('s', buf.getCell(13, 0).character().charAt(0));
-        assertEquals('t', buf.getCell(13, 1).character().charAt(0));
+        // Row 1 (first item): [M] at col 1, "Boards" at col 9
+        assertEquals('[', buf.getCell(1, 1).character().charAt(0));
+        assertEquals('M', buf.getCell(2, 1).character().charAt(0));
+        assertEquals('s', buf.getCell(14, 1).character().charAt(0)); // last of "Boards"
+        // Row 2 (second item): [C] at col 1, "Chat" at col 9
+        assertEquals('[', buf.getCell(1, 2).character().charAt(0));
+        assertEquals('C', buf.getCell(2, 2).character().charAt(0));
+        assertEquals('t', buf.getCell(12, 2).character().charAt(0)); // last of "Chat"
     }
 
     @Test
@@ -134,16 +151,18 @@ class MenuPanelTest {
     }
 
     @Test
-    void descriptionIsRightAlignedEvenWhenPanelWider() {
+    void descriptionIsLeftAlignedEvenWhenPanelWider() {
         var panel = new MenuPanel();
         panel.addItem("Q", "Logout");
-        panel.setBounds(TerminalPosition.TOP_LEFT, new TerminalSize(22, 1));
-        var buf = new ScreenBuffer(new TerminalSize(22, 1));
+        // Give extra width: 30 cols, 3 rows
+        panel.setBounds(TerminalPosition.TOP_LEFT, new TerminalSize(30, 3));
+        var buf = new ScreenBuffer(new TerminalSize(30, 3));
         panel.draw(new TextGraphics(buf));
-        // "Logout" width 6, right-aligned in remaining 18 cols starts at col 4 + 12 = 16
-        assertEquals('Q', buf.getCell(0, 0).character().charAt(0));
-        assertEquals('L', buf.getCell(16, 0).character().charAt(0));
-        assertEquals('t', buf.getCell(21, 0).character().charAt(0));
+        // "[Q]" at col 1, description starts at col 1 + 3 + 5 = 9
+        assertEquals('[', buf.getCell(1, 1).character().charAt(0));
+        assertEquals('Q', buf.getCell(2, 1).character().charAt(0));
+        assertEquals('L', buf.getCell(9, 1).character().charAt(0)); // "Logout" left-aligned
+        assertEquals('t', buf.getCell(14, 1).character().charAt(0)); // last of "Logout"
     }
 
     @Test
@@ -151,8 +170,9 @@ class MenuPanelTest {
         var panel = new MenuPanel();
         panel.addItem("漢", "Chinese");
         panel.addItem("A", "English");
-        // "漢" is double-width; keyCol should be 2
+        // "漢" is double-width; "[漢]" = 4, "[A]" = 3, keyCol = 4
         var ps = panel.getPreferredSize();
-        assertEquals(2 + 3 + 7, ps.columns()); // key 2 + gap 3 + "English" 7
+        // 1 + 4 + 5 + 7 + 1 = 18
+        assertEquals(1 + 4 + 5 + 7 + 1, ps.columns());
     }
 }
