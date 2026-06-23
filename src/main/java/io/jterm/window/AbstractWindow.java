@@ -84,7 +84,14 @@ public class AbstractWindow implements Window {
             drawDecorations(graphics);
             var pos = contents.getPosition();
             var sz = contents.getSize();
-            var sub = io.jterm.graphics.TextGraphicsExtensions.subGraphics(graphics, pos, sz);
+            // contents.getPosition() is absolute, but the graphics context is
+            // already offset to the window's position by the caller. Use the
+            // relative offset so content lands in the right place for centered
+            // windows (not just fullscreen at (0,0)).
+            var relPos = new TerminalPosition(
+                    pos.column() - getPosition().column(),
+                    pos.row() - getPosition().row());
+            var sub = io.jterm.graphics.TextGraphicsExtensions.subGraphics(graphics, relPos, sz);
             contents.draw(sub);
         } else {
             contents.draw(graphics);
