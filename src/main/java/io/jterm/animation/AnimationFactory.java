@@ -38,7 +38,8 @@ public final class AnimationFactory {
             () -> new Spirograph(DEFAULT_SIZE),
             () -> new MandelbrotZoom(DEFAULT_SIZE),
             () -> new DvdLogo(DEFAULT_SIZE),
-            () -> new Snowfall(DEFAULT_SIZE)
+            () -> new Snowfall(DEFAULT_SIZE),
+            () -> new LightningStorm(DEFAULT_SIZE)
     );
 
     private AnimationFactory() {}
