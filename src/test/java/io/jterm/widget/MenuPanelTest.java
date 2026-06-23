@@ -175,4 +175,80 @@ class MenuPanelTest {
         // 1 + 4 + 5 + 7 + 1 = 18
         assertEquals(1 + 4 + 5 + 7 + 1, ps.columns());
     }
+
+    // ---- Highlight / blink tests ----
+
+    @Test
+    void indexOfKeyFindsMatchingItem() {
+        var panel = new MenuPanel();
+        panel.addItem("M", "Message Boards");
+        panel.addItem("C", "Live Chat");
+        assertEquals(0, panel.indexOfKey("M"));
+        assertEquals(1, panel.indexOfKey("C"));
+        assertEquals(0, panel.indexOfKey("m")); // case-insensitive
+        assertEquals(-1, panel.indexOfKey("Z"));
+    }
+
+    @Test
+    void highlightedIndexDefaultsToNone() {
+        var panel = new MenuPanel();
+        panel.addItem("M", "Message Boards");
+        assertEquals(-1, panel.getHighlightedIndex());
+    }
+
+    @Test
+    void setHighlightedIndexClampsToValidRange() {
+        var panel = new MenuPanel();
+        panel.addItem("M", "Message Boards");
+        panel.addItem("C", "Live Chat");
+        panel.setHighlightedIndex(5); // out of range
+        assertEquals(1, panel.getHighlightedIndex()); // clamped to last item
+        panel.setHighlightedIndex(-1);
+        assertEquals(-1, panel.getHighlightedIndex());
+    }
+
+    @Test
+    void highlightedRowRendersInReverseVideo() {
+        var panel = new MenuPanel();
+        panel.addItem("M", "Message Boards");
+        panel.addItem("C", "Live Chat");
+        panel.setBounds(TerminalPosition.TOP_LEFT, panel.getPreferredSize());
+        panel.setHighlightedIndex(0);
+
+        var buf = new ScreenBuffer(panel.getPreferredSize());
+        panel.draw(new TextGraphics(buf));
+
+        // Row 1 (first item, index 0) should have REVERSE modifier
+        assertTrue(buf.getCell(1, 1).modifiers().contains(SGR.REVERSE),
+                "highlighted row should have REVERSE SGR");
+        // Row 2 (second item, index 1) should NOT have REVERSE
+        assertFalse(buf.getCell(1, 2).modifiers().contains(SGR.REVERSE),
+                "non-highlighted row should not have REVERSE SGR");
+    }
+
+    @Test
+    void clearHighlightRemovesReverseVideo() {
+        var panel = new MenuPanel();
+        panel.addItem("M", "Message Boards");
+        panel.setBounds(TerminalPosition.TOP_LEFT, panel.getPreferredSize());
+        panel.setHighlightedIndex(0);
+
+        var buf1 = new ScreenBuffer(panel.getPreferredSize());
+        panel.draw(new TextGraphics(buf1));
+        assertTrue(buf1.getCell(1, 1).modifiers().contains(SGR.REVERSE));
+
+        panel.setHighlightedIndex(-1);
+        var buf2 = new ScreenBuffer(panel.getPreferredSize());
+        panel.draw(new TextGraphics(buf2));
+        assertFalse(buf2.getCell(1, 1).modifiers().contains(SGR.REVERSE));
+    }
+
+    @Test
+    void clearItemsResetsHighlightedIndex() {
+        var panel = new MenuPanel();
+        panel.addItem("M", "Message Boards");
+        panel.setHighlightedIndex(0);
+        panel.clearItems();
+        assertEquals(-1, panel.getHighlightedIndex());
+    }
 }

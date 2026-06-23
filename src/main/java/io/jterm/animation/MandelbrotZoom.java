@@ -54,30 +54,25 @@ public class MandelbrotZoom implements AnimatedBackground {
             return;
         }
 
-        // To avoid extreme aspect ratio distortion, keep the visible region
-        // square and centered on the terminal, using the smaller dimension.
+        // Terminal cells are roughly 2:1 (height:width), so to fill the
+        // full screen without visual distortion we stretch the Y range
+        // by the cell aspect ratio.
         int cols = size.columns();
         int rows = size.rows();
-        int dim = Math.min(cols, rows);
-        int xOffset = (cols - dim) / 2;
-        int yOffset = (rows - dim) / 2;
+        double aspect = 2.0; // terminal cell height / width
 
-        double halfRange = range / 2.0;
-        double minX = CENTER_X - halfRange;
-        double maxX = CENTER_X + halfRange;
-        double minY = CENTER_Y - halfRange;
-        double maxY = CENTER_Y + halfRange;
+        double halfRangeX = range / 2.0;
+        double halfRangeY = halfRangeX * rows * aspect / cols;
+
+        double minX = CENTER_X - halfRangeX;
+        double maxX = CENTER_X + halfRangeX;
+        double minY = CENTER_Y - halfRangeY;
+        double maxY = CENTER_Y + halfRangeY;
 
         for (int y = 0; y < rows; y++) {
             for (int x = 0; x < cols; x++) {
-                // Center the square viewport; border cells are left black.
-                if (x < xOffset || x >= xOffset + dim || y < yOffset || y >= yOffset + dim) {
-                    graphics.setCell(x, y, new TextCell(' ', AnsiColor.BLACK, AnsiColor.BLACK));
-                    continue;
-                }
-
-                double cx = map(x - xOffset, 0, dim - 1, minX, maxX);
-                double cy = map(y - yOffset, 0, dim - 1, minY, maxY);
+                double cx = map(x, 0, cols - 1, minX, maxX);
+                double cy = map(y, 0, rows - 1, minY, maxY);
 
                 int iterations = mandelbrotIterations(cx, cy, MAX_ITERATIONS);
                 graphics.setCell(x, y, cellFor(iterations));

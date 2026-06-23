@@ -10,6 +10,7 @@ import io.jterm.util.TerminalTextUtils;
 
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.EnumSet;
 import java.util.List;
 
 /**
@@ -35,6 +36,7 @@ public class MenuPanel extends AbstractComponent {
     private static final int VERTICAL_PADDING = 1; // rows above and below items
 
     private final List<MenuEntry> items = new ArrayList<>();
+    private int highlightedIndex = -1;
 
     public MenuPanel() {}
 
@@ -49,12 +51,34 @@ public class MenuPanel extends AbstractComponent {
     /** Removes all items. */
     public void clearItems() {
         items.clear();
+        highlightedIndex = -1;
         invalidate();
     }
 
     /** Returns a copy of the current items. */
     public List<MenuEntry> getItems() {
         return new ArrayList<>(items);
+    }
+
+    /** Returns the index of the highlighted item, or -1 if none. */
+    public int getHighlightedIndex() {
+        return highlightedIndex;
+    }
+
+    /** Highlights the item at the given index (rendered in reverse video). Pass -1 to clear. */
+    public void setHighlightedIndex(int index) {
+        this.highlightedIndex = Math.max(-1, Math.min(index, items.size() - 1));
+        invalidate();
+    }
+
+    /** Finds the index of the menu item whose key matches (case-insensitive), or -1 if not found. */
+    public int indexOfKey(String key) {
+        if (key == null) return -1;
+        String upper = key.toUpperCase();
+        for (int i = 0; i < items.size(); i++) {
+            if (items.get(i).key().equalsIgnoreCase(upper)) return i;
+        }
+        return -1;
     }
 
     @Override
@@ -88,6 +112,7 @@ public class MenuPanel extends AbstractComponent {
         for (int i = 0; i < items.size() && i < size.rows() - VERTICAL_PADDING; i++) {
             var item = items.get(i);
             int row = i + VERTICAL_PADDING;
+            boolean highlighted = (i == highlightedIndex);
 
             // Key in brackets: "[M]" — right-padded to keyColWidth
             String keyInBrackets = "[" + item.key() + "]";
@@ -95,12 +120,28 @@ public class MenuPanel extends AbstractComponent {
             int keyPadding = Math.max(0, keyColWidth - keyWidth);
             String keyText = " ".repeat(keyPadding) + keyInBrackets;
             // Start at column 1 (leading space)
-            graphics.drawString(1, row, keyText, bold);
+            var keyCell = highlighted
+                    ? new TextCell(' ', theme.background(), theme.foreground(), SGR.BOLD, SGR.REVERSE)
+                    : bold;
+            graphics.drawString(1, row, keyText, keyCell);
 
             // Description: left-aligned after the gap
             String desc = TerminalTextUtils.truncate(item.description(), availableDescWidth);
             int descX = 1 + keyColWidth + GAP;
-            graphics.drawString(descX, row, desc, normal);
+            var descCell = highlighted
+                    ? new TextCell(' ', theme.background(), theme.foreground(), SGR.REVERSE)
+                    : normal;
+            graphics.drawString(descX, row, desc, descCell);
+
+            // If highlighted, fill the rest of the row with reverse-video spaces
+            if (highlighted) {
+                int descEnd = descX + TerminalTextUtils.getTrueWidth(desc);
+                int rowEnd = size.columns() - 1; // leave 1 trailing space
+                if (descEnd < rowEnd) {
+                    var fillCell = new TextCell(' ', theme.background(), theme.foreground(), SGR.REVERSE);
+                    graphics.fillRectangle(descEnd, row, rowEnd - descEnd, 1, fillCell);
+                }
+            }
         }
     }
 
