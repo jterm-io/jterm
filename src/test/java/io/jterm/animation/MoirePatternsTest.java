@@ -21,7 +21,7 @@ class MoirePatternsTest {
     void implementsAnimatedBackground() {
         var moire = new MoirePatterns(new TerminalSize(80, 24));
         assertTrue(moire instanceof AnimatedBackground);
-        assertEquals(12, moire.targetFps());
+        assertEquals(9, moire.targetFps());
         moire.start();
         assertTrue(moire.isRunning());
         moire.stop();

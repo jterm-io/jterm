@@ -17,7 +17,7 @@ import io.jterm.style.TextCell;
  */
 public class MoirePatterns implements AnimatedBackground {
 
-    private static final int TARGET_FPS = 12;
+    private static final int TARGET_FPS = 9;
 
     // Grid spacing in terminal cells.
     private static final int GRID_SPACING = 4;
