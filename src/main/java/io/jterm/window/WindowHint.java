@@ -10,5 +10,8 @@ public enum WindowHint {
     BACKGROUND,
     /** Skip the opaque background fill in {@link AbstractWindow#draw} so lower
      * windows (e.g. an {@link AnimatedBackgroundWindow}) show through. */
-    TRANSPARENT
+    TRANSPARENT,
+    /** Center the window on the terminal based on its preferred size,
+     * leaving the window sized to fit its content rather than the full screen. */
+    CENTERED
 }

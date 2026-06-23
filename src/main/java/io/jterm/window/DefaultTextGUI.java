@@ -263,6 +263,13 @@ public class DefaultTextGUI implements TextGUI, WindowManager {
             window.setBounds(TerminalPosition.TOP_LEFT, size);
         } else if (hints.contains(WindowHint.FIT_TERMINAL_WINDOW) || window.getSize().equals(TerminalSize.ZERO)) {
             window.setBounds(TerminalPosition.TOP_LEFT, size);
+        } else if (hints.contains(WindowHint.CENTERED)) {
+            var preferred = window.getPreferredSize();
+            int width = Math.min(preferred.columns(), size.columns());
+            int height = Math.min(preferred.rows(), size.rows());
+            int col = Math.max(0, (size.columns() - width) / 2);
+            int row = Math.max(0, (size.rows() - height) / 2);
+            window.setBounds(new TerminalPosition(col, row), new TerminalSize(width, height));
         }
     }
 

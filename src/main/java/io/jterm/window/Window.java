@@ -23,6 +23,13 @@ public interface Window {
     void setFocusedComponent(Component component);
 
     /**
+     * Returns the window's preferred content size. The default implementation
+     * returns the current size; windows that want to be centered or auto-sized
+     * should override this to report their natural dimensions.
+     */
+    default TerminalSize getPreferredSize() { return getSize(); }
+
+    /**
      * Called when a key is pressed and no focused child component consumed it,
      * or when the window has no focusable children. Default implementation does nothing.
      *
