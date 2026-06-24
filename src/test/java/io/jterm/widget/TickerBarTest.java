@@ -25,9 +25,9 @@ class TickerBarTest {
         var buffer = new ScreenBuffer(new TerminalSize(80, 1));
         bar.draw(new TextGraphics(buffer));
 
-        // AAPL symbol should be at column 1 in bright white bold.
-        assertEquals('A', buffer.getCell(1, 0).character().charAt(0));
-        assertEquals(AnsiColor.BRIGHT_WHITE, buffer.getCell(1, 0).fg());
+        // AAPL symbol should be at column 0 in bright white bold.
+        assertEquals('A', buffer.getCell(0, 0).character().charAt(0));
+        assertEquals(AnsiColor.BRIGHT_WHITE, buffer.getCell(0, 0).fg());
 
         // Should contain green cells (AAPL up) and red cells (TSLA down).
         boolean hasGreen = false, hasRed = false;
@@ -63,17 +63,64 @@ class TickerBarTest {
     }
 
     @Test
-    @DisplayName("truncates content to available width")
-    void truncatesToWidth() {
-        var entries = new java.util.ArrayList<TickerBar.TickerEntry>();
-        for (int i = 0; i < 50; i++) {
-            entries.add(new TickerBar.TickerEntry("SYM" + i, 100.0, 1.0));
-        }
-        var bar = new TickerBar(entries);
-        bar.setBounds(TerminalPosition.TOP_LEFT, new TerminalSize(20, 1));
-        var buffer = new ScreenBuffer(new TerminalSize(20, 1));
+    @DisplayName("tick advances scroll offset")
+    void tickAdvancesScroll() {
+        var bar = new TickerBar(List.of(
+                new TickerBar.TickerEntry("AAPL", 189.52, 1.35)
+        ));
+        int before = bar.getScrollOffset();
+        bar.tick();
+        assertEquals(before + 1, bar.getScrollOffset());
+    }
 
-        assertDoesNotThrow(() -> bar.draw(new TextGraphics(buffer)));
+    @Test
+    @DisplayName("scroll wraps around seamlessly")
+    void scrollWrapsAround() {
+        var bar = new TickerBar(List.of(
+                new TickerBar.TickerEntry("A", 1.0, 1.0)
+        ));
+        int totalLen = bar.buildScrollTextLen();
+        // Scroll past the end — should wrap to 0.
+        bar.setScrollOffset(totalLen - 1);
+        bar.tick();
+        assertEquals(0, bar.getScrollOffset(), "scroll offset should wrap to 0");
+    }
+
+    @Test
+    @DisplayName("two consecutive ticks produce different frames")
+    void consecutiveTicksDiffer() {
+        var bar = new TickerBar(List.of(
+                new TickerBar.TickerEntry("AAPL", 189.52, 1.35),
+                new TickerBar.TickerEntry("MSFT", 378.91, 0.99)
+        ));
+        bar.setBounds(TerminalPosition.TOP_LEFT, new TerminalSize(80, 1));
+        var buffer1 = new ScreenBuffer(new TerminalSize(80, 1));
+        var buffer2 = new ScreenBuffer(new TerminalSize(80, 1));
+        bar.draw(new TextGraphics(buffer1));
+        bar.tick();
+        bar.draw(new TextGraphics(buffer2));
+
+        boolean anyDifferent = false;
+        for (int c = 0; c < 80; c++) {
+            if (!buffer1.getCell(c, 0).equals(buffer2.getCell(c, 0))) {
+                anyDifferent = true;
+                break;
+            }
+        }
+        assertTrue(anyDifferent, "expected frames to differ after tick");
+    }
+
+    @Test
+    @DisplayName("startAnimation begins scrolling, stopAnimation stops")
+    void startStopAnimation() {
+        var bar = new TickerBar(List.of(
+                new TickerBar.TickerEntry("AAPL", 189.52, 1.35)
+        ));
+        assertFalse(bar.isAnimating());
+        bar.startAnimation();
+        assertTrue(bar.isAnimating());
+        bar.stopAnimation();
+        assertFalse(bar.isAnimating());
     }
 
     @Test
@@ -107,15 +154,16 @@ class TickerBarTest {
     }
 
     @Test
-    @DisplayName("setEntries updates content")
-    void setEntriesUpdatesContent() {
-        var bar = new TickerBar();
-        assertTrue(bar.getEntries().isEmpty());
-
-        var entries = List.of(new TickerBar.TickerEntry("GOOGL", 141.80, 1.21));
-        bar.setEntries(entries);
-        assertEquals(1, bar.getEntries().size());
-        assertEquals("GOOGL", bar.getEntries().get(0).symbol());
+    @DisplayName("setEntries resets scroll offset")
+    void setEntriesResetsScroll() {
+        var bar = new TickerBar(List.of(
+                new TickerBar.TickerEntry("AAPL", 189.52, 1.35)
+        ));
+        bar.tick();
+        bar.tick();
+        assertTrue(bar.getScrollOffset() > 0);
+        bar.setEntries(List.of(new TickerBar.TickerEntry("MSFT", 378.91, 0.99)));
+        assertEquals(0, bar.getScrollOffset());
     }
 
     @Test
