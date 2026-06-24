@@ -42,7 +42,8 @@ public final class AnimationFactory {
             () -> new LightningStorm(DEFAULT_SIZE),
             () -> new PacketFlow(DEFAULT_SIZE),
             () -> new TickerTape(DEFAULT_SIZE),
-            () -> new CandlestickField(DEFAULT_SIZE)
+            () -> new CandlestickField(DEFAULT_SIZE),
+            () -> new MarketDepth(DEFAULT_SIZE)
     );
 
     private AnimationFactory() {}
