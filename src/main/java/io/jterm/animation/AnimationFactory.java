@@ -41,7 +41,8 @@ public final class AnimationFactory {
             () -> new Snowfall(DEFAULT_SIZE),
             () -> new LightningStorm(DEFAULT_SIZE),
             () -> new PacketFlow(DEFAULT_SIZE),
-            () -> new TickerTape(DEFAULT_SIZE)
+            () -> new TickerTape(DEFAULT_SIZE),
+            () -> new CandlestickField(DEFAULT_SIZE)
     );
 
     private AnimationFactory() {}
