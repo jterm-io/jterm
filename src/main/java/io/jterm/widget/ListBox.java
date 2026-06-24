@@ -107,6 +107,20 @@ public class ListBox<T> extends AbstractComponent implements ListDataListener {
         return scrollOffset;
     }
 
+    /** Scroll down by one viewport height (page down). */
+    public void pageDown() {
+        int rows = getSize().rows();
+        setScrollOffset(scrollOffset + rows);
+        setSelectedIndex(scrollOffset + rows - 1);
+    }
+
+    /** Scroll up by one viewport height (page up). */
+    public void pageUp() {
+        int rows = getSize().rows();
+        setScrollOffset(scrollOffset - rows);
+        setSelectedIndex(scrollOffset);
+    }
+
     public void setScrollOffset(int offset) {
         int rows = getSize().rows();
         int maxOffset = Math.max(0, model.getSize() - rows);
@@ -216,12 +230,17 @@ public class ListBox<T> extends AbstractComponent implements ListDataListener {
             switch (keyStroke.character()) {
                 case 'P', 'p' -> { setSelectedIndex(selectedIndex - 1); return; }
                 case 'N', 'n' -> { setSelectedIndex(selectedIndex + 1); return; }
+                case 'V', 'v' -> { pageDown(); return; }
                 default -> { return; }  // Ignore other Ctrl+letter combos
             }
         }
         switch (keyStroke.type()) {
             case ARROW_UP -> setSelectedIndex(selectedIndex - 1);
             case ARROW_DOWN -> setSelectedIndex(selectedIndex + 1);
+            case PAGE_UP -> pageUp();
+            case PAGE_DOWN -> pageDown();
+            case HOME -> setSelectedIndex(0);
+            case END -> setSelectedIndex(model.getSize() - 1);
             case ENTER -> fireSelectionChanged();
             default -> {}
         }

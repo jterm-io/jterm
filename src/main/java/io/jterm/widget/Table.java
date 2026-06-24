@@ -204,12 +204,17 @@ public class Table extends AbstractComponent implements TableModelListener {
             switch (keyStroke.character()) {
                 case 'P', 'p' -> { setSelectedRow(selectedRow - 1); return; }
                 case 'N', 'n' -> { setSelectedRow(selectedRow + 1); return; }
+                case 'V', 'v' -> { pageDown(); return; }
                 default -> { return; }  // Ignore other Ctrl+letter combos
             }
         }
         switch (keyStroke.type()) {
             case ARROW_UP -> setSelectedRow(selectedRow - 1);
             case ARROW_DOWN -> setSelectedRow(selectedRow + 1);
+            case PAGE_UP -> pageUp();
+            case PAGE_DOWN -> pageDown();
+            case HOME -> setSelectedRow(0);
+            case END -> { if (model != null) setSelectedRow(model.getRowCount() - 1); }
             default -> {}
         }
     }
@@ -219,6 +224,21 @@ public class Table extends AbstractComponent implements TableModelListener {
         if (selectedRow < scrollOffset) scrollOffset = selectedRow;
         if (selectedRow >= scrollOffset + visibleRows) scrollOffset = selectedRow - visibleRows + 1;
         if (scrollOffset < 0) scrollOffset = 0;
+    }
+
+    /** Scroll down by one viewport height (page down). */
+    public void pageDown() {
+        int visibleRows = Math.max(1, getSize().rows() - 1);
+        int rowCount = model == null ? 0 : model.getRowCount();
+        scrollOffset = Math.min(scrollOffset + visibleRows, Math.max(0, rowCount - visibleRows));
+        setSelectedRow(scrollOffset);
+    }
+
+    /** Scroll up by one viewport height (page up). */
+    public void pageUp() {
+        int visibleRows = Math.max(1, getSize().rows() - 1);
+        scrollOffset = Math.max(0, scrollOffset - visibleRows);
+        setSelectedRow(scrollOffset);
     }
 
     @Override

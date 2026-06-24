@@ -377,7 +377,6 @@ class ListBoxTest {
         list.setBounds(TerminalPosition.TOP_LEFT, new TerminalSize(5, 3));
         // Keys not handled by handleKeyStroke should be no-ops (default branch)
         for (var kt : new KeyType[]{
-                KeyType.HOME, KeyType.END, KeyType.PAGE_UP, KeyType.PAGE_DOWN,
                 KeyType.ARROW_LEFT, KeyType.ARROW_RIGHT, KeyType.TAB,
                 KeyType.ESCAPE, KeyType.DELETE, KeyType.BACKSPACE,
                 KeyType.INSERT, KeyType.F1, KeyType.EOF, KeyType.UNKNOWN}) {
@@ -385,6 +384,29 @@ class ListBoxTest {
             list.handleKeyStroke(new KeyStroke(kt));
             assertEquals(0, list.getSelectedIndex(), "key " + kt + " should not move selection");
         }
+    }
+
+    @Test
+    void navigationKeysMoveSelection() {
+        var list = new ListBox<String>();
+        for (int i = 0; i < 10; i++) list.addItem("Item" + i);
+        list.setBounds(TerminalPosition.TOP_LEFT, new TerminalSize(10, 3));
+        // HOME goes to first item
+        list.setSelectedIndex(5);
+        list.handleKeyStroke(new KeyStroke(KeyType.HOME));
+        assertEquals(0, list.getSelectedIndex(), "HOME should select first item");
+        // END goes to last item
+        list.setSelectedIndex(0);
+        list.handleKeyStroke(new KeyStroke(KeyType.END));
+        assertEquals(9, list.getSelectedIndex(), "END should select last item");
+        // PAGE_DOWN scrolls down by viewport height
+        list.setSelectedIndex(0);
+        list.handleKeyStroke(new KeyStroke(KeyType.PAGE_DOWN));
+        assertTrue(list.getSelectedIndex() >= 2, "PAGE_DOWN should move selection down");
+        // PAGE_UP scrolls up by viewport height
+        int afterDown = list.getSelectedIndex();
+        list.handleKeyStroke(new KeyStroke(KeyType.PAGE_UP));
+        assertTrue(list.getSelectedIndex() < afterDown, "PAGE_UP should move selection up");
     }
 
     @Test

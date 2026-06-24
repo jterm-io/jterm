@@ -146,6 +146,7 @@ public class TextArea extends AbstractComponent {
                 case 'P', 'p' -> { moveUp(); return; }
                 case 'N', 'n' -> { moveDown(); return; }
                 case 'D', 'd' -> { deleteForward(); invalidate(); adjustViewport(); return; }
+                case 'V', 'v' -> { pageDown(); return; }
                 default -> { return; } // Ignore other Ctrl combos
             }
         }
