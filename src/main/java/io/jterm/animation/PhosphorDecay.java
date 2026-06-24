@@ -32,7 +32,7 @@ public class PhosphorDecay implements AnimatedBackground {
 
     private static final double EXCITE_CHANCE = 0.06;
 
-    private final Random random = new Random();
+    private final Random random;
 
     private volatile boolean running;
     private volatile TerminalSize lastSize;
@@ -41,6 +41,12 @@ public class PhosphorDecay implements AnimatedBackground {
     private TerminalSize currentSize;
 
     public PhosphorDecay(TerminalSize preferredSize) {
+        this(preferredSize, new Random());
+    }
+
+    /** Visible for tests: inject a deterministic Random. */
+    PhosphorDecay(TerminalSize preferredSize, Random rng) {
+        this.random = rng;
         onResize(preferredSize);
     }
 

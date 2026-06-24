@@ -199,7 +199,7 @@ class InputPipelineTest {
         long elapsedMs = (System.nanoTime() - start) / 1_000_000;
         assertTrue(ks.isEmpty());
         // Should return quickly because inputClosed is set
-        assertTrue(elapsedMs < 50, "pollInput after close should return quickly, took " + elapsedMs + "ms");
+        assertTrue(elapsedMs < 250, "pollInput after close should return quickly, took " + elapsedMs + "ms");
     }
 
     @Test

@@ -10,6 +10,7 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
 import java.util.HashSet;
+import java.util.Random;
 import java.util.Set;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -106,7 +107,10 @@ class PhosphorDecayTest {
     @Test
     @DisplayName("cells decay naturally without manual override")
     void cellsDecayNaturally() {
-        var decay = new PhosphorDecay(new TerminalSize(30, 15));
+        // Use a Random that never triggers excite or double-decay (always returns 1.0)
+        var decay = new PhosphorDecay(new TerminalSize(30, 15), new Random() {
+            @Override public double nextDouble() { return 1.0; }
+        });
         var size = new TerminalSize(30, 15);
         var buffer = new ScreenBuffer(size);
 
