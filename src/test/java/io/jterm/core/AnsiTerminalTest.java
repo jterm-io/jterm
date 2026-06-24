@@ -200,6 +200,8 @@ class AnsiTerminalTest {
     @Test
     void exitPrivateModeEmitsShowCursorAndExitAltScreen() throws Exception {
         var t = newTerminal(null);
+        t.terminal.enterPrivateMode();
+        t.captured.reset();
         t.terminal.exitPrivateMode();
         String out = t.output();
         assertEquals(AnsiCodes.SHOW_CURSOR + AnsiCodes.EXIT_ALT_SCREEN, out);
@@ -565,6 +567,8 @@ class AnsiTerminalTest {
     @Test
     void closeEmitsExitPrivateModeSequence() throws Exception {
         var t = newTerminal(null);
+        t.terminal.enterPrivateMode();
+        t.captured.reset();
         t.terminal.close();
         String out = t.output();
         assertEquals(AnsiCodes.SHOW_CURSOR + AnsiCodes.EXIT_ALT_SCREEN, out);
@@ -573,6 +577,8 @@ class AnsiTerminalTest {
     @Test
     void closeCallsExitPrivateMode() throws Exception {
         var t = newTerminal(null);
+        t.terminal.enterPrivateMode();
+        t.captured.reset();
         t.terminal.close();
         String out = t.output();
         assertTrue(out.contains(AnsiCodes.SHOW_CURSOR));

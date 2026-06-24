@@ -40,6 +40,7 @@ public class SocketTerminal implements Terminal {
     private final LinkedBlockingQueue<KeyStroke> inputQueue = new LinkedBlockingQueue<>(256);
     private Thread readerThread;
     private volatile boolean inputClosed = false;
+    private volatile boolean inPrivateMode = false;
 
     /**
      * Construct a terminal from the socket's input and output streams, with an explicit size.
@@ -75,13 +76,16 @@ public class SocketTerminal implements Terminal {
         writeRaw(AnsiCodes.HIDE_CURSOR.getBytes(StandardCharsets.UTF_8));
         writeRaw(AnsiCodes.CLEAR_SCREEN.getBytes(StandardCharsets.UTF_8));
         flush();
+        inPrivateMode = true;
     }
 
     @Override
     public void exitPrivateMode() throws IOException {
+        if (!inPrivateMode) return;
         writeRaw(AnsiCodes.SHOW_CURSOR.getBytes(StandardCharsets.UTF_8));
         writeRaw(AnsiCodes.EXIT_ALT_SCREEN.getBytes(StandardCharsets.UTF_8));
         flush();
+        inPrivateMode = false;
     }
 
     @Override

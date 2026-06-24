@@ -104,6 +104,8 @@ class SocketTerminalExtraTest {
         var captured = new ByteArrayOutputStream();
         var in = new ByteArrayInputStream(new byte[0]);
         var t = new SocketTerminal(in, captured, new TerminalSize(80, 24));
+        t.enterPrivateMode();
+        captured.reset();
         t.close();
         String out = captured.toString(StandardCharsets.UTF_8);
         assertTrue(out.contains(AnsiCodes.SHOW_CURSOR));

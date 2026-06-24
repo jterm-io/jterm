@@ -349,6 +349,8 @@ class SocketTerminalTest {
     void exitPrivateModeEmitsSequences() throws IOException {
         var out = new ByteArrayOutputStream();
         var term = new SocketTerminal(new ByteArrayInputStream(new byte[0]), out, new TerminalSize(80, 24));
+        term.enterPrivateMode();
+        out.reset();
         term.exitPrivateMode();
         var s = out.toString(StandardCharsets.UTF_8);
         assertTrue(s.contains("\033[?25h"), "should show cursor");
@@ -370,6 +372,8 @@ class SocketTerminalTest {
     void exitPrivateModeAutoFlushes() throws IOException {
         var out = new ByteArrayOutputStream();
         var term = new SocketTerminal(new ByteArrayInputStream(new byte[0]), out, new TerminalSize(80, 24));
+        term.enterPrivateMode();
+        out.reset();
         term.exitPrivateMode();
         assertFalse(out.toString(StandardCharsets.UTF_8).isEmpty());
     }
@@ -541,6 +545,8 @@ class SocketTerminalTest {
         var out = new ByteArrayOutputStream();
         var in = new ByteArrayInputStream(new byte[0]);
         var term = new SocketTerminal(in, out, new TerminalSize(80, 24));
+        term.enterPrivateMode();
+        out.reset();
         term.close();
         var s = out.toString(StandardCharsets.UTF_8);
         assertTrue(s.contains("\033[?25h"), "exit private mode shows cursor");

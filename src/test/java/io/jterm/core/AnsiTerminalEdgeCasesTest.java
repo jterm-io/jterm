@@ -78,6 +78,8 @@ class AnsiTerminalEdgeCasesTest {
     @Test
     void closeOnTestTerminalDoesNotInvokeStty() throws Exception {
         var h = newHolder(null);
+        h.terminal.enterPrivateMode();
+        h.captured.reset();
         h.terminal.close();
         String out = h.output();
         assertTrue(out.contains("\033[?25h"));
