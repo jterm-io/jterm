@@ -23,6 +23,7 @@ public abstract class AbstractComponent implements Component {
     private volatile LayoutData layoutData;
     private volatile Component parent;
     private volatile boolean focused;
+    private volatile boolean focusable = true;
 
     @Override
     public TerminalSize getSize() { return size; }
@@ -83,6 +84,12 @@ public abstract class AbstractComponent implements Component {
 
     @Override
     public void setFocused(boolean focused) { this.focused = focused; }
+
+    @Override
+    public boolean isFocusable() { return focusable; }
+
+    @Override
+    public void setFocusable(boolean focusable) { this.focusable = focusable; }
 
     @Override
     public void handleKeyStroke(io.jterm.core.input.KeyStroke keyStroke) {

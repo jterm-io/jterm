@@ -161,7 +161,8 @@ class RainStormTest {
     void onResizeRegeneratesDrops() {
         var storm = new RainStorm(new TerminalSize(40, 12));
         storm.onResize(new TerminalSize(100, 50));
-        assertEquals(100, storm.getDropCount());
+        // Drop count scales with area: 100*50=5000, * 100/(80*24) ≈ 260
+        assertTrue(storm.getDropCount() > 100, "larger screen should have more drops");
     }
 
     @Test

@@ -319,6 +319,7 @@ public class DefaultTextGUI implements TextGUI, WindowManager {
     }
 
     private boolean isFocusable(Component component) {
+        if (!component.isFocusable()) return false;
         return component instanceof Button
                 || component instanceof CheckBox
                 || component instanceof ListBox

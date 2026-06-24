@@ -54,4 +54,10 @@ public interface Component {
 
     /** Sets focused state. */
     void setFocused(boolean focused);
+
+    /** Whether this component can receive keyboard focus via TAB traversal. */
+    default boolean isFocusable() { return true; }
+
+    /** Sets whether this component can receive focus via TAB traversal. */
+    default void setFocusable(boolean focusable) {}
 }

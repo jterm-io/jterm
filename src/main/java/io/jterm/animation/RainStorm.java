@@ -16,7 +16,10 @@ import java.util.Random;
 public class RainStorm implements AnimatedBackground {
 
     private static final int TARGET_FPS = 10;
-    private static final int DROP_COUNT = 100;
+    private static final int MIN_DROPS = 80;
+    private static final int MAX_DROPS = 400;
+    /** Drops per 80×24 screen area — scales with terminal size. */
+    private static final double DROPS_PER_AREA = 100.0 / (80 * 24);
 
     private final Random random = new Random();
 
@@ -91,19 +94,33 @@ public class RainStorm implements AnimatedBackground {
     }
 
     private void ensureDrops(TerminalSize size) {
-        if (drops != null && drops.length == DROP_COUNT) return;
-        drops = new Drop[DROP_COUNT];
-        for (int i = 0; i < DROP_COUNT; i++) {
+        int targetCount = dropCount(size);
+        if (drops != null && drops.length == targetCount
+                && lastSize != null
+                && lastSize.columns() == size.columns()
+                && lastSize.rows() == size.rows()) {
+            return;
+        }
+        drops = new Drop[targetCount];
+        for (int i = 0; i < targetCount; i++) {
             drops[i] = new Drop(size, random);
         }
+    }
+
+    private int dropCount(TerminalSize size) {
+        int area = size.columns() * size.rows();
+        if (area <= 0) return 0;
+        int count = (int) (area * DROPS_PER_AREA);
+        return Math.max(MIN_DROPS, Math.min(MAX_DROPS, count));
     }
 
     @Override
     public void onResize(TerminalSize newSize) {
         this.lastSize = newSize;
         if (newSize.columns() <= 0 || newSize.rows() <= 0) return;
-        drops = new Drop[DROP_COUNT];
-        for (int i = 0; i < DROP_COUNT; i++) {
+        int count = dropCount(newSize);
+        drops = new Drop[count];
+        for (int i = 0; i < count; i++) {
             drops[i] = new Drop(newSize, random);
         }
     }

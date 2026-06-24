@@ -66,9 +66,9 @@ public class PacketFlow implements AnimatedBackground {
         int cols = size.columns();
         int rows = size.rows();
 
-        // Avoid the very edges; place nodes in a scattered layout.
-        int marginX = Math.max(2, cols / 10);
-        int marginY = Math.max(1, rows / 10);
+        // Use minimal margins so nodes spread across the full screen width.
+        int marginX = Math.max(1, cols / 20);
+        int marginY = Math.max(1, rows / 20);
         int usableW = Math.max(1, cols - 2 * marginX);
         int usableH = Math.max(1, rows - 2 * marginY);
 
@@ -78,8 +78,9 @@ public class PacketFlow implements AnimatedBackground {
         pulseFrames.clear();
 
         for (int i = 0; i < NODE_COUNT; i++) {
-            int x = marginX + (int) Math.round(usableW * (0.1 + 0.8 * random.nextDouble()));
-            int y = marginY + (int) Math.round(usableH * (0.1 + 0.8 * random.nextDouble()));
+            // Spread nodes across the full usable area (0.0 to 1.0)
+            int x = marginX + (int) Math.round(usableW * random.nextDouble());
+            int y = marginY + (int) Math.round(usableH * random.nextDouble());
             x = Math.max(marginX, Math.min(cols - marginX - 1, x));
             y = Math.max(marginY, Math.min(rows - marginY - 1, y));
             nodes.add(new Node(i, "N" + (i + 1), x, y));
