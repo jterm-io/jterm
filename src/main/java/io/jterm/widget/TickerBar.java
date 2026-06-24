@@ -33,6 +33,7 @@ public class TickerBar extends AbstractComponent {
 
     private volatile List<TickerEntry> entries = List.of();
     private volatile int scrollOffset = 0;
+    private volatile Runnable onTick;
     private final AtomicBoolean animating = new AtomicBoolean(false);
     private ScheduledExecutorService animator;
 
@@ -45,6 +46,15 @@ public class TickerBar extends AbstractComponent {
     public TickerBar(List<TickerEntry> entries) {
         setFocusable(false);
         setEntries(entries);
+    }
+
+    /**
+     * Sets a callback invoked after each scroll tick. The callback should
+     * call {@code gui.requestRefresh()} to trigger a screen repaint.
+     * Without this, the animation only updates on keystrokes.
+     */
+    public void setOnTick(Runnable onTick) {
+        this.onTick = onTick;
     }
 
     /** Updates the ticker data and triggers a repaint. */
@@ -110,6 +120,9 @@ public class TickerBar extends AbstractComponent {
         if (fullText.isEmpty()) return;
         scrollOffset = (scrollOffset + SCROLL_SPEED_CELLS) % fullText.length();
         invalidate();
+        if (onTick != null) {
+            onTick.run();
+        }
     }
 
     /** Visible for tests: length of the full scroll text. */
