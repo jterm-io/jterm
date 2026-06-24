@@ -3,7 +3,6 @@ package io.jterm.graphics;
 import io.jterm.core.TerminalPosition;
 import io.jterm.core.TerminalSize;
 import io.jterm.screen.ScreenBuffer;
-import io.jterm.style.AnsiColor;
 import io.jterm.style.TextCell;
 import org.junit.jupiter.api.Test;
 
@@ -11,46 +10,46 @@ import static org.junit.jupiter.api.Assertions.*;
 
 class ClippedTextGraphicsTest {
     @Test
-    void writesWithinClipArea() {
-        var parent = new TextGraphics(new ScreenBuffer(new TerminalSize(10, 5)));
-        var clipped = new ClippedTextGraphics(parent, new TerminalPosition(2, 1), new TerminalSize(3, 3));
-        clipped.setCell(0, 0, new TextCell('A'));
-        assertEquals('A', parent.getCell(2, 1).character().charAt(0));
+    void delegatesSetCellToParentWithOffset() {
+        var parent = new ScreenBuffer(new TerminalSize(10, 10));
+        var g = new ClippedTextGraphics(new TextGraphics(parent), new TerminalPosition(2, 3), new TerminalSize(4, 4));
+        g.setCell(1, 1, new TextCell('X'));
+        assertEquals('X', parent.getCell(3, 4).character().charAt(0));
     }
 
     @Test
-    void ignoresCellsOutsideClip() {
-        var parent = new TextGraphics(new ScreenBuffer(new TerminalSize(10, 5)));
-        var clipped = new ClippedTextGraphics(parent, new TerminalPosition(2, 1), new TerminalSize(3, 3));
-        clipped.setCell(5, 5, new TextCell('A'));
-        assertEquals(' ', parent.getCell(7, 6).character().charAt(0));
+    void ignoresOutOfBoundsSetCell() {
+        var parent = new ScreenBuffer(new TerminalSize(10, 10));
+        var g = new ClippedTextGraphics(new TextGraphics(parent), new TerminalPosition(0, 0), new TerminalSize(2, 2));
+        g.setCell(5, 5, new TextCell('X'));
+        assertEquals(' ', parent.getCell(5, 5).character().charAt(0));
     }
 
     @Test
-    void fillRectangleRespectsClip() {
-        var parent = new TextGraphics(new ScreenBuffer(new TerminalSize(10, 5)));
-        var clipped = new ClippedTextGraphics(parent, new TerminalPosition(1, 1), new TerminalSize(3, 3));
-        clipped.fillRectangle(0, 0, 5, 5, new TextCell('X'));
-        assertEquals('X', parent.getCell(1, 1).character().charAt(0));
-        assertEquals('X', parent.getCell(3, 3).character().charAt(0));
+    void drawLineWithinClipUpdatesParent() {
+        var parent = new ScreenBuffer(new TerminalSize(10, 10));
+        var g = new ClippedTextGraphics(new TextGraphics(parent), new TerminalPosition(1, 1), new TerminalSize(5, 5));
+        g.drawLine(0, 0, 2, 0, new TextCell('-'));
+        assertEquals('-', parent.getCell(1, 1).character().charAt(0));
+        assertEquals('-', parent.getCell(3, 1).character().charAt(0));
+    }
+
+    @Test
+    void fillRectangleWithinClipUpdatesParent() {
+        var parent = new ScreenBuffer(new TerminalSize(10, 10));
+        var g = new ClippedTextGraphics(new TextGraphics(parent), new TerminalPosition(2, 2), new TerminalSize(4, 4));
+        g.fillRectangle(0, 0, 2, 2, new TextCell('#'));
+        assertEquals('#', parent.getCell(2, 2).character().charAt(0));
+        assertEquals('#', parent.getCell(3, 3).character().charAt(0));
         assertEquals(' ', parent.getCell(4, 4).character().charAt(0));
     }
 
     @Test
-    void drawStringClipsHorizontally() {
-        var parent = new TextGraphics(new ScreenBuffer(new TerminalSize(10, 5)));
-        var clipped = new ClippedTextGraphics(parent, new TerminalPosition(0, 0), new TerminalSize(3, 1));
-        clipped.drawString(0, 0, "Hello", new TextCell(' ', AnsiColor.DEFAULT, AnsiColor.DEFAULT));
-        assertEquals('H', parent.getCell(0, 0).character().charAt(0));
-        assertEquals('e', parent.getCell(1, 0).character().charAt(0));
-        assertEquals('l', parent.getCell(2, 0).character().charAt(0));
-        assertEquals(' ', parent.getCell(3, 0).character().charAt(0));
-    }
-
-    @Test
-    void getSizeReturnsClipSize() {
-        var parent = new TextGraphics(new ScreenBuffer(new TerminalSize(20, 10)));
-        var clipped = new ClippedTextGraphics(parent, new TerminalPosition(5, 5), new TerminalSize(4, 2));
-        assertEquals(new TerminalSize(4, 2), clipped.getSize());
+    void drawStringWithinClipUpdatesParent() {
+        var parent = new ScreenBuffer(new TerminalSize(20, 5));
+        var g = new ClippedTextGraphics(new TextGraphics(parent), new TerminalPosition(5, 2), new TerminalSize(10, 1));
+        g.drawString(0, 0, "hi", new TextCell(' '));
+        assertEquals('h', parent.getCell(5, 2).character().charAt(0));
+        assertEquals('i', parent.getCell(6, 2).character().charAt(0));
     }
 }

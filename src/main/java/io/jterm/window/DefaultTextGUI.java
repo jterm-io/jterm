@@ -83,11 +83,16 @@ public class DefaultTextGUI implements TextGUI, WindowManager {
     }
 
     @Override
-    public Collection<Window> getWindows() { return new ArrayList<>(windows); }
+    public Collection<Window> getWindows() {
+        if (windowsToRemove.isEmpty()) return new ArrayList<>(windows);
+        var visible = new ArrayList<>(windows);
+        visible.removeAll(windowsToRemove);
+        return visible;
+    }
 
     @Override
     public boolean containsWindow(Window window) {
-        return windows.contains(window);
+        return windows.contains(window) && !windowsToRemove.contains(window);
     }
 
     public FocusManager getFocusManager() {
