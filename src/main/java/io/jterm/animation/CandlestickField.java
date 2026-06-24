@@ -9,24 +9,23 @@ import io.jterm.style.TextCell;
 import java.util.Random;
 
 /**
- * Animated background that fills the screen with a grid of miniature ASCII
- * candlestick bars. Each candle displays a randomized OHLC value that updates
- * each frame. Bullish candles are green, bearish candles are red. Candles are
- * drawn with block characters for the body and vertical-bar wicks.
+ * Animated background that renders candlestick price charts as horizontal
+ * bands across the screen. Each band is an independent price series where
+ * every candle's open equals the previous candle's close, producing a
+ * continuous price walk. Candles use full-block bodies with thin wicks;
+ * bullish candles are green, bearish are red. Dim separators divide bands.
  */
 public class CandlestickField implements AnimatedBackground {
 
-    private static final int TARGET_FPS = 6;
-
-    // Each candle occupies a 2-column wide cell; the candle body is drawn
-    // with left/right half-blocks (\u258c / \u2590) and the wick is a vertical bar.
-    private static final int CANDLE_WIDTH = 2;
+    private static final int TARGET_FPS = 4;
+    private static final int CANDLE_SPACING = 3;  // body col + 2 gap cols
+    private static final int MIN_BAND_ROWS = 5;
 
     private final Random random = new Random();
 
     private volatile boolean running;
     private volatile TerminalSize lastSize;
-    private Candle[][] candles;
+    private ChartBand[] bands;
 
     public CandlestickField(TerminalSize preferredSize) {
         onResize(preferredSize);
@@ -39,193 +38,218 @@ public class CandlestickField implements AnimatedBackground {
             return;
         }
 
-        ensureCandles(size);
+        ensureBands(size);
 
         // Black background.
         TextCell bg = new TextCell(' ', AnsiColor.BLACK, AnsiColor.BLACK);
         graphics.fillRectangle(0, 0, size.columns(), size.rows(), bg);
 
-        int cols = size.columns();
-        int rows = size.rows();
+        for (int i = 0; i < bands.length; i++) {
+            ChartBand band = bands[i];
+            band.update();
+            band.draw(graphics, size.columns());
 
-        for (int cy = 0; cy < candles.length; cy++) {
-            for (int cx = 0; cx < candles[cy].length; cx++) {
-                Candle candle = candles[cy][cx];
-                candle.update(rows);
-                candle.draw(graphics, rows);
+            // Dim separator line between bands (not after the last one).
+            if (i < bands.length - 1) {
+                int sepRow = band.startRow + band.height;
+                if (sepRow < size.rows()) {
+                    TextCell sep = new TextCell('─', AnsiColor.BRIGHT_BLACK, AnsiColor.BLACK);
+                    for (int c = 0; c < size.columns(); c++) {
+                        graphics.setCell(c, sepRow, sep);
+                    }
+                }
             }
         }
     }
 
-    private void ensureCandles(TerminalSize size) {
+    private void ensureBands(TerminalSize size) {
         int cols = size.columns();
         int rows = size.rows();
-        int candleCols = Math.max(1, cols / CANDLE_WIDTH);
-        int candleRows = Math.max(1, rows);
+        int candleCount = Math.max(1, cols / CANDLE_SPACING);
 
-        if (candles != null && candles.length == candleRows && candles[0].length == candleCols) {
+        // Determine number of bands: aim for ~8 rows per band, minimum 5.
+        int bandHeight = Math.max(MIN_BAND_ROWS, rows / 4);
+        int usableRows = rows;  // separators take 1 row each between bands
+        int numBands = Math.max(1, (usableRows + 1) / (bandHeight + 1));
+        // Recalculate height to evenly divide.
+        int totalSeparators = numBands - 1;
+        int actualBandHeight = Math.max(MIN_BAND_ROWS, (usableRows - totalSeparators) / numBands);
+
+        if (bands != null && bands.length == numBands && bands[0].candles.length == candleCount
+                && bands[0].height == actualBandHeight) {
             return;
         }
 
-        candles = new Candle[candleRows][candleCols];
-        for (int y = 0; y < candleRows; y++) {
-            for (int x = 0; x < candleCols; x++) {
-                candles[y][x] = new Candle(x * CANDLE_WIDTH, y, rows, random);
+        bands = new ChartBand[numBands];
+        int currentRow = 0;
+        for (int i = 0; i < numBands; i++) {
+            int height = actualBandHeight;
+            // Last band absorbs any remainder.
+            if (i == numBands - 1) {
+                int used = currentRow + height + totalSeparators;
+                if (used < rows) {
+                    height += rows - used;
+                }
             }
+            bands[i] = new ChartBand(currentRow, height, candleCount, random);
+            currentRow += height + 1;  // +1 for separator
         }
     }
 
     @Override
     public void onResize(TerminalSize newSize) {
         this.lastSize = newSize;
-        if (newSize.columns() <= 0 || newSize.rows() <= 0) {
-            return;
+        if (newSize.columns() > 0 && newSize.rows() > 0) {
+            ensureBands(newSize);
         }
-        ensureCandles(newSize);
     }
 
     @Override
-    public void start() {
-        running = true;
-    }
+    public void start() { running = true; }
 
     @Override
-    public void stop() {
-        running = false;
-    }
+    public void stop() { running = false; }
 
     @Override
-    public boolean isRunning() {
-        return running;
-    }
+    public boolean isRunning() { return running; }
 
     @Override
-    public int targetFps() {
-        return TARGET_FPS;
-    }
+    public int targetFps() { return TARGET_FPS; }
 
     @Override
-    public TerminalSize lastSize() {
-        return lastSize;
-    }
+    public TerminalSize lastSize() { return lastSize; }
 
-    /** Visible for tests: returns the current candle grid. */
-    public Candle[][] getCandles() {
-        return candles;
-    }
+    /** Visible for tests: returns the current band array. */
+    public ChartBand[] getBands() { return bands; }
 
-    /** Visible for tests: returns the number of candles in each row. */
-    public int getCandleRowCount() {
-        return candles == null ? 0 : candles[0].length;
-    }
+    /** Visible for tests: returns the number of bands. */
+    public int getBandCount() { return bands == null ? 0 : bands.length; }
 
-    /** A single ASCII candlestick with randomized OHLC data. */
-    public static final class Candle {
-        private static final double RANDOM_SCALE = 0.15;
-        private static final double REVERSION = 0.05;
-        private static final char LEFT_BLOCK = '\u258c';
-        private static final char RIGHT_BLOCK = '\u2590';
+    /**
+     * One horizontal chart strip with its own continuous price series.
+     */
+    public static final class ChartBand {
+        private static final double DRIFT = 0.08;
+        private static final double VOLATILITY = 0.12;
         private static final char FULL_BLOCK = '\u2588';
-        private static final char WICK = '\u2503';
+        private static final char WICK = '\u2502';
 
-        private final int screenX;
-        private final int screenY;
-        private final int totalRows;
+        private final int startRow;
+        private final int height;
+        private final Candle[] candles;
         private final Random random;
 
-        private double open;
-        private double high;
-        private double low;
-        private double close;
-        private boolean bullish;
-
-        Candle(int screenX, int screenY, int totalRows, Random random) {
-            this.screenX = screenX;
-            this.screenY = screenY;
-            this.totalRows = totalRows;
+        ChartBand(int startRow, int height, int candleCount, Random random) {
+            this.startRow = startRow;
+            this.height = height;
             this.random = random;
-            this.open = random.nextDouble();
-            this.close = open + (random.nextDouble() - 0.5) * RANDOM_SCALE;
-            computeHighLow();
-        }
-
-        void update(int rows) {
-            // Random walk with mean reversion. Price is normalized to [0, 1]
-            // and mapped to terminal rows when drawn.
-            double change = (random.nextDouble() - 0.5) * RANDOM_SCALE;
-            double meanReversion = (0.5 - close) * REVERSION;
-            open = close;
-            close = clamp(close + change + meanReversion, 0.05, 0.95);
-            computeHighLow();
-        }
-
-        private void computeHighLow() {
-            double range = Math.max(Math.abs(close - open), 0.02) * (1.0 + random.nextDouble());
-            high = Math.max(open, close) + range * 0.5;
-            low = Math.min(open, close) - range * 0.5;
-            bullish = close >= open;
-        }
-
-        void draw(TextGraphics graphics, int rows) {
-            AnsiColor fg = bullish ? AnsiColor.BRIGHT_GREEN : AnsiColor.BRIGHT_RED;
-            AnsiColor bg = AnsiColor.BLACK;
-            TextCell bodyLeft = new TextCell(LEFT_BLOCK, fg, bg, SGR.BOLD);
-            TextCell bodyRight = new TextCell(RIGHT_BLOCK, fg, bg, SGR.BOLD);
-            TextCell bodyFull = new TextCell(FULL_BLOCK, fg, bg, SGR.BOLD);
-            TextCell wick = new TextCell(WICK, fg, bg, SGR.BOLD);
-
-            int top = priceToRow(high, rows);
-            int bottom = priceToRow(low, rows);
-            int bodyTop = priceToRow(Math.max(open, close), rows);
-            int bodyBottom = priceToRow(Math.min(open, close), rows);
-
-            // Draw wick from high to low.
-            for (int y = top; y <= bottom; y++) {
-                if (y >= 0 && y < rows) {
-                    graphics.setCell(screenX, y, wick);
-                }
+            this.candles = new Candle[candleCount];
+            // Seed the series with a continuous price walk.
+            double price = 0.4 + random.nextDouble() * 0.2;  // start near middle
+            for (int i = 0; i < candleCount; i++) {
+                double open = price;
+                double change = (random.nextDouble() - 0.5) * VOLATILITY;
+                double close = clamp(open + change, 0.05, 0.95);
+                double wickRange = Math.max(Math.abs(close - open), 0.03) * (0.5 + random.nextDouble());
+                double high = Math.max(open, close) + wickRange * random.nextDouble() * 0.5;
+                double low = Math.min(open, close) - wickRange * random.nextDouble() * 0.5;
+                candles[i] = new Candle(open, close, clamp(high, 0.02, 0.98), clamp(low, 0.02, 0.98));
+                price = close;
             }
+        }
 
-            // Draw body. If the body is at least one row tall, fill with left/right
-            // half-blocks. If the open/close round to the same row, draw a single
-            // full-width block character on that row.
+        void update() {
+            // Advance the price walk: each candle's open = previous close.
+            double prevClose = candles[candles.length - 1].close;
+            for (int i = 0; i < candles.length; i++) {
+                double open = prevClose;
+                double change = (random.nextDouble() - 0.5) * VOLATILITY;
+                double meanReversion = (0.5 - open) * 0.03;
+                double close = clamp(open + change + meanReversion, 0.05, 0.95);
+                double bodyRange = Math.abs(close - open);
+                double wickRange = Math.max(bodyRange, 0.03) * (0.5 + random.nextDouble());
+                double high = Math.max(open, close) + wickRange * random.nextDouble() * 0.5;
+                double low = Math.min(open, close) - wickRange * random.nextDouble() * 0.5;
+                candles[i] = new Candle(open, close, clamp(high, 0.02, 0.98), clamp(low, 0.02, 0.98));
+                prevClose = close;
+            }
+        }
+
+        void draw(TextGraphics graphics, int cols) {
+            for (int i = 0; i < candles.length; i++) {
+                int screenX = i * CANDLE_SPACING;
+                if (screenX >= cols) break;
+                drawCandle(graphics, screenX, candles[i], cols);
+            }
+        }
+
+        private void drawCandle(TextGraphics graphics, int x, Candle candle, int cols) {
+            boolean bullish = candle.close >= candle.open;
+            AnsiColor bodyColor = bullish ? AnsiColor.BRIGHT_GREEN : AnsiColor.BRIGHT_RED;
+            AnsiColor wickColor = AnsiColor.BRIGHT_BLACK;  // dim wicks
+
+            int top = priceToRow(candle.high);
+            int bottom = priceToRow(candle.low);
+            int bodyTop = priceToRow(Math.max(candle.open, candle.close));
+            int bodyBottom = priceToRow(Math.min(candle.open, candle.close));
+
+            // Ensure body is at least 1 row.
             if (bodyTop == bodyBottom) {
-                if (bodyTop >= 0 && bodyTop < rows) {
-                    graphics.setCell(screenX, bodyTop, bodyFull);
+                bodyBottom = Math.min(bodyTop + 1, height - 1);
+            }
+
+            // Draw wick (dim, thin) across the full high-low range.
+            TextCell wickCell = new TextCell(WICK, wickColor, AnsiColor.BLACK);
+            for (int row = top; row <= bottom; row++) {
+                int screenRow = startRow + row;
+                if (row >= 0 && row < height && screenRow >= 0) {
+                    graphics.setCell(x, screenRow, wickCell);
                 }
-            } else {
-                for (int y = bodyTop; y <= bodyBottom; y++) {
-                    if (y >= 0 && y < rows) {
-                        graphics.setCell(screenX, y, bodyLeft);
-                        if (screenX + 1 < graphics.getSize().columns()) {
-                            graphics.setCell(screenX + 1, y, bodyRight);
-                        }
-                    }
+            }
+
+            // Draw body (bright, full block) over the wick for body rows.
+            TextCell bodyCell = new TextCell(FULL_BLOCK, bodyColor, AnsiColor.BLACK, SGR.BOLD);
+            for (int row = bodyTop; row <= bodyBottom; row++) {
+                int screenRow = startRow + row;
+                if (row >= 0 && row < height && screenRow >= 0) {
+                    graphics.setCell(x, screenRow, bodyCell);
                 }
             }
         }
 
-        private int priceToRow(double price, int rows) {
-            int row = (int) ((1.0 - price) * (rows - 1));
-            return clamp(row, 0, rows - 1);
+        private int priceToRow(double price) {
+            // price [0..1] → row [0..height-1], inverted (high price = top = row 0)
+            int row = (int) ((1.0 - price) * (height - 1));
+            return Math.max(0, Math.min(height - 1, row));
         }
 
-        private static int clamp(int value, int min, int max) {
-            return Math.max(min, Math.min(max, value));
+        public Candle[] getCandles() { return candles; }
+        public int getStartRow() { return startRow; }
+        public int getHeight() { return height; }
+    }
+
+    /** Immutable OHLC data for a single candle. */
+    public static final class Candle {
+        private final double open;
+        private final double close;
+        private final double high;
+        private final double low;
+
+        Candle(double open, double close, double high, double low) {
+            this.open = open;
+            this.close = close;
+            this.high = high;
+            this.low = low;
         }
 
-        private static double clamp(double value, double min, double max) {
-            return Math.max(min, Math.min(max, value));
-        }
+        public boolean isBullish() { return close >= open; }
+        public double getOpen() { return open; }
+        public double getClose() { return close; }
+        public double getHigh() { return high; }
+        public double getLow() { return low; }
+    }
 
-        /** True if this candle closed at or above its open. */
-        public boolean isBullish() {
-            return bullish;
-        }
-
-        /** Normalized close price, roughly [0, 1]. */
-        public double getClose() {
-            return close;
-        }
+    private static double clamp(double v, double min, double max) {
+        return Math.max(min, Math.min(max, v));
     }
 }

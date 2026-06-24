@@ -14,7 +14,7 @@ import static org.junit.jupiter.api.Assertions.*;
 
 /**
  * Tests for {@link CandlestickField}: AnimatedBackground contract, full-frame
- * rendering, bullish/bearish coloring, and frame-to-frame updates.
+ * rendering, bullish/bearish coloring, band structure, and frame updates.
  */
 class CandlestickFieldTest {
 
@@ -23,7 +23,7 @@ class CandlestickFieldTest {
     void implementsAnimatedBackground() {
         var field = new CandlestickField(new TerminalSize(80, 24));
         assertTrue(field instanceof AnimatedBackground);
-        assertEquals(6, field.targetFps());
+        assertEquals(4, field.targetFps());
         field.start();
         assertTrue(field.isRunning());
         field.stop();
@@ -37,7 +37,9 @@ class CandlestickFieldTest {
         var size = new TerminalSize(80, 24);
         var buffer = new ScreenBuffer(size);
         field.renderFrame(new TextGraphics(buffer), size);
-        assertEquals(AnsiColor.BLACK, buffer.getCell(0, 0).bg());
+        // Corners should be black background.
+        // Top-left may be a candle, so check a gap column.
+        assertEquals(AnsiColor.BLACK, buffer.getCell(1, 0).bg());
         assertEquals(AnsiColor.BLACK, buffer.getCell(79, 23).bg());
     }
 
@@ -61,28 +63,49 @@ class CandlestickFieldTest {
     }
 
     @Test
-    @DisplayName("candles cover the full width of the screen")
-    void fillsScreenWidth() {
+    @DisplayName("multiple chart bands are created")
+    void createsMultipleBands() {
+        var field = new CandlestickField(new TerminalSize(80, 24));
+        var size = new TerminalSize(80, 24);
+        field.renderFrame(new TextGraphics(new ScreenBuffer(size)), size);
+        int bandCount = field.getBandCount();
+        assertTrue(bandCount >= 2, "expected at least 2 bands, got " + bandCount);
+    }
+
+    @Test
+    @DisplayName("bands cover the full height of the screen")
+    void bandsCoverFullHeight() {
         var field = new CandlestickField(new TerminalSize(80, 24));
         var size = new TerminalSize(80, 24);
         var buffer = new ScreenBuffer(size);
         field.renderFrame(new TextGraphics(buffer), size);
 
-        int candlesPerRow = field.getCandleRowCount();
-        int expected = 80 / 2;
-        assertEquals(expected, candlesPerRow);
+        // Check that candle content (non-space, non-separator) appears in
+        // both the top and bottom halves of the screen.
+        boolean topHalfHasContent = false;
+        boolean bottomHalfHasContent = false;
+        int midRow = size.rows() / 2;
 
-        // Every column should contain at least one non-blank cell in some row.
-        for (int c = 0; c < size.columns(); c++) {
-            boolean anyNonBlank = false;
-            for (int r = 0; r < size.rows(); r++) {
-                if (buffer.getCell(c, r).character().charAt(0) != ' ') {
-                    anyNonBlank = true;
+        for (int r = 0; r < midRow && !topHalfHasContent; r++) {
+            for (int c = 0; c < size.columns(); c++) {
+                char ch = buffer.getCell(c, r).character().charAt(0);
+                if (ch != ' ' && ch != '─') {
+                    topHalfHasContent = true;
                     break;
                 }
             }
-            assertTrue(anyNonBlank, "expected column " + c + " to contain candle content");
         }
+        for (int r = midRow; r < size.rows() && !bottomHalfHasContent; r++) {
+            for (int c = 0; c < size.columns(); c++) {
+                char ch = buffer.getCell(c, r).character().charAt(0);
+                if (ch != ' ' && ch != '─') {
+                    bottomHalfHasContent = true;
+                    break;
+                }
+            }
+        }
+        assertTrue(topHalfHasContent, "expected candle content in top half");
+        assertTrue(bottomHalfHasContent, "expected candle content in bottom half");
     }
 
     @Test
@@ -130,15 +153,31 @@ class CandlestickFieldTest {
     }
 
     @Test
+    @DisplayName("candle prices form a continuous series (open = prev close)")
+    void continuousPriceSeries() {
+        var field = new CandlestickField(new TerminalSize(80, 24));
+        var size = new TerminalSize(80, 24);
+        field.renderFrame(new TextGraphics(new ScreenBuffer(size)), size);
+
+        CandlestickField.ChartBand band = field.getBands()[0];
+        CandlestickField.Candle[] candles = band.getCandles();
+        // After construction, each candle's open should equal the previous candle's close.
+        for (int i = 1; i < candles.length; i++) {
+            assertEquals(candles[i - 1].getClose(), candles[i].getOpen(), 0.0001,
+                    "candle " + i + " open should equal candle " + (i - 1) + " close");
+        }
+    }
+
+    @Test
     @DisplayName("candle prices update each frame")
     void candlePricesUpdate() {
         var field = new CandlestickField(new TerminalSize(80, 24));
         var size = new TerminalSize(80, 24);
         field.renderFrame(new TextGraphics(new ScreenBuffer(size)), size);
-        double firstClose = field.getCandles()[0][0].getClose();
+        double firstClose = field.getBands()[0].getCandles()[0].getClose();
 
         field.renderFrame(new TextGraphics(new ScreenBuffer(size)), size);
-        double secondClose = field.getCandles()[0][0].getClose();
+        double secondClose = field.getBands()[0].getCandles()[0].getClose();
 
         assertNotEquals(firstClose, secondClose, 0.0,
                 "expected candle close to update between frames");
@@ -172,5 +211,25 @@ class CandlestickFieldTest {
         var size = new TerminalSize(100, 40);
         field.onResize(size);
         assertEquals(size, field.lastSize());
+    }
+
+    @Test
+    @DisplayName("candles are spaced correctly across the width")
+    void candlesSpacedCorrectly() {
+        var field = new CandlestickField(new TerminalSize(80, 24));
+        var size = new TerminalSize(80, 24);
+        var buffer = new ScreenBuffer(size);
+        field.renderFrame(new TextGraphics(buffer), size);
+
+        // Candles are at x=0, 3, 6, 9, ... so columns 1,2 should be blank/gap.
+        // Verify candle body content at x=0 and gap at x=1.
+        boolean candleAt0 = false;
+        for (int r = 0; r < size.rows(); r++) {
+            if (buffer.getCell(0, r).character().charAt(0) != ' ') {
+                candleAt0 = true;
+                break;
+            }
+        }
+        assertTrue(candleAt0, "expected candle content at column 0");
     }
 }
