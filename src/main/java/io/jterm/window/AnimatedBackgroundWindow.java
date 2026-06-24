@@ -16,12 +16,27 @@ public class AnimatedBackgroundWindow extends WindowImpl {
     private final AnimatedBackground background;
     private AnimationTimer timer;
     private final TextGUI gui;
+    private final boolean fullscreen;
 
     public AnimatedBackgroundWindow(AnimatedBackground background, TextGUI gui) {
+        this(background, gui, true);
+    }
+
+    /**
+     * Creates a background animation window. When {@code fullscreen} is false,
+     * the caller must set bounds via {@link #setBounds(TerminalPosition, TerminalSize)}
+     * (e.g. a thin strip at the bottom of the screen).
+     */
+    public AnimatedBackgroundWindow(AnimatedBackground background, TextGUI gui, boolean fullscreen) {
         super("animation-bg");
         this.background = background;
         this.gui = gui;
-        setHints(List.of(WindowHint.FULLSCREEN, WindowHint.NO_DECORATIONS, WindowHint.BACKGROUND));
+        this.fullscreen = fullscreen;
+        if (fullscreen) {
+            setHints(List.of(WindowHint.FULLSCREEN, WindowHint.NO_DECORATIONS, WindowHint.BACKGROUND));
+        } else {
+            setHints(List.of(WindowHint.NO_DECORATIONS, WindowHint.BACKGROUND));
+        }
         getContents().setLayoutManager(null);
     }
 
