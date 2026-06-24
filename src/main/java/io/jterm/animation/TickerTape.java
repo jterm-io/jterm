@@ -28,6 +28,7 @@ public class TickerTape implements AnimatedBackground {
     private static final int TARGET_FPS = 8;
     private static final int SCROLL_SPEED_CELLS = 1;
     private static final String SEPARATOR = "  |  ";
+    private static final long REFRESH_INTERVAL_MS = 60_000;
 
     // Default sample data used when the screener database cannot be reached.
     private static final List<TickerItem> FALLBACK_ITEMS = List.of(
@@ -47,6 +48,7 @@ public class TickerTape implements AnimatedBackground {
     private volatile TerminalSize lastSize;
     private volatile int scrollOffset;
     private volatile List<TickerItem> items;
+    private volatile long lastRefreshMs;
 
     /** Creates a ticker tape with data loaded from the default screener source. */
     public TickerTape(TerminalSize preferredSize) {
@@ -65,6 +67,11 @@ public class TickerTape implements AnimatedBackground {
         lastSize = size;
         if (size.columns() <= 0 || size.rows() <= 0) {
             return;
+        }
+
+        // Periodically refresh prices from the data source
+        if (System.currentTimeMillis() - lastRefreshMs >= REFRESH_INTERVAL_MS) {
+            refreshData();
         }
 
         // Background.
@@ -180,6 +187,7 @@ public class TickerTape implements AnimatedBackground {
         if (this.items == null || this.items.isEmpty()) {
             this.items = FALLBACK_ITEMS;
         }
+        lastRefreshMs = System.currentTimeMillis();
     }
 
     private static Supplier<List<TickerItem>> defaultSupplier() {
