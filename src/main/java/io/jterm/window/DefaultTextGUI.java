@@ -144,11 +144,13 @@ public class DefaultTextGUI implements TextGUI, WindowManager {
                 activeWindow = findTopmostNonBackground(new ArrayList<>(windows));
             }
             var focused = activeWindow != null ? activeWindow.getFocusedComponent() : null;
+            var windowBefore = activeWindow;
             if (focused != null) {
                 focused.handleKeyStroke(ks);
             }
-            // Always let the window handle keys too (e.g. MainMenu hotkeys)
-            if (activeWindow != null) {
+            // Only forward to the window if the focused component didn't consume it
+            // by changing the active window (e.g. popping a sub-screen on ESC).
+            if (activeWindow != null && activeWindow == windowBefore) {
                 activeWindow.handleKeyStroke(ks);
             }
             needsRefresh = true;
