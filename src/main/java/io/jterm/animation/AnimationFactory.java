@@ -20,31 +20,16 @@ public final class AnimationFactory {
 
     private static final List<Supplier<AnimatedBackground>> FACTORIES = List.of(
             () -> new TwinkleStarfield(new Random(), true),
-            () -> new WarpStarfield(DEFAULT_SIZE),
             () -> new PlasmaWash(DEFAULT_SIZE),
             () -> new CircuitBoard(DEFAULT_SIZE),
             () -> new StarfieldBackground(DEFAULT_SIZE),
-            () -> new LavaLamp(DEFAULT_SIZE),
             () -> new OceanWaves(DEFAULT_SIZE),
-            () -> new TerrainFlyover(DEFAULT_SIZE),
             () -> new Aurora(DEFAULT_SIZE),
-            () -> new RainStorm(DEFAULT_SIZE),
-            () -> new Fireworks(DEFAULT_SIZE),
-            () -> new DNAHelix(DEFAULT_SIZE),
             () -> new VoronoiCells(DEFAULT_SIZE),
-            () -> new PhosphorDecay(DEFAULT_SIZE),
-            () -> new Scanlines(DEFAULT_SIZE),
             () -> new MoirePatterns(DEFAULT_SIZE),
-            () -> new Spirograph(DEFAULT_SIZE),
-            () -> new MandelbrotZoom(DEFAULT_SIZE),
-            () -> new DvdLogo(DEFAULT_SIZE),
-            () -> new Snowfall(DEFAULT_SIZE),
-            () -> new LightningStorm(DEFAULT_SIZE),
             () -> new PacketFlow(DEFAULT_SIZE),
             () -> new TickerTape(DEFAULT_SIZE),
-            () -> new CandlestickField(DEFAULT_SIZE),
-            () -> new MarketDepth(DEFAULT_SIZE),
-            () -> new PortfolioHeatmap(DEFAULT_SIZE)
+            () -> new CandlestickField(DEFAULT_SIZE)
     );
 
     private AnimationFactory() {}
