@@ -6,11 +6,11 @@ import io.jterm.style.AnsiColor;
 import io.jterm.style.SGR;
 import io.jterm.style.TextCell;
 
+import io.jterm.animation.AnimationTimer;
+
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
-import java.util.concurrent.Executors;
-import java.util.concurrent.ScheduledExecutorService;
-import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 /**
@@ -29,13 +29,18 @@ import java.util.concurrent.atomic.AtomicBoolean;
 public class TickerBar extends AbstractComponent {
 
     private static final int SCROLL_SPEED_CELLS = 1;
+    private static final int TARGET_FPS = 8;  // matches TickerTape animated background
     private static final String SEPARATOR = "  |  ";
 
     private volatile List<TickerEntry> entries = List.of();
     private volatile int scrollOffset = 0;
     private volatile Runnable onTick;
     private final AtomicBoolean animating = new AtomicBoolean(false);
-    private ScheduledExecutorService animator;
+    private AnimationTimer timer;
+
+    // Pre-built scroll text and per-character color map, rebuilt on setEntries.
+    private volatile char[] scrollChars = new char[0];
+    private volatile AnsiColor[] scrollColors = new AnsiColor[0];
 
     /** Creates an empty ticker bar. Call {@link #setEntries(List)} to populate. */
     public TickerBar() {
@@ -61,6 +66,7 @@ public class TickerBar extends AbstractComponent {
     public void setEntries(List<TickerEntry> entries) {
         this.entries = entries == null ? List.of() : List.copyOf(entries);
         this.scrollOffset = 0;
+        rebuildScrollData();
         invalidate();
     }
 
@@ -84,12 +90,8 @@ public class TickerBar extends AbstractComponent {
      */
     public void startAnimation() {
         if (animating.compareAndSet(false, true)) {
-            animator = Executors.newSingleThreadScheduledExecutor(r -> {
-                Thread t = new Thread(r, "TickerBar-animator");
-                t.setDaemon(true);
-                return t;
-            });
-            animator.scheduleAtFixedRate(this::tick, 200, 200, TimeUnit.MILLISECONDS);
+            timer = new AnimationTimer(TARGET_FPS, this::tick);
+            timer.start();
         }
     }
 
@@ -98,9 +100,9 @@ public class TickerBar extends AbstractComponent {
      */
     public void stopAnimation() {
         if (animating.compareAndSet(true, false)) {
-            if (animator != null) {
-                animator.shutdownNow();
-                animator = null;
+            if (timer != null) {
+                timer.stop();
+                timer = null;
             }
         }
     }
@@ -115,10 +117,8 @@ public class TickerBar extends AbstractComponent {
      * manually for testing.
      */
     void tick() {
-        if (entries.isEmpty()) return;
-        String fullText = buildScrollText();
-        if (fullText.isEmpty()) return;
-        scrollOffset = (scrollOffset + SCROLL_SPEED_CELLS) % fullText.length();
+        if (scrollChars.length == 0) return;
+        scrollOffset = (scrollOffset + SCROLL_SPEED_CELLS) % scrollChars.length;
         invalidate();
         if (onTick != null) {
             onTick.run();
@@ -127,7 +127,7 @@ public class TickerBar extends AbstractComponent {
 
     /** Visible for tests: length of the full scroll text. */
     int buildScrollTextLen() {
-        return buildScrollText().length();
+        return scrollChars.length;
     }
 
     @Override
@@ -144,80 +144,83 @@ public class TickerBar extends AbstractComponent {
         TextCell bg = new TextCell(' ', AnsiColor.BLACK, AnsiColor.BLACK);
         graphics.fillRectangle(0, 0, size.columns(), size.rows(), bg);
 
-        if (entries.isEmpty()) return;
+        if (scrollChars.length == 0) return;
 
-        // Build the full scrollable text and a parallel color map.
-        String fullText = buildScrollText();
-        if (fullText.isEmpty()) return;
-
-        int totalWidth = fullText.length();
+        int totalWidth = scrollChars.length;
         int cols = size.columns();
 
         for (int col = 0; col < cols; col++) {
             int idx = (scrollOffset + col) % totalWidth;
-            char ch = fullText.charAt(idx);
-
-            // Determine color for this position.
-            AnsiColor fg = colorAtPosition(idx);
+            char ch = scrollChars[idx];
+            AnsiColor fg = scrollColors[idx];
             SGR[] mods = (fg == AnsiColor.BRIGHT_BLACK) ? new SGR[0] : new SGR[]{SGR.BOLD};
-
             graphics.setCell(col, 0, new TextCell(ch, fg, AnsiColor.BLACK, mods));
         }
     }
 
     /**
-     * Builds the full scrollable text: entry1 | entry2 | ... | (wrap).
-     * The text is padded with a separator at the end so it loops seamlessly.
+     * Pre-builds the scroll text and per-character color array from the
+     * current entries. Called once on {@link #setEntries(List)} so that
+     * {@link #drawComponent(TextGraphics)} is O(cols) per frame with no
+     * string allocation.
      */
-    private String buildScrollText() {
-        StringBuilder sb = new StringBuilder();
-        for (int i = 0; i < entries.size(); i++) {
-            if (i > 0) sb.append(SEPARATOR);
-            sb.append(formatEntry(entries.get(i)));
+    private void rebuildScrollData() {
+        if (entries.isEmpty()) {
+            scrollChars = new char[0];
+            scrollColors = new AnsiColor[0];
+            return;
         }
-        sb.append(SEPARATOR);  // trailing separator for seamless wrap
-        return sb.toString();
-    }
 
-    private static String formatEntry(TickerEntry entry) {
-        String pct = String.format(java.util.Locale.US, "%+.2f%%", entry.changePercent());
-        String price = String.format(java.util.Locale.US, "%.2f", entry.price());
-        return entry.symbol() + " " + price + " " + pct;
-    }
+        StringBuilder text = new StringBuilder();
+        List<AnsiColor> colors = new ArrayList<>();
 
-    /**
-     * Returns the foreground color for a character at the given position
-     * in the full scroll text. Symbols are white, prices/percentages are
-     * green/red, separators are dim.
-     */
-    private AnsiColor colorAtPosition(int pos) {
-        int offset = 0;
         for (int i = 0; i < entries.size(); i++) {
             TickerEntry entry = entries.get(i);
-            String entryText = formatEntry(entry);
-            int entryLen = entryText.length();
+            AnsiColor priceColor = entry.changePercent() >= 0
+                    ? AnsiColor.BRIGHT_GREEN : AnsiColor.BRIGHT_RED;
 
-            // Entry region.
-            if (pos >= offset && pos < offset + entryLen) {
-                int relPos = pos - offset;
-                // Symbol is the first entry.symbol().length() chars + 1 space.
-                int symLen = entry.symbol().length();
-                if (relPos <= symLen) {
-                    return AnsiColor.BRIGHT_WHITE;
+            // Separator before entries (except the first).
+            if (i > 0) {
+                for (int j = 0; j < SEPARATOR.length(); j++) {
+                    text.append(SEPARATOR.charAt(j));
+                    colors.add(AnsiColor.BRIGHT_BLACK);
                 }
-                // Rest is price + percent — colored by direction.
-                return entry.changePercent() >= 0 ? AnsiColor.BRIGHT_GREEN : AnsiColor.BRIGHT_RED;
             }
-            offset += entryLen;
 
-            // Separator region after this entry.
-            if (pos >= offset && pos < offset + SEPARATOR.length()) {
-                return AnsiColor.BRIGHT_BLACK;
+            // Symbol in bold white.
+            for (int j = 0; j < entry.symbol().length(); j++) {
+                text.append(entry.symbol().charAt(j));
+                colors.add(AnsiColor.BRIGHT_WHITE);
             }
-            offset += SEPARATOR.length();
+
+            // Space between symbol and price.
+            text.append(' ');
+            colors.add(priceColor);
+
+            // Price and percent in green/red.
+            String priceAndPct = formatPriceAndPct(entry);
+            for (int j = 0; j < priceAndPct.length(); j++) {
+                text.append(priceAndPct.charAt(j));
+                colors.add(priceColor);
+            }
         }
-        // Trailing separator.
-        return AnsiColor.BRIGHT_BLACK;
+
+        // Trailing separator for seamless wrap.
+        for (int j = 0; j < SEPARATOR.length(); j++) {
+            text.append(SEPARATOR.charAt(j));
+            colors.add(AnsiColor.BRIGHT_BLACK);
+        }
+
+        char[] chars = new char[text.length()];
+        text.getChars(0, text.length(), chars, 0);
+        scrollChars = chars;
+        scrollColors = colors.toArray(new AnsiColor[0]);
+    }
+
+    private static String formatPriceAndPct(TickerEntry entry) {
+        String pct = String.format(java.util.Locale.US, "%+.2f%%", entry.changePercent());
+        String price = String.format(java.util.Locale.US, "%.2f", entry.price());
+        return price + " " + pct;
     }
 
     /** Immutable ticker entry: symbol, price, and day change percentage. */
