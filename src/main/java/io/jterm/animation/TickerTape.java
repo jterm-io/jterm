@@ -76,7 +76,7 @@ public class TickerTape implements AnimatedBackground {
         }
 
         int cols = size.columns();
-        int row = size.rows() / 2;
+        int row = size.rows() - 1;
 
         StringBuilder builder = new StringBuilder();
         for (TickerItem item : items) {
