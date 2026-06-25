@@ -20,7 +20,6 @@ public final class AnimationFactory {
     private static final List<Supplier<AnimatedBackground>> FACTORIES = List.of(
             () -> new TwinkleStarfield(new Random(), true),
             () -> new PlasmaWash(DEFAULT_SIZE),
-            () -> new CircuitBoard(DEFAULT_SIZE),
             () -> new StarfieldBackground(DEFAULT_SIZE),
             () -> new VoronoiCells(DEFAULT_SIZE),
             () -> new MoirePatterns(DEFAULT_SIZE)

@@ -41,8 +41,8 @@ class AnimationFactoryTest {
     void factoryCountMatches() {
         assertEquals(AnimationFactory.factoryCount(), AnimationFactory.factoryCount(),
                 "factory count should be consistent with availableClasses()");
-        assertEquals(6, AnimationFactory.factoryCount(),
-                "expected 6 registered animation factories, got " + AnimationFactory.factoryCount());
+        assertEquals(5, AnimationFactory.factoryCount(),
+                "expected 5 registered animation factories, got " + AnimationFactory.factoryCount());
     }
 
     @Test
