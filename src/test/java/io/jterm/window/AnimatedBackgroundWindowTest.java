@@ -78,19 +78,27 @@ class AnimatedBackgroundWindowTest {
     }
 
     @Test
-    @DisplayName("draw delegates to AnimatedBackground.renderFrame")
+    @DisplayName("draw blits cached frame from renderTick, does not advance state")
     void drawDelegatesToBackground() {
         var size = new TerminalSize(40, 20);
         var bg = new MockAnimatedBackground();
         var window = new AnimatedBackgroundWindow(bg, null);
         window.setBounds(TerminalPosition.TOP_LEFT, size);
 
+        // start() renders the first frame into the off-screen buffer
+        window.start();
+        window.getTimer().stop(); // prevent timer from firing during test
+        int callsAfterStart = bg.renderCalls.get();
+        assertTrue(callsAfterStart >= 1, "start() should render at least one frame");
+        assertEquals(size, bg.lastSize.get());
+
+        // draw() blits the cached frame — no additional renderFrame call
         var buffer = new ScreenBuffer(size);
         window.draw(new TextGraphics(buffer));
-
-        assertEquals(1, bg.renderCalls.get());
-        assertEquals(size, bg.lastSize.get());
+        assertEquals(callsAfterStart, bg.renderCalls.get(), "draw() must not call renderFrame");
         assertEquals('B', buffer.getCell(0, 0).character().charAt(0));
+
+        window.stop();
     }
 
     @Test
@@ -293,6 +301,8 @@ class AnimatedBackgroundWindowTest {
         contents.addComponent(label);
 
         gui.addWindow(bgWindow);
+        bgWindow.start();
+        bgWindow.getTimer().stop(); // prevent timer from firing during test
         gui.addWindow(fgWindow);
         gui.updateScreen();
 

@@ -75,8 +75,36 @@ class AnimatedBackgroundTest {
     }
 
     @Test
-    @DisplayName("renderFrame is invoked by AnimatedBackgroundWindow draw")
+    @DisplayName("renderFrame is invoked by AnimatedBackgroundWindow start, draw blits cached frame")
     void renderFrameInvoked() {
+        var size = new TerminalSize(10, 5);
+        var bg = new MockAnimatedBackground();
+        var window = new io.jterm.window.AnimatedBackgroundWindow(bg, null);
+        window.setBounds(TerminalPosition.TOP_LEFT, size);
+
+        // start() calls renderTick() which renders the first frame into the
+        // off-screen buffer. No GUI needed — renderTick handles null gui.
+        window.start();
+        // Stop the timer immediately so it doesn't fire extra frames
+        // during the test — we only care about the one from start().
+        window.getTimer().stop();
+        int callsAfterStart = bg.renderCalls.get();
+        assertTrue(callsAfterStart >= 1, "start() should render at least one frame");
+        assertEquals(size, bg.lastSize);
+
+        // draw() should blit the cached frame without advancing animation state
+        var buffer = new ScreenBuffer(size);
+        window.draw(new TextGraphics(buffer));
+        assertEquals(callsAfterStart, bg.renderCalls.get(), "draw() must not call renderFrame");
+        assertEquals('M', buffer.getCell(0, 0).character().charAt(0),
+                "draw() should blit the cached frame content");
+
+        window.stop();
+    }
+
+    @Test
+    @DisplayName("draw before start fills with black, does not advance state")
+    void drawBeforeStartFillsBlack() {
         var size = new TerminalSize(10, 5);
         var bg = new MockAnimatedBackground();
         var window = new io.jterm.window.AnimatedBackgroundWindow(bg, null);
@@ -84,9 +112,8 @@ class AnimatedBackgroundTest {
         var buffer = new ScreenBuffer(size);
         window.draw(new TextGraphics(buffer));
 
-        assertEquals(1, bg.renderCalls.get());
-        assertEquals(size, bg.lastSize);
-        assertEquals('M', buffer.getCell(0, 0).character().charAt(0));
+        assertEquals(0, bg.renderCalls.get(), "draw() before start must not call renderFrame");
+        // Buffer should remain at its fill value (TextCell.EMPTY by default)
     }
 
     @Test

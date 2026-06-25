@@ -4,6 +4,9 @@ import io.jterm.animation.AnimatedBackground;
 import io.jterm.animation.AnimationTimer;
 import io.jterm.core.TerminalSize;
 import io.jterm.graphics.TextGraphics;
+import io.jterm.screen.ScreenBuffer;
+import io.jterm.style.AnsiColor;
+import io.jterm.style.TextCell;
 
 import java.util.List;
 
@@ -11,12 +14,25 @@ import java.util.List;
  * A fullscreen background window that delegates rendering to an
  * {@link AnimatedBackground}. Background windows render behind all normal
  * windows, never receive focus, and never handle input.
+ *
+ * <p>The animation frame is advanced and rendered into a private off-screen
+ * buffer by the {@link AnimationTimer} callback at the background's target
+ * FPS. The {@link #draw} method only blits the cached buffer to the GUI's
+ * graphics context — it never advances animation state. This decouples
+ * animation pacing from the input event loop, so keystroke-triggered
+ * redraws (which happen in {@link DefaultTextGUI#processInput}) do not
+ * cause extra animation steps.</p>
  */
 public class AnimatedBackgroundWindow extends WindowImpl {
     private final AnimatedBackground background;
     private AnimationTimer timer;
     private final TextGUI gui;
     private final boolean fullscreen;
+
+    /** Off-screen buffer that holds the most recently rendered animation frame. */
+    private volatile ScreenBuffer frameBuffer;
+    /** Size of the last rendered frame, so draw() can detect stale buffers. */
+    private volatile TerminalSize frameSize;
 
     public AnimatedBackgroundWindow(AnimatedBackground background, TextGUI gui) {
         this(background, gui, true);
@@ -40,11 +56,57 @@ public class AnimatedBackgroundWindow extends WindowImpl {
         getContents().setLayoutManager(null);
     }
 
+    /**
+     * Blits the cached animation frame to the GUI's graphics context.
+     * Does NOT advance animation state — that happens only in the
+     * {@link AnimationTimer} callback at the target FPS.
+     */
     @Override
     public void draw(TextGraphics graphics) {
-        background.tick(System.nanoTime());
         var sz = getSize();
-        background.renderFrame(graphics, sz);
+        var buf = frameBuffer;
+        var fSize = frameSize;
+        if (buf == null || fSize == null) {
+            // No frame rendered yet — fill with black and let the first
+            // timer tick populate the buffer.
+            TextCell bg = new TextCell(' ', AnsiColor.BLACK, AnsiColor.BLACK);
+            graphics.fillRectangle(0, 0, sz.columns(), sz.rows(), bg);
+            return;
+        }
+        // Blit the cached frame, clamping to the intersection of the
+        // buffer and graphics sizes.
+        int maxRows = Math.min(fSize.rows(), sz.rows());
+        int maxCols = Math.min(fSize.columns(), sz.columns());
+        for (int r = 0; r < maxRows; r++) {
+            for (int c = 0; c < maxCols; c++) {
+                graphics.setCell(c, r, buf.getCell(c, r));
+            }
+        }
+    }
+
+    /**
+     * Advances the animation state and renders a frame into the off-screen
+     * buffer. Called by the {@link AnimationTimer} at the target FPS.
+     * After rendering, requests a GUI refresh so {@link #draw} is called
+     * to blit the new frame.
+     */
+    private void renderTick() {
+        var sz = getSize();
+        if (sz.columns() <= 0 || sz.rows() <= 0) return;
+        // (Re)allocate the off-screen buffer if the size changed
+        if (frameBuffer == null || frameSize == null
+                || frameSize.columns() != sz.columns() || frameSize.rows() != sz.rows()) {
+            TextCell bg = new TextCell(' ', AnsiColor.BLACK, AnsiColor.BLACK);
+            frameBuffer = new ScreenBuffer(sz, bg);
+            frameSize = sz;
+        }
+        var buf = frameBuffer;
+        var g = new TextGraphics(buf);
+        background.tick(System.nanoTime());
+        background.renderFrame(g, sz);
+        if (gui != null) {
+            gui.requestRefresh();
+        }
     }
 
     public void start() {
@@ -55,7 +117,10 @@ public class AnimatedBackgroundWindow extends WindowImpl {
         for (int i = 0; i < 5; i++) {
             background.tick(now + i * 250_000_000L); // 250ms steps
         }
-        timer = new AnimationTimer(background.targetFps(), () -> gui.requestRefresh());
+        // Render the first frame immediately so draw() has content to blit
+        // before the first timer tick.
+        renderTick();
+        timer = new AnimationTimer(background.targetFps(), this::renderTick);
         timer.start();
     }
 
@@ -72,5 +137,10 @@ public class AnimatedBackgroundWindow extends WindowImpl {
 
     public AnimationTimer getTimer() {
         return timer;
+    }
+
+    /** Visible for tests: returns the off-screen frame buffer (may be null before first tick). */
+    ScreenBuffer getFrameBuffer() {
+        return frameBuffer;
     }
 }
