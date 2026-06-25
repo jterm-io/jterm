@@ -120,8 +120,12 @@ public class MenuPanel extends AbstractComponent {
             int keyPadding = Math.max(0, keyColWidth - keyWidth);
             String keyText = " ".repeat(keyPadding) + keyInBrackets;
             // Start at column 1 (leading space)
+            // Highlighted cells swap fg/bg directly instead of using SGR.REVERSE.
+            // Some CP437 clients (MuffinTerm) don't implement ESC[7m (REVERSE),
+            // and on standard ANSI terminals REVERSE would undo the manual swap.
+            // Explicit fg/bg color codes work on every terminal.
             var keyCell = highlighted
-                    ? new TextCell(' ', theme.background(), theme.foreground(), SGR.BOLD, SGR.REVERSE)
+                    ? new TextCell(' ', theme.background(), theme.foreground(), SGR.BOLD)
                     : bold;
             graphics.drawString(1, row, keyText, keyCell);
 
@@ -129,16 +133,16 @@ public class MenuPanel extends AbstractComponent {
             String desc = TerminalTextUtils.truncate(item.description(), availableDescWidth);
             int descX = 1 + keyColWidth + GAP;
             var descCell = highlighted
-                    ? new TextCell(' ', theme.background(), theme.foreground(), SGR.REVERSE)
+                    ? new TextCell(' ', theme.background(), theme.foreground())
                     : normal;
             graphics.drawString(descX, row, desc, descCell);
 
-            // If highlighted, fill the rest of the row with reverse-video spaces
+            // If highlighted, fill the rest of the row with inverted spaces
             if (highlighted) {
                 int descEnd = descX + TerminalTextUtils.getTrueWidth(desc);
                 int rowEnd = size.columns() - 1; // leave 1 trailing space
                 if (descEnd < rowEnd) {
-                    var fillCell = new TextCell(' ', theme.background(), theme.foreground(), SGR.REVERSE);
+                    var fillCell = new TextCell(' ', theme.background(), theme.foreground());
                     graphics.fillRectangle(descEnd, row, rowEnd - descEnd, 1, fillCell);
                 }
             }

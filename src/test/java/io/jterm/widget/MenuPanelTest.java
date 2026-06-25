@@ -6,6 +6,7 @@ import io.jterm.graphics.TextGraphics;
 import io.jterm.screen.ScreenBuffer;
 import io.jterm.style.AnsiColor;
 import io.jterm.style.SGR;
+import io.jterm.style.ThemeManager;
 import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -218,12 +219,19 @@ class MenuPanelTest {
         var buf = new ScreenBuffer(panel.getPreferredSize());
         panel.draw(new TextGraphics(buf));
 
-        // Row 1 (first item, index 0) should have REVERSE modifier
-        assertTrue(buf.getCell(1, 1).modifiers().contains(SGR.REVERSE),
-                "highlighted row should have REVERSE SGR");
-        // Row 2 (second item, index 1) should NOT have REVERSE
-        assertFalse(buf.getCell(1, 2).modifiers().contains(SGR.REVERSE),
-                "non-highlighted row should not have REVERSE SGR");
+        var theme = ThemeManager.active();
+        // Row 1 (first item, index 0) should have swapped fg/bg (inverted)
+        var hlCell = buf.getCell(1, 1);
+        assertEquals(theme.background(), hlCell.fg(),
+                "highlighted row should have bg color as fg (inverted)");
+        assertEquals(theme.foreground(), hlCell.bg(),
+                "highlighted row should have fg color as bg (inverted)");
+        // Row 2 (second item, index 1) should NOT be inverted
+        var normCell = buf.getCell(1, 2);
+        assertEquals(theme.foreground(), normCell.fg(),
+                "non-highlighted row should have normal fg");
+        assertEquals(theme.background(), normCell.bg(),
+                "non-highlighted row should have normal bg");
     }
 
     @Test
@@ -233,14 +241,17 @@ class MenuPanelTest {
         panel.setBounds(TerminalPosition.TOP_LEFT, panel.getPreferredSize());
         panel.setHighlightedIndex(0);
 
+        var theme = ThemeManager.active();
         var buf1 = new ScreenBuffer(panel.getPreferredSize());
         panel.draw(new TextGraphics(buf1));
-        assertTrue(buf1.getCell(1, 1).modifiers().contains(SGR.REVERSE));
+        assertEquals(theme.background(), buf1.getCell(1, 1).fg(),
+                "highlighted row should have inverted fg");
 
         panel.setHighlightedIndex(-1);
         var buf2 = new ScreenBuffer(panel.getPreferredSize());
         panel.draw(new TextGraphics(buf2));
-        assertFalse(buf2.getCell(1, 1).modifiers().contains(SGR.REVERSE));
+        assertEquals(theme.foreground(), buf2.getCell(1, 1).fg(),
+                "cleared highlight should restore normal fg");
     }
 
     @Test
