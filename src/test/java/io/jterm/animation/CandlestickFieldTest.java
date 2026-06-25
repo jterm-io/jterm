@@ -23,7 +23,7 @@ class CandlestickFieldTest {
     void implementsAnimatedBackground() {
         var field = new CandlestickField(new TerminalSize(80, 24));
         assertTrue(field instanceof AnimatedBackground);
-        assertEquals(4, field.targetFps());
+        assertEquals(2, field.targetFps());
         field.start();
         assertTrue(field.isRunning());
         field.stop();

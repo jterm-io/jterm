@@ -17,7 +17,7 @@ import java.util.Random;
  */
 public class CandlestickField implements AnimatedBackground {
 
-    private static final int TARGET_FPS = 4;
+    private static final int TARGET_FPS = 2;
     private static final int CANDLE_SPACING = 3;  // body col + 2 gap cols
     private static final int MIN_BAND_ROWS = 5;
 
