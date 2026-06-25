@@ -2,7 +2,6 @@ package io.jterm.animation;
 
 import io.jterm.core.TerminalSize;
 import io.jterm.widget.animation.TwinkleStarfield;
-import io.jterm.widget.animation.WarpStarfield;
 import java.util.List;
 import java.util.Random;
 import java.util.Set;
@@ -23,13 +22,8 @@ public final class AnimationFactory {
             () -> new PlasmaWash(DEFAULT_SIZE),
             () -> new CircuitBoard(DEFAULT_SIZE),
             () -> new StarfieldBackground(DEFAULT_SIZE),
-            () -> new OceanWaves(DEFAULT_SIZE),
-            () -> new Aurora(DEFAULT_SIZE),
             () -> new VoronoiCells(DEFAULT_SIZE),
-            () -> new MoirePatterns(DEFAULT_SIZE),
-            () -> new PacketFlow(DEFAULT_SIZE),
-            () -> new TickerTape(DEFAULT_SIZE),
-            () -> new CandlestickField(DEFAULT_SIZE)
+            () -> new MoirePatterns(DEFAULT_SIZE)
     );
 
     private AnimationFactory() {}
