@@ -35,6 +35,21 @@ class ScreenManagerTest {
     }
 
     @Test
+    void pushCallsOpenOnWindow() {
+        var gui = newGui();
+        var sm = new ScreenManager(gui);
+        AtomicInteger openCallCount = new AtomicInteger(0);
+        var window = new WindowImpl("OpenSpy") {
+            @Override
+            public void open(DefaultTextGUI g) {
+                openCallCount.incrementAndGet();
+            }
+        };
+        sm.push(window);
+        assertEquals(1, openCallCount.get(), "push() must call window.open(gui)");
+    }
+
+    @Test
     void pushTwoWindows() {
         var gui = newGui();
         var sm = new ScreenManager(gui);

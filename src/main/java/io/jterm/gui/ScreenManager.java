@@ -27,6 +27,7 @@ public class ScreenManager {
             }
             stack.push(window);
             gui.addWindow(window);
+            window.open(gui);
         }
     }
 

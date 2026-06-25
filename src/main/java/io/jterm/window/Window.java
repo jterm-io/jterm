@@ -38,6 +38,13 @@ public interface Window {
     default void handleKeyStroke(io.jterm.core.input.KeyStroke keyStroke) {}
 
     /**
+     * Called when the window is added to a GUI (e.g. via ScreenManager.push).
+     * Override to set focus, register listeners, or perform initialization.
+     * Default implementation does nothing.
+     */
+    default void open(DefaultTextGUI gui) {}
+
+    /**
      * Called when the window is being removed from the GUI (user navigates away,
      * disconnects, or the session ends). Override to unregister listeners, release
      * resources, or perform cleanup. Default implementation does nothing.
