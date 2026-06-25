@@ -25,7 +25,7 @@ import java.io.IOException;
 import java.util.List;
 
 /**
- * Theme demo: shows all 4 built-in color themes with live switching.
+ * Theme demo: shows all 5 built-in color themes with live switching.
  *
  * <h3>Keyboard</h3>
  * <ul>
@@ -34,6 +34,7 @@ import java.util.List;
  *   <li><b>2</b> — Yellow on Blue</li>
  *   <li><b>3</b> — Green on Black</li>
  *   <li><b>4</b> — White on Green</li>
+ *   <li><b>5</b> — Yellow on Red</li>
  *   <li><b>q</b> — quit</li>
  * </ul>
  */
@@ -45,7 +46,7 @@ public class ThemeDemo {
         var gui = new DefaultTextGUI(screen);
         gui.getScreen().startScreen();
 
-        var window = new WindowImpl("Theme Demo — Press t to cycle, 1-4 to select, q to quit");
+        var window = new WindowImpl("Theme Demo — Press t to cycle, 1-5 to select, q to quit");
         window.setHints(List.of(WindowHint.FULLSCREEN));
         var content = window.getContents();
         content.setLayoutManager(new BorderLayout());
@@ -105,11 +106,11 @@ public class ThemeDemo {
 
         // Theme change listener updates header
         ThemeManager.addListener(theme -> {
-            header.setText(" ── Theme: " + theme.name() + " ── Press t to cycle, 1-4 to select, q to quit ");
+            header.setText(" ── Theme: " + theme.name() + " ── Press t to cycle, 1-5 to select, q to quit ");
             gui.requestRefresh();
         });
         // Set initial header
-        header.setText(" ── Theme: " + ThemeManager.active().name() + " ── Press t to cycle, 1-4 to select, q to quit ");
+        header.setText(" ── Theme: " + ThemeManager.active().name() + " ── Press t to cycle, 1-5 to select, q to quit ");
 
         gui.addWindow(window);
         gui.updateScreen();
@@ -138,6 +139,7 @@ public class ThemeDemo {
                             case '2' -> { ThemeManager.setActive(Theme.YELLOW_ON_BLUE); gui.requestRefresh(); }
                             case '3' -> { ThemeManager.setActive(Theme.GREEN_ON_BLACK); gui.requestRefresh(); }
                             case '4' -> { ThemeManager.setActive(Theme.WHITE_ON_GREEN); gui.requestRefresh(); }
+                            case '5' -> { ThemeManager.setActive(Theme.YELLOW_ON_RED); gui.requestRefresh(); }
                             default -> {
                                 // Route to focused component for normal typing
                                 gui.processInput(ks);

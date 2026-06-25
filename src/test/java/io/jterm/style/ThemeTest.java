@@ -39,8 +39,19 @@ class ThemeTest {
     }
 
     @Test
-    void builtInThemesHasFourEntries() {
-        assertEquals(4, Theme.BUILT_IN.length);
+    void yellowOnRedThemeHasExpectedColors() {
+        var t = Theme.YELLOW_ON_RED;
+        assertEquals(AnsiColor.BRIGHT_YELLOW, t.foreground());
+        assertEquals(AnsiColor.RED, t.background());
+        assertEquals(AnsiColor.RED, t.selectionFg());
+        assertEquals(AnsiColor.BRIGHT_YELLOW, t.selectionBg());
+        assertEquals(AnsiColor.BRIGHT_RED, t.border());
+        assertEquals(AnsiColor.YELLOW, t.accent());
+    }
+
+    @Test
+    void builtInThemesHasFiveEntries() {
+        assertEquals(5, Theme.BUILT_IN.length);
     }
 
     @Test
@@ -49,6 +60,7 @@ class ThemeTest {
         assertEquals("Yellow on Blue", Theme.YELLOW_ON_BLUE.name());
         assertEquals("Green on Black", Theme.GREEN_ON_BLACK.name());
         assertEquals("White on Green", Theme.WHITE_ON_GREEN.name());
+        assertEquals("Yellow on Red", Theme.YELLOW_ON_RED.name());
     }
 
     @Test
@@ -85,6 +97,7 @@ class ThemeTest {
         assertEquals(Theme.YELLOW_ON_BLUE, ThemeManager.cycle());
         assertEquals(Theme.GREEN_ON_BLACK, ThemeManager.cycle());
         assertEquals(Theme.WHITE_ON_GREEN, ThemeManager.cycle());
+        assertEquals(Theme.YELLOW_ON_RED, ThemeManager.cycle());
         assertEquals(Theme.DARK, ThemeManager.cycle()); // wraps around
         // Reset
         ThemeManager.setActive(Theme.DARK);

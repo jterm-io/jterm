@@ -15,6 +15,7 @@ package io.jterm.style;
  *   <li>{@link #YELLOW_ON_BLUE} — classic yellow text on blue background</li>
  *   <li>{@link #GREEN_ON_BLACK} — matrix-style green on black</li>
  *   <li>{@link #WHITE_ON_GREEN} — light green background with dark text</li>
+ *   <li>{@link #YELLOW_ON_RED} — bright yellow/orange text on red background</li>
  * </ul>
  *
  * @param foreground      default text color
@@ -108,12 +109,29 @@ public record Theme(
             AnsiColor.BRIGHT_GREEN
     );
 
+    /** Inferno: bright yellow/orange text on red background. */
+    public static final Theme YELLOW_ON_RED = new Theme(
+            AnsiColor.BRIGHT_YELLOW,       // foreground
+            AnsiColor.RED,                 // background
+            AnsiColor.RED,                 // selectionFg
+            AnsiColor.BRIGHT_YELLOW,       // selectionBg
+            AnsiColor.BLACK,               // focusFg
+            AnsiColor.BRIGHT_YELLOW,       // focusBg
+            AnsiColor.BRIGHT_RED,          // border
+            AnsiColor.BRIGHT_YELLOW,       // titleFg
+            AnsiColor.RED,                 // titleBg
+            AnsiColor.YELLOW,              // accent
+            AnsiColor.BRIGHT_YELLOW,       // headerFg
+            AnsiColor.RED                  // headerBg
+    );
+
     /** All built-in themes in a list for cycling. */
     public static final Theme[] BUILT_IN = {
             Theme.DARK,
             Theme.YELLOW_ON_BLUE,
             Theme.GREEN_ON_BLACK,
-            Theme.WHITE_ON_GREEN
+            Theme.WHITE_ON_GREEN,
+            Theme.YELLOW_ON_RED
     };
 
     /** Human-readable name for display. */
@@ -122,6 +140,7 @@ public record Theme(
         if (this == YELLOW_ON_BLUE) return "Yellow on Blue";
         if (this == GREEN_ON_BLACK) return "Green on Black";
         if (this == WHITE_ON_GREEN) return "White on Green";
+        if (this == YELLOW_ON_RED) return "Yellow on Red";
         return "Custom";
     }
 }
