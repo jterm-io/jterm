@@ -111,15 +111,14 @@ public class AnimatedBackgroundWindow extends WindowImpl {
 
     public void start() {
         background.start();
-        // Pre-tick a few times so the first frame has visible content spread
-        // across the screen instead of clustered at initial positions.
-        long now = System.nanoTime();
+        // Pre-render several frames so the first visible frame has content
+        // spread across the screen instead of clustered at initial positions.
+        // tick() alone only updates timing — renderFrame() is what advances
+        // star positions (advanceStar), so we must call renderTick() to
+        // actually move stars before the first draw.
         for (int i = 0; i < 5; i++) {
-            background.tick(now + i * 250_000_000L); // 250ms steps
+            renderTick();
         }
-        // Render the first frame immediately so draw() has content to blit
-        // before the first timer tick.
-        renderTick();
         timer = new AnimationTimer(background.targetFps(), this::renderTick);
         timer.start();
     }
