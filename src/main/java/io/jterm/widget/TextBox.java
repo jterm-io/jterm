@@ -27,6 +27,7 @@ public class TextBox extends AbstractComponent {
     public void setValue(String value) {
         this.value = forceUppercase ? value.toUpperCase() : value;
         cursorPosition = Math.min(cursorPosition, value.length());
+        viewportOffset = Math.min(viewportOffset, value.length());
         invalidate();
     }
 
@@ -70,7 +71,9 @@ public class TextBox extends AbstractComponent {
         Color bg = backgroundColorOverride != null ? backgroundColorOverride : theme.background();
         var style = new TextCell(' ', theme.foreground(), bg);
         graphics.fillRectangle(0, 0, size.columns(), 1, style);
-        var visible = value.substring(viewportOffset, Math.min(value.length(), viewportOffset + size.columns()));
+        // Defensive: clamp viewportOffset in case it's stale from a prior longer value.
+        int offset = Math.min(viewportOffset, value.length());
+        var visible = value.substring(offset, Math.min(value.length(), offset + size.columns()));
         var display = masked ? "*".repeat(visible.length()) : visible;
         graphics.drawString(0, 0, display, style);
         // Only draw cursor when this TextBox has focus
