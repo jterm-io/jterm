@@ -206,9 +206,9 @@ public class WarpStarfield extends AbstractComponent implements AnimatedBackgrou
 
     /** Project a 3D normalized point to 2D screen coordinates. */
     public TerminalPosition project(double x, double y, double z) {
-        // Wider FOV — multiply by 2.5x so stars spread out more at all depths
-        int sx = (int) Math.round(centerX + (x / z) * centerX * 2.5);
-        int sy = (int) Math.round(centerY + (y / z) * centerY * 2.5);
+        // Narrower FOV — stars stay closer to center, more focused stream
+        int sx = (int) Math.round(centerX + (x / z) * centerX * 1.2);
+        int sy = (int) Math.round(centerY + (y / z) * centerY * 1.2);
         return new TerminalPosition(sx, sy);
     }
 
