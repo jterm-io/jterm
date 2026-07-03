@@ -14,6 +14,7 @@ import io.jterm.widget.CheckBox;
 import io.jterm.widget.ListBox;
 import io.jterm.widget.Table;
 import io.jterm.widget.TextBox;
+import io.jterm.widget.TextArea;
 import io.jterm.widget.Container;
 import io.jterm.widget.Component;
 import io.jterm.style.ThemeManager;
@@ -331,6 +332,7 @@ public class DefaultTextGUI implements TextGUI, WindowManager {
                 || component instanceof CheckBox
                 || component instanceof ListBox
                 || component instanceof Table
-                || component instanceof TextBox;
+                || component instanceof TextBox
+                || component instanceof TextArea;
     }
 }

@@ -10,6 +10,7 @@ import io.jterm.widget.CheckBox;
 import io.jterm.widget.Label;
 import io.jterm.widget.Panel;
 import io.jterm.widget.TextBox;
+import io.jterm.widget.TextArea;
 import io.jterm.widget.ListBox;
 import io.jterm.layout.BorderLayout;
 import io.jterm.layout.LinearLayout;
@@ -792,6 +793,26 @@ class DefaultTextGUITest {
         // This will block until 'x' is read
         gui.waitForInput();
         // If it returns without hanging, the test passes
+    }
+
+    @Test
+    @DisplayName("TextArea is recognized as focusable and Tab advances focus to it")
+    void textAreaIsFocusableAndTabAdvances() throws IOException {
+        var screen = new DefaultScreen(new MockTerminal(new TerminalSize(80, 24)));
+        var gui = new DefaultTextGUI(screen);
+        var window = new WindowImpl("Test");
+        var textBox = new TextBox();
+        var textArea = new TextArea("", 10, 3);
+        window.getContents().setLayoutManager(new LinearLayout(LinearLayout.Direction.VERTICAL));
+        window.getContents().addComponent(textBox);
+        window.getContents().addComponent(textArea);
+        gui.addWindow(window);
+
+        assertTrue(textBox.isFocused(), "TextBox should get initial focus");
+        gui.processInput(new KeyStroke(KeyType.TAB));
+        assertTrue(textArea.isFocused(), "TextArea should receive focus after Tab");
+        gui.processInput(new KeyStroke(KeyType.TAB));
+        assertTrue(textBox.isFocused(), "Tab should cycle back to TextBox");
     }
 
     private static DefaultTextGUI createGui() {
