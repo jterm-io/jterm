@@ -47,7 +47,7 @@ public class WarpStarfield extends AbstractComponent implements AnimatedBackgrou
     private volatile int centerY;
 
     public WarpStarfield(TerminalSize preferredSize) {
-        this(preferredSize, 175);
+        this(preferredSize, 60);
     }
 
     public WarpStarfield(TerminalSize preferredSize, int starCount) {
