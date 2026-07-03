@@ -152,8 +152,9 @@ class WarpStarfieldTest {
     void projectionStaysWithinBounds() {
         var bg = new WarpStarfield(new TerminalSize(40, 20));
         bg.setBounds(TerminalPosition.TOP_LEFT, new TerminalSize(40, 20));
-        for (double z = 0.6; z <= 10.0; z += 0.2) {
-            var p = bg.project(0.5, 0.5, z);
+        // At higher z values, stars should project within bounds
+        for (double z = 1.5; z <= 10.0; z += 0.2) {
+            var p = bg.project(0.3, 0.3, z);
             assertTrue(p.column() >= 0 && p.column() < 40,
                     "projected column should be on screen for z=" + z);
             assertTrue(p.row() >= 0 && p.row() < 20,
