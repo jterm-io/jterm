@@ -6,7 +6,7 @@ import io.jterm.core.TerminalSize;
 import io.jterm.graphics.TextGraphics;
 import io.jterm.style.AnsiColor;
 import io.jterm.style.Color;
-import io.jterm.style.SGR;
+
 import io.jterm.style.TextCell;
 import io.jterm.style.ThemeManager;
 import io.jterm.widget.AbstractComponent;
@@ -171,44 +171,36 @@ public class WarpStarfield extends AbstractComponent implements AnimatedBackgrou
         }
 
         var bg = theme.background();
-        Color dim = blend(AnsiColor.WHITE, bg, 0.25);
-        Color medium = blend(AnsiColor.WHITE, bg, 0.55);
-        Color bright = blend(AnsiColor.WHITE, bg, 0.85);
-        Color cyanTint = random.nextDouble() < 0.10
-                ? blend(AnsiColor.BRIGHT_CYAN, bg, 0.7)
-                : bright;
+        // Same color palette as StarfieldBackground — cyan-based with dim/medium blends
+        Color dim = blend(AnsiColor.BRIGHT_CYAN, bg, 0.30);
+        Color medium = blend(AnsiColor.BRIGHT_CYAN, bg, 0.60);
+        Color bright = AnsiColor.BRIGHT_CYAN;
 
         for (Star star : stars) {
             advanceStar(star, warpSpeed);
 
-            var current = project(star.x, star.y, star.z);
-            var previous = project(star.x, star.y, star.z + warpSpeed * 2);
+            var pos = project(star.x, star.y, star.z);
+            if (!pos.isValid(size)) continue;
 
-            if (!current.isValid(size) && !previous.isValid(size)) continue;
-
-            double b = brightnessForDepth(star.z);
+            // Color by depth — closer = brighter
             Color fg;
-            if (star.z > 7.0) {
+            char glyph;
+            if (star.z > 6.0) {
                 fg = dim;
+                glyph = '.';
             } else if (star.z > 3.0) {
                 fg = medium;
+                glyph = '+';
             } else if (star.z > 1.0) {
                 fg = bright;
+                glyph = '*';
             } else {
-                fg = cyanTint;
+                fg = bright;
+                glyph = '#';
             }
 
-            char glyph = glyphForDepth(star.z);
-            var cell = star.z < 3.0
-                    ? new TextCell(glyph, fg, bg, SGR.BOLD)
-                    : new TextCell(glyph, fg, bg);
-
-            if (previous.isValid(size) && current.isValid(size)) {
-                graphics.drawLineSmooth(previous.column(), previous.row(),
-                        current.column(), current.row(), cell);
-            } else if (current.isValid(size)) {
-                graphics.setCell(current.column(), current.row(), cell);
-            }
+            graphics.setCell(pos.column(), pos.row(),
+                    new TextCell(glyph, fg, bg));
         }
     }
 
