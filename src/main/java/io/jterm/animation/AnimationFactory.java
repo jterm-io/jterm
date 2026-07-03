@@ -22,7 +22,8 @@ public final class AnimationFactory {
             () -> new PlasmaWash(DEFAULT_SIZE),
             () -> new StarfieldBackground(DEFAULT_SIZE),
             () -> new VoronoiCells(DEFAULT_SIZE),
-            () -> new MoirePatterns(DEFAULT_SIZE)
+            () -> new MoirePatterns(DEFAULT_SIZE),
+            () -> new io.jterm.widget.animation.WarpStarfield(DEFAULT_SIZE)
     );
 
     private AnimationFactory() {}
