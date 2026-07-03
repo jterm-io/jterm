@@ -2,6 +2,7 @@ package io.jterm.window;
 
 import io.jterm.animation.AnimatedBackground;
 import io.jterm.animation.AnimationTimer;
+import io.jterm.core.TerminalPosition;
 import io.jterm.core.TerminalSize;
 import io.jterm.graphics.TextGraphics;
 import io.jterm.screen.ScreenBuffer;
@@ -106,6 +107,26 @@ public class AnimatedBackgroundWindow extends WindowImpl {
         background.renderFrame(g, sz);
         if (gui != null) {
             gui.requestRefresh();
+        }
+    }
+
+    /**
+     * Forwards resize to the background animation only when the size actually
+     * changes. The GUI layout manager calls setBounds() on every screen update,
+     * so forwarding unconditionally would reset animation state (e.g. VoronoiCells
+     * recreating seeds) many times per second. By tracking the last forwarded
+     * size, we ensure onResize() is called only on real terminal resizes.
+     */
+    private TerminalSize lastResizeSize;
+
+    @Override
+    public void setBounds(TerminalPosition position, TerminalSize size) {
+        super.setBounds(position, size);
+        if (lastResizeSize == null
+                || lastResizeSize.columns() != size.columns()
+                || lastResizeSize.rows() != size.rows()) {
+            lastResizeSize = size;
+            background.onResize(size);
         }
     }
 

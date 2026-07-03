@@ -26,7 +26,7 @@ public class WarpStarfield extends AbstractComponent implements AnimatedBackgrou
 
     private static final double MIN_DEPTH = 0.1;
     private static final double MAX_DEPTH = 10.0;
-    private static final double DEFAULT_WARP_SPEED = 0.05;
+    private static final double DEFAULT_WARP_SPEED = 0.075;
 
     private final Random random = new Random();
     private final int starCount;
@@ -207,8 +207,8 @@ public class WarpStarfield extends AbstractComponent implements AnimatedBackgrou
     /** Project a 3D normalized point to 2D screen coordinates. */
     public TerminalPosition project(double x, double y, double z) {
         // Narrower FOV — stars stay closer to center, more focused stream
-        int sx = (int) Math.round(centerX + (x / z) * centerX * 1.2);
-        int sy = (int) Math.round(centerY + (y / z) * centerY * 1.2);
+        int sx = (int) Math.round(centerX + (x / z) * centerX * 2.5);
+        int sy = (int) Math.round(centerY + (y / z) * centerY * 2.5);
         return new TerminalPosition(sx, sy);
     }
 

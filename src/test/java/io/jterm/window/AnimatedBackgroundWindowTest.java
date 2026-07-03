@@ -5,6 +5,7 @@ import org.junit.jupiter.api.BeforeEach;
 
 import io.jterm.animation.AnimatedBackground;
 import io.jterm.animation.AnimationTimer;
+import io.jterm.core.TerminalPosition;
 import io.jterm.core.TerminalSize;
 import io.jterm.graphics.TextGraphics;
 import io.jterm.screen.ScreenBuffer;
@@ -83,5 +84,42 @@ class AnimatedBackgroundWindowTest {
         var g = new TextGraphics(buf);
         bg.renderFrame(g, new TerminalSize(80, 24));
         assertEquals(1, bg.renderCount, "renderFrame() called — stars advanced");
+    }
+
+    @Test
+    @org.junit.jupiter.api.DisplayName("setBounds forwards resize to background animation")
+    void setBoundsForwardsResizeToBackground() {
+        var bg = new CountingBackground();
+        var window = new AnimatedBackgroundWindow(bg, null, true);
+        var realSize = new TerminalSize(80, 24);
+        window.setBounds(TerminalPosition.TOP_LEFT, realSize);
+        assertEquals(realSize, bg.lastSize,
+                "setBounds should forward the new size to background.onResize()");
+        assertEquals(realSize, window.getSize(),
+                "window size should match what was set");
+    }
+
+    @Test
+    @org.junit.jupiter.api.DisplayName("setBounds does not forward repeated same-size calls")
+    void setBoundsDedupesSameSize() {
+        // The GUI layout manager calls setBounds() on every screen update.
+        // Forwarding onResize() unconditionally resets animation state (e.g.
+        // VoronoiCells recreating seeds) many times per second, making the
+        // animation appear to run extremely fast.
+        var bg = new CountingBackground();
+        var window = new AnimatedBackgroundWindow(bg, null, true);
+        var size = new TerminalSize(80, 24);
+        window.setBounds(TerminalPosition.TOP_LEFT, size);
+        bg.lastSize = null; // reset to detect subsequent calls
+        // Repeated setBounds with same size should NOT forward
+        window.setBounds(TerminalPosition.TOP_LEFT, size);
+        window.setBounds(TerminalPosition.TOP_LEFT, size);
+        assertNull(bg.lastSize,
+                "onResize should NOT be called again for same size");
+        // Different size SHOULD forward
+        var newSize = new TerminalSize(120, 40);
+        window.setBounds(TerminalPosition.TOP_LEFT, newSize);
+        assertEquals(newSize, bg.lastSize,
+                "onResize should be called when size actually changes");
     }
 }
