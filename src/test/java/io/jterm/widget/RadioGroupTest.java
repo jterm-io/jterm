@@ -238,7 +238,9 @@ class RadioGroupTest {
     }
 
     @Test
-    void radioButtonHandleKeyStrokeEnterSelects() {
+    void radioButtonHandleKeyStrokeEnterDoesNotSelect() {
+        // Enter is intentionally NOT handled by RadioButton — in dialog contexts,
+        // Enter means "submit" and is handled by the dialog, not the radio.
         var group = new RadioGroup();
         var a = new RadioButton("A");
         var b = new RadioButton("B");
@@ -246,8 +248,8 @@ class RadioGroupTest {
         group.add(b);
         var enterStroke = new KeyStroke(KeyType.ENTER);
         b.handleKeyStroke(enterStroke);
-        assertSame(b, group.getSelected());
-        assertTrue(b.isSelected());
+        assertSame(a, group.getSelected());
+        assertFalse(b.isSelected());
     }
 
     @Test

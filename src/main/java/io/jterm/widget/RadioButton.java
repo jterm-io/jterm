@@ -59,8 +59,10 @@ public class RadioButton extends AbstractComponent {
     public void handleKeyStroke(KeyStroke keyStroke) {
         if (keyStroke.type() == KeyType.CHARACTER && keyStroke.character() == ' ') {
             select();
-        } else if (keyStroke.type() == KeyType.ENTER) {
-            select();
         }
+        // Enter is intentionally NOT handled here. In dialog contexts, Enter
+        // means "submit" — the dialog handles it. If RadioButton also selected
+        // on Enter, the focused radio would change state before the dialog's
+        // submit() runs.
     }
 }

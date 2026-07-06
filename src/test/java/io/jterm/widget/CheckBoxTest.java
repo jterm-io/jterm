@@ -54,11 +54,13 @@ class CheckBoxTest {
     }
 
     @Test
-    void enterKeyToggles() {
+    void enterKeyDoesNotToggle() {
+        // Enter is intentionally NOT handled by CheckBox — in dialog contexts,
+        // Enter means "submit" and is handled by the dialog, not the checkbox.
         var cb = new CheckBox("Option");
         cb.setBounds(TerminalPosition.TOP_LEFT, new TerminalSize(10, 1));
         cb.handleKeyStroke(new KeyStroke(KeyType.ENTER));
-        assertTrue(cb.isSelected());
+        assertFalse(cb.isSelected());
     }
 
     @Test
@@ -109,12 +111,13 @@ class CheckBoxTest {
     }
 
     @Test
-    void enterKeyTogglesOff() {
+    void enterKeyDoesNotToggleOff() {
+        // Enter does not toggle — see enterKeyDoesNotToggle for rationale
         var cb = new CheckBox("Option");
+        cb.setSelected(true);
         cb.setBounds(TerminalPosition.TOP_LEFT, new TerminalSize(10, 1));
-        cb.handleKeyStroke(new KeyStroke(KeyType.ENTER)); // on
-        cb.handleKeyStroke(new KeyStroke(KeyType.ENTER)); // off
-        assertFalse(cb.isSelected());
+        cb.handleKeyStroke(new KeyStroke(KeyType.ENTER));
+        assertTrue(cb.isSelected(), "Enter should not toggle checkbox state");
     }
 
     @Test
