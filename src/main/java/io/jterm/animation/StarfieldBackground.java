@@ -179,7 +179,7 @@ public class StarfieldBackground extends AbstractComponent implements AnimatedBa
                 int idx = random.nextInt(area);
                 if (stars[idx] == null) {
                     stars[idx] = new Star(idx % size.columns(), idx / size.columns(),
-                            1 + random.nextInt(4), random.nextDouble() < 0.15,
+                            1 + random.nextInt(10), random.nextDouble() < 0.15,
                             random.nextInt(4));
                     starCount++;
                 }
@@ -191,7 +191,7 @@ public class StarfieldBackground extends AbstractComponent implements AnimatedBa
                 if (stars[idx] == null) {
                     stars[idx] = new Star(random.nextInt(size.columns()),
                             idx / size.columns(),
-                            1 + random.nextInt(4), random.nextDouble() < 0.15,
+                            1 + random.nextInt(10), random.nextDouble() < 0.15,
                             random.nextInt(4));
                     starCount++;
                 }
