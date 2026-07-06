@@ -1,7 +1,12 @@
 package io.jterm.widget;
 
+import io.jterm.core.TerminalPosition;
+import io.jterm.core.TerminalSize;
 import io.jterm.core.input.KeyStroke;
 import io.jterm.core.input.KeyType;
+import io.jterm.graphics.TextGraphics;
+import io.jterm.screen.ScreenBuffer;
+import io.jterm.style.ThemeManager;
 import org.junit.jupiter.api.Test;
 
 import java.util.concurrent.atomic.AtomicInteger;
@@ -345,5 +350,66 @@ class RadioGroupTest {
         var size = btn.getPreferredSize();
         assertEquals(2 + 4, size.columns(), "marker plus label length");
         assertEquals(1, size.rows());
+    }
+
+    // ── Focus highlight tests ──────────────────────────────────────
+
+    @Test
+    void drawUnfocusedUsesNormalColors() {
+        var btn = new RadioButton("Test");
+        btn.setBounds(TerminalPosition.TOP_LEFT, new TerminalSize(12, 1));
+        btn.setFocused(false);
+        var buf = new ScreenBuffer(new TerminalSize(12, 1));
+        btn.draw(new TextGraphics(buf));
+        var theme = ThemeManager.active();
+        var cell = buf.getCell(0, 0);
+        assertEquals(theme.foreground(), cell.fg(), "unfocused radio should use theme foreground");
+        assertEquals(theme.background(), cell.bg(), "unfocused radio should use theme background");
+    }
+
+    @Test
+    void drawFocusedUsesFocusColors() {
+        var btn = new RadioButton("Test");
+        btn.setBounds(TerminalPosition.TOP_LEFT, new TerminalSize(12, 1));
+        btn.setFocused(true);
+        var buf = new ScreenBuffer(new TerminalSize(12, 1));
+        btn.draw(new TextGraphics(buf));
+        var theme = ThemeManager.active();
+        var cell = buf.getCell(0, 0);
+        assertEquals(theme.focusFg(), cell.fg(), "focused radio should use theme focusFg");
+        assertEquals(theme.focusBg(), cell.bg(), "focused radio should use theme focusBg");
+    }
+
+    @Test
+    void drawFocusedSelectedStillUsesFocusColors() {
+        var group = new RadioGroup();
+        var btn = new RadioButton("Test");
+        group.add(btn);
+        btn.setBounds(TerminalPosition.TOP_LEFT, new TerminalSize(12, 1));
+        btn.setFocused(true);
+        var buf = new ScreenBuffer(new TerminalSize(12, 1));
+        btn.draw(new TextGraphics(buf));
+        var theme = ThemeManager.active();
+        var cell = buf.getCell(0, 0);
+        assertEquals(theme.focusFg(), cell.fg(), "focused+selected radio should use theme focusFg");
+        assertEquals(theme.focusBg(), cell.bg(), "focused+selected radio should use theme focusBg");
+        // Content should still be the selected marker
+        assertTrue(buf.getCell(0, 0).is('('));
+        assertEquals("●", buf.getCell(1, 0).character());
+    }
+
+    @Test
+    void drawFocusedLabelCellsUseFocusColors() {
+        var btn = new RadioButton("MyLabel");
+        btn.setBounds(TerminalPosition.TOP_LEFT, new TerminalSize(20, 1));
+        btn.setFocused(true);
+        var buf = new ScreenBuffer(new TerminalSize(20, 1));
+        btn.draw(new TextGraphics(buf));
+        var theme = ThemeManager.active();
+        // Label starts at col 4: "(○) MyLabel"
+        var cell = buf.getCell(4, 0);
+        assertTrue(cell.is('M'));
+        assertEquals(theme.focusFg(), cell.fg(), "focused radio label should use theme focusFg");
+        assertEquals(theme.focusBg(), cell.bg(), "focused radio label should use theme focusBg");
     }
 }

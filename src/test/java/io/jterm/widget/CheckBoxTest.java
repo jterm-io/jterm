@@ -6,6 +6,7 @@ import io.jterm.core.input.KeyStroke;
 import io.jterm.core.input.KeyType;
 import io.jterm.graphics.TextGraphics;
 import io.jterm.screen.ScreenBuffer;
+import io.jterm.style.ThemeManager;
 import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -196,5 +197,66 @@ class CheckBoxTest {
     void preferredSizeSingleCharLabel() {
         var cb = new CheckBox("X");
         assertEquals(new TerminalSize(5, 1), cb.getPreferredSize());
+    }
+
+    // ── Focus highlight tests ──────────────────────────────────────
+
+    @Test
+    void drawUnfocusedUsesNormalColors() {
+        var cb = new CheckBox("Test");
+        cb.setBounds(TerminalPosition.TOP_LEFT, new TerminalSize(12, 1));
+        // Ensure not focused
+        cb.setFocused(false);
+        var buf = new ScreenBuffer(new TerminalSize(12, 1));
+        cb.draw(new TextGraphics(buf));
+        var theme = ThemeManager.active();
+        var cell = buf.getCell(0, 0);
+        assertEquals(theme.foreground(), cell.fg(), "unfocused checkbox should use theme foreground");
+        assertEquals(theme.background(), cell.bg(), "unfocused checkbox should use theme background");
+    }
+
+    @Test
+    void drawFocusedUsesFocusColors() {
+        var cb = new CheckBox("Test");
+        cb.setBounds(TerminalPosition.TOP_LEFT, new TerminalSize(12, 1));
+        cb.setFocused(true);
+        var buf = new ScreenBuffer(new TerminalSize(12, 1));
+        cb.draw(new TextGraphics(buf));
+        var theme = ThemeManager.active();
+        var cell = buf.getCell(0, 0);
+        assertEquals(theme.focusFg(), cell.fg(), "focused checkbox should use theme focusFg");
+        assertEquals(theme.focusBg(), cell.bg(), "focused checkbox should use theme focusBg");
+    }
+
+    @Test
+    void drawFocusedCheckedStillUsesFocusColors() {
+        var cb = new CheckBox("Test");
+        cb.setSelected(true);
+        cb.setBounds(TerminalPosition.TOP_LEFT, new TerminalSize(12, 1));
+        cb.setFocused(true);
+        var buf = new ScreenBuffer(new TerminalSize(12, 1));
+        cb.draw(new TextGraphics(buf));
+        var theme = ThemeManager.active();
+        var cell = buf.getCell(0, 0);
+        assertEquals(theme.focusFg(), cell.fg(), "focused+checked checkbox should use theme focusFg");
+        assertEquals(theme.focusBg(), cell.bg(), "focused+checked checkbox should use theme focusBg");
+        // Content should still be the checkmark marker
+        assertTrue(buf.getCell(0, 0).is('['));
+        assertEquals("✓", buf.getCell(1, 0).character());
+    }
+
+    @Test
+    void drawFocusedLabelCellsUseFocusColors() {
+        var cb = new CheckBox("MyLabel");
+        cb.setBounds(TerminalPosition.TOP_LEFT, new TerminalSize(20, 1));
+        cb.setFocused(true);
+        var buf = new ScreenBuffer(new TerminalSize(20, 1));
+        cb.draw(new TextGraphics(buf));
+        var theme = ThemeManager.active();
+        // Label starts at col 4: "[ ] MyLabel"
+        var cell = buf.getCell(4, 0);
+        assertTrue(cell.is('M'));
+        assertEquals(theme.focusFg(), cell.fg(), "focused checkbox label should use theme focusFg");
+        assertEquals(theme.focusBg(), cell.bg(), "focused checkbox label should use theme focusBg");
     }
 }

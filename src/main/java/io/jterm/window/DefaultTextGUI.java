@@ -12,6 +12,7 @@ import io.jterm.screen.Screen;
 import io.jterm.widget.Button;
 import io.jterm.widget.CheckBox;
 import io.jterm.widget.ListBox;
+import io.jterm.widget.RadioButton;
 import io.jterm.widget.Table;
 import io.jterm.widget.TextBox;
 import io.jterm.widget.TextArea;
@@ -331,6 +332,7 @@ public class DefaultTextGUI implements TextGUI, WindowManager {
         return component instanceof Button
                 || component instanceof CheckBox
                 || component instanceof ListBox
+                || component instanceof RadioButton
                 || component instanceof Table
                 || component instanceof TextBox
                 || component instanceof TextArea;

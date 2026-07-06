@@ -49,7 +49,9 @@ public class RadioButton extends AbstractComponent {
     protected void drawComponent(TextGraphics graphics) {
         var theme = ThemeManager.active();
         var marker = selected ? "(●)" : "(○)";
-        var style = new TextCell(' ', theme.foreground(), theme.background());
+        var style = isFocused()
+                ? new TextCell(' ', theme.focusFg(), theme.focusBg())
+                : new TextCell(' ', theme.foreground(), theme.background());
         graphics.drawString(0, 0, marker + " " + label, style);
     }
 
