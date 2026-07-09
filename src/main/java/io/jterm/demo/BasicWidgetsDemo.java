@@ -9,6 +9,8 @@ import io.jterm.style.SGR;
 import io.jterm.style.TextCell;
 import io.jterm.widget.Button;
 import io.jterm.widget.CheckBox;
+import io.jterm.widget.DataGrid;
+import io.jterm.widget.Borders;
 import io.jterm.widget.Label;
 import io.jterm.widget.ListBox;
 import io.jterm.widget.Panel;
@@ -22,12 +24,19 @@ import io.jterm.layout.LinearLayout;
 import io.jterm.window.DefaultTextGUI;
 import io.jterm.window.WindowImpl;
 import io.jterm.window.WindowHint;
+import io.jterm.style.CellStyle;
+import io.jterm.widget.model.DefaultGridModel;
+import io.jterm.widget.model.GridColumn;
 
 import java.io.IOException;
 import java.util.List;
 
-/** Basic widgets demo: CheckBox, RadioButton, Separator, ProgressBar, ListBox, Table. */
+/** Basic widgets demo: CheckBox, RadioButton, Separator, ProgressBar, ListBox, Table, DataGrid. */
 public class BasicWidgetsDemo {
+
+    /** Sample row type for the DataGrid demo. */
+    record StockRow(String ticker, String name, double price, double change, int volume) {}
+
     public static void main(String[] args) throws IOException {
         var terminal = new AnsiTerminal();
         var screen = new DefaultScreen(terminal);
@@ -88,6 +97,12 @@ public class BasicWidgetsDemo {
         table.addRow("Carol", "720", "3");
         table.addRow("Dave", "690", "4");
         right.addComponent(table);
+        right.addComponent(new Separator(false));
+
+        right.addComponent(new Label("DataGrid:"));
+        var dataGrid = createStockGrid();
+        var gridBorder = Borders.titled(Borders.singleLine(dataGrid), " Stock Quotes ");
+        right.addComponent(gridBorder);
 
         center.addComponent(left);
         center.addComponent(new Separator(true));
@@ -127,5 +142,43 @@ public class BasicWidgetsDemo {
         } finally {
             gui.close();
         }
+    }
+
+    /**
+     * Creates a DataGrid showing a sample stock portfolio with per-column
+     * formatting and a styler that colors the change column green/red.
+     */
+    private static DataGrid<StockRow> createStockGrid() {
+        var columns = List.of(
+                GridColumn.text("Tk", StockRow::ticker),
+                GridColumn.text("Name", StockRow::name),
+                GridColumn.doubleCol("Price", "$%,.2f", StockRow::price),
+                GridColumn.doubleCol("Chg", "%+.2f", StockRow::change)
+                        .withStyler(v -> ((Double) v) >= 0 ? CellStyle.GREEN : CellStyle.RED),
+                GridColumn.intCol("Vol", StockRow::volume)
+        );
+
+        var model = new DefaultGridModel<StockRow>();
+        model.addRows(List.of(
+                new StockRow("AAPL", "Apple Inc.",       189.45,  +2.35,  52_000_000),
+                new StockRow("MSFT", "Microsoft Corp.",  412.78,  -1.12,  23_400_000),
+                new StockRow("GOOG", "Alphabet Inc.",    172.34,  +0.89,  18_700_000),
+                new StockRow("AMZN", "Amazon.com Inc.",  178.22,  -3.45,  41_200_000),
+                new StockRow("TSLA", "Tesla Inc.",      248.91,  +5.67,  89_300_000),
+                new StockRow("NVDA", "NVIDIA Corp.",     875.30,  +12.44, 67_800_000),
+                new StockRow("META", "Meta Platforms",  502.66,  -2.78,  15_900_000),
+                new StockRow("NFLX", "Netflix Inc.",    612.15,  +1.34,   8_200_000),
+                new StockRow("JPM",  "JPMorgan Chase",  198.77,  -0.45,  10_100_000),
+                new StockRow("V",    "Visa Inc.",       276.54,  +0.67,   7_600_000)
+        ));
+
+        var grid = new DataGrid<>(columns, model);
+        grid.addSelectionListener(() -> {
+            var selected = grid.getSelectedItem();
+            if (selected != null) {
+                System.out.println("Selected: " + selected.ticker() + " @ $" + selected.price());
+            }
+        });
+        return grid;
     }
 }
