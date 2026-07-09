@@ -34,6 +34,7 @@ public class DataGrid<T> extends AbstractComponent implements GridListener {
     private volatile int scrollOffsetY = 0;
     private volatile int scrollOffsetX = 0;
     private volatile int[] columnWidths;
+    private volatile boolean showVerticalLines = false;
 
     private final List<Runnable> selectionListeners = new CopyOnWriteArrayList<>();
 
@@ -91,6 +92,25 @@ public class DataGrid<T> extends AbstractComponent implements GridListener {
     /** Returns the column definitions. */
     public List<GridColumn<T>> getColumns() {
         return columns;
+    }
+
+    /**
+     * Returns whether vertical separator lines between columns are drawn.
+     * Default is {@code false} (no lines).
+     */
+    public boolean isShowVerticalLines() {
+        return showVerticalLines;
+    }
+
+    /**
+     * Sets whether vertical separator lines ({@code │}) are drawn between columns.
+     * When {@code false}, columns are separated by a space instead.
+     *
+     * @param showVerticalLines {@code true} to show lines, {@code false} to hide
+     */
+    public void setShowVerticalLines(boolean showVerticalLines) {
+        this.showVerticalLines = showVerticalLines;
+        invalidate();
     }
 
     // ---- Selection --------------------------------------------------------
@@ -169,7 +189,7 @@ public class DataGrid<T> extends AbstractComponent implements GridListener {
             widths[c] = w;
             totalWidth += w;
         }
-        totalWidth += Math.max(0, colCount - 1); // separators
+        totalWidth += Math.max(0, colCount - 1) * (showVerticalLines ? 1 : 1); // 1 col separator each regardless
 
         int rowCount = model == null ? 0 : model.getRowCount();
         int height = Math.min(rowCount + 1, 12);
@@ -294,7 +314,8 @@ public class DataGrid<T> extends AbstractComponent implements GridListener {
 
             // Draw separator before column (except first visible)
             if (c > startCol) {
-                graphics.drawString(x, y, "│", headerStyle);
+                String sep = showVerticalLines ? "│" : " ";
+                graphics.drawString(x, y, sep, headerStyle);
                 x++;
             }
 
@@ -325,7 +346,8 @@ public class DataGrid<T> extends AbstractComponent implements GridListener {
                 var sepStyle = selected
                         ? new TextCell(' ', theme.selectionFg(), theme.selectionBg())
                         : new TextCell(' ', theme.foreground(), theme.background());
-                graphics.drawString(x, y, "│", sepStyle);
+                String sep = showVerticalLines ? "│" : " ";
+                graphics.drawString(x, y, sep, sepStyle);
                 x++;
             }
 
@@ -536,7 +558,7 @@ public class DataGrid<T> extends AbstractComponent implements GridListener {
             }
             total += w;
         }
-        total += Math.max(0, colCount - 1); // separators
+        total += Math.max(0, colCount - 1); // separators (1 col each, line or space)
         return total;
     }
 

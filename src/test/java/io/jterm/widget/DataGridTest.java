@@ -200,6 +200,7 @@ class DataGridTest {
     @Test
     void columnSeparatorsPresent() {
         var grid = gridWithRows(30, 5, new TestRow("Alice", 30, 95.5));
+        grid.setShowVerticalLines(true);
         var buf = drawGrid(grid, 30, 5);
         // There should be a '│' separator between columns in the header row
         boolean foundSeparator = false;
@@ -209,7 +210,19 @@ class DataGridTest {
                 break;
             }
         }
-        assertTrue(foundSeparator, "Column separator │ should be present in header row");
+        assertTrue(foundSeparator, "Column separator │ should be present in header row when lines enabled");
+    }
+
+    @Test
+    void verticalLinesOffByDefault() {
+        var grid = gridWithRows(30, 5, new TestRow("Alice", 30, 95.5));
+        assertFalse(grid.isShowVerticalLines(), "Vertical lines should be off by default");
+        var buf = drawGrid(grid, 30, 5);
+        // There should be NO '│' separator between columns when lines are off
+        for (int x = 0; x < 30; x++) {
+            assertFalse(buf.getCell(x, 0).is('│'),
+                "Should not find │ separator in header row when lines are off (found at x=" + x + ")");
+        }
     }
 
     @Test
