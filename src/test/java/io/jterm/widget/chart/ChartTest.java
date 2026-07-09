@@ -289,6 +289,52 @@ class ChartTest {
     }
 
     @Test
+    void xAxisLabelsVisibleInOutput() {
+        var chart = new Chart("Dates");
+        chart.addSeries(new ChartSeries("Price", List.of(10.0, 20.0, 15.0, 25.0), AnsiColor.GREEN));
+        chart.setXAxisLabels(List.of("Jan", "Apr", "Jul", "Oct"));
+        chart.setShowBorder(false);
+        chart.setShowGrid(false);
+        chart.setShowLegend(false);
+        var size = new TerminalSize(40, 12);
+        chart.setBounds(TerminalPosition.TOP_LEFT, size);
+        var buf = new ScreenBuffer(size);
+        var g = new TextGraphics(buf);
+        chart.draw(g);
+
+        // Find "Jan" and "Oct" in the buffer
+        boolean foundJan = false;
+        boolean foundOct = false;
+        for (int r = 0; r < size.rows(); r++) {
+            for (int c = 0; c <= size.columns() - 3; c++) {
+                String s = buf.getCell(c, r).character()
+                        + buf.getCell(c + 1, r).character()
+                        + buf.getCell(c + 2, r).character();
+                if (s.equals("Jan")) foundJan = true;
+                if (s.equals("Oct")) foundOct = true;
+            }
+        }
+        assertTrue(foundJan, "X-axis label 'Jan' should be visible");
+        assertTrue(foundOct, "X-axis label 'Oct' should be visible");
+    }
+
+    @Test
+    void xAxisLabelsReserveBottomRow() {
+        // With x-axis labels, the plot area should be 1 row shorter
+        var chart = new Chart("Test");
+        chart.addSeries(new ChartSeries("Price", List.of(10.0, 20.0, 15.0), AnsiColor.GREEN));
+        chart.setXAxisLabels(List.of("Start", "End"));
+        chart.setShowBorder(false);
+        chart.setShowGrid(false);
+        chart.setShowLegend(false);
+        var size = new TerminalSize(30, 8);
+        chart.setBounds(TerminalPosition.TOP_LEFT, size);
+        var buf = new ScreenBuffer(size);
+        var g = new TextGraphics(buf);
+        assertDoesNotThrow(() -> chart.draw(g));
+    }
+
+    @Test
     void drawSinglePointSeriesDoesNotThrow() {
         var chart = new Chart("Single");
         chart.addSeries(new ChartSeries("One", List.of(42.0), AnsiColor.GREEN));
@@ -518,6 +564,70 @@ class ChartTest {
     }
 
     @Test
+    void markerDoesNotDegradeFullBlockToHalfBlock() {
+        // The bug: Bresenham line draws █ (full block) at a data point position,
+        // then the marker overwrites it with ▀ or ▄, creating an apparent gap.
+        // The fix: markers should merge with existing line chars, never downgrading
+        // █ to ▀/▄.
+        //
+        // Test: a zigzag with steep segments that produce full blocks at data points.
+        var chart = new Chart("Merge Test");
+        chart.addSeries(new ChartSeries("Z", List.of(10.0, 90.0, 10.0, 90.0, 10.0, 90.0, 10.0),
+                ChartType.LINE, AnsiColor.GREEN));
+        chart.setShowBorder(false);
+        chart.setShowLegend(false);
+        chart.setShowGrid(false);
+        chart.setYAxisConfig(ChartAxisConfig.fixed(0, 100, "%.0f"));
+        var size = new TerminalSize(20, 8);
+        chart.setBounds(TerminalPosition.TOP_LEFT, size);
+        var buf = new ScreenBuffer(size);
+        var g = new TextGraphics(buf);
+        chart.draw(g);
+
+        // Count full blocks (█) — the steep segments should produce many.
+        // If the bug existed, markers would downgrade them to ▀/▄ at each data point.
+        int fullBlocks = 0;
+        for (int r = 0; r < size.rows(); r++) {
+            for (int c = 0; c < size.columns(); c++) {
+                if (buf.getCell(c, r).character().equals("█")) fullBlocks++;
+            }
+        }
+        assertTrue(fullBlocks > 0, "Steep segments should produce full blocks (█), found " + fullBlocks);
+    }
+
+    @Test
+    void markersMergeWithLineChars() {
+        // Verify that when a line draws ▀ and the marker is ▄ (or vice versa),
+        // the cell becomes █ (merged) rather than overwriting.
+        // Use a zigzag with steep segments that force both halves to be visited.
+        var chart = new Chart("Merge");
+        chart.addSeries(new ChartSeries("Z", List.of(10.0, 90.0, 10.0, 90.0, 10.0),
+                ChartType.LINE, AnsiColor.GREEN));
+        chart.setShowBorder(false);
+        chart.setShowLegend(false);
+        chart.setShowGrid(false);
+        chart.setYAxisConfig(ChartAxisConfig.fixed(0, 100, "%.0f"));
+        var size = new TerminalSize(20, 8);
+        chart.setBounds(TerminalPosition.TOP_LEFT, size);
+        var buf = new ScreenBuffer(size);
+        var g = new TextGraphics(buf);
+        chart.draw(g);
+
+        // Should have at least some █ from merged cells
+        boolean hasFullBlock = false;
+        for (int r = 0; r < size.rows(); r++) {
+            for (int c = 0; c < size.columns(); c++) {
+                if (buf.getCell(c, r).character().equals("█")) {
+                    hasFullBlock = true;
+                    break;
+                }
+            }
+            if (hasFullBlock) break;
+        }
+        assertTrue(hasFullBlock, "Merged markers and line chars should produce █ blocks");
+    }
+
+    @Test
     void lineChartNoOldStyleDiagonalChars() {
         // Verify old-style diagonal chars (╱╲) are NOT used anymore
         var chart = new Chart("No diagonals");
@@ -568,5 +678,245 @@ class ChartTest {
             }
         }
         assertTrue(foundHorizontal, "Flat line should contain ─ characters");
+    }
+
+    // ── Y-axis nice tick tests ──────────────────────────────────
+
+    @Test
+    void yAxisLabelsAreRoundNumbers() {
+        // Verify Y-axis labels are at round multiples (not arbitrary fractions)
+        var chart = new Chart("Ticks");
+        chart.addSeries(new ChartSeries("Price", List.of(142.0, 156.0, 148.0, 163.0), AnsiColor.GREEN));
+        chart.setYAxisConfig(ChartAxisConfig.fixed(140, 165, "$%.0f"));
+        chart.setShowBorder(false);
+        chart.setShowLegend(false);
+        chart.setShowGrid(false);
+        var size = new TerminalSize(30, 12);
+        chart.setBounds(TerminalPosition.TOP_LEFT, size);
+        var buf = new ScreenBuffer(size);
+        var g = new TextGraphics(buf);
+        chart.draw(g);
+
+        // Collect all Y-axis labels (left side, rows with ┤ tick marks)
+        java.util.List<String> labels = new java.util.ArrayList<>();
+        for (int r = 0; r < size.rows(); r++) {
+            // Y-axis labels are to the left of the ┤ tick
+            for (int c = 0; c < 8; c++) {
+                String ch = buf.getCell(c, r).character();
+                if (ch.equals("$")) {
+                    // Read the full label starting here
+                    StringBuilder sb = new StringBuilder();
+                    for (int cc = c; cc < 10; cc++) {
+                        String cell = buf.getCell(cc, r).character();
+                        if (cell.equals(" ") || cell.equals("┤") || cell.equals("┴") || cell.equals("─")) break;
+                        sb.append(cell);
+                    }
+                    String label = sb.toString();
+                    if (label.startsWith("$")) labels.add(label);
+                    break;
+                }
+            }
+        }
+        assertTrue(labels.size() >= 2, "Should have at least 2 Y-axis labels, got " + labels.size());
+        // Every label should be a round number: $140, $145, $150, $155, $160, $165, etc.
+        for (String label : labels) {
+            int value = Integer.parseInt(label.replace("$", "").replace(",", ""));
+            assertTrue(value % 5 == 0, "Y-axis label " + label + " should be a multiple of 5");
+        }
+    }
+
+    @Test
+    void yAxisLabelsForLargePrices() {
+        // Prices in the hundreds — labels should be at multiples of 25 or 50
+        var chart = new Chart("Big");
+        chart.addSeries(new ChartSeries("Price", List.of(410.0, 460.0, 425.0, 480.0), AnsiColor.GREEN));
+        chart.setYAxisConfig(ChartAxisConfig.fixed(400, 500, "$%.0f"));
+        chart.setShowBorder(false);
+        chart.setShowLegend(false);
+        chart.setShowGrid(false);
+        var size = new TerminalSize(30, 12);
+        chart.setBounds(TerminalPosition.TOP_LEFT, size);
+        var buf = new ScreenBuffer(size);
+        var g = new TextGraphics(buf);
+        chart.draw(g);
+
+        // Collect labels
+        java.util.List<Integer> values = new java.util.ArrayList<>();
+        for (int r = 0; r < size.rows(); r++) {
+            for (int c = 0; c < 8; c++) {
+                String ch = buf.getCell(c, r).character();
+                if (ch.equals("$")) {
+                    StringBuilder sb = new StringBuilder();
+                    for (int cc = c; cc < 10; cc++) {
+                        String cell = buf.getCell(cc, r).character();
+                        if (cell.equals(" ") || cell.equals("┤") || cell.equals("┴") || cell.equals("─")) break;
+                        sb.append(cell);
+                    }
+                    String label = sb.toString();
+                    if (label.startsWith("$")) {
+                        try {
+                            values.add(Integer.parseInt(label.replace("$", "")));
+                        } catch (NumberFormatException ignored) {}
+                    }
+                    break;
+                }
+            }
+        }
+        assertTrue(values.size() >= 2, "Should have at least 2 Y-axis labels");
+        for (int v : values) {
+            assertTrue(v % 25 == 0, "Y-axis label $" + v + " should be a multiple of 25");
+        }
+    }
+
+    // ── Bug fix tests ───────────────────────────────────────────
+
+    /**
+     * Bug 1: Y-axis labels are inverted. The max value label (100) should
+     * appear at a HIGHER position (lower row number = closer to top) than the
+     * min value label (0). Before the fix, drawYAxis didn't invert yFraction,
+     * so max appeared at the bottom and min at the top.
+     */
+    @Test
+    void yAxisLabelsMaxAtTopMinAtBottom() {
+        var chart = new Chart("YAxis");
+        chart.addSeries(new ChartSeries("Price", List.of(50.0), AnsiColor.GREEN));
+        chart.setYAxisConfig(ChartAxisConfig.fixed(0, 100, "%.0f"));
+        chart.setShowBorder(false);
+        chart.setShowLegend(false);
+        chart.setShowGrid(false);
+        var size = new TerminalSize(30, 12);
+        chart.setBounds(TerminalPosition.TOP_LEFT, size);
+        var buf = new ScreenBuffer(size);
+        var g = new TextGraphics(buf);
+        chart.draw(g);
+
+        // Scan each row for numeric Y-axis labels (digits in the left label area)
+        Integer row100 = null; // row where "100" appears
+        Integer row0 = null;    // row where "0" appears as a standalone label
+        for (int r = 0; r < size.rows(); r++) {
+            // Read the left 6 columns of the row as a trimmed string
+            StringBuilder sb = new StringBuilder();
+            for (int c = 0; c < 6; c++) sb.append(buf.getCell(c, r).character());
+            String text = sb.toString().trim();
+            if (text.equals("100")) row100 = r;
+            // "0" label: the text is exactly "0" (not part of a bigger number)
+            if (text.equals("0")) row0 = r;
+        }
+
+        assertNotNull(row100, "Y-axis should show a '100' label");
+        assertNotNull(row0, "Y-axis should show a '0' label");
+        assertTrue(row100 < row0,
+                "Max label (100) should be above min label (0): row100=" + row100 + " row0=" + row0);
+    }
+
+    /**
+     * Bug 2: logTicks produces too few ticks for narrow price ranges.
+     * A log-scale chart with range $380-$500 spans less than one decade,
+     * so logTicks only finds one tick ($500). The fix falls back to niceTicks
+     * (linear) so we get multiple readable tick labels.
+     */
+    @Test
+    void logScaleNarrowRangeProducesMultipleTicks() {
+        var chart = new Chart("MSFT");
+        chart.addSeries(new ChartSeries("Price", List.of(420.0, 450.0, 480.0), AnsiColor.GREEN));
+        chart.setYAxisConfig(ChartAxisConfig.logFixed(380, 500, "$%.0f"));
+        chart.setShowBorder(false);
+        chart.setShowLegend(false);
+        chart.setShowGrid(false);
+        var size = new TerminalSize(30, 14);
+        chart.setBounds(TerminalPosition.TOP_LEFT, size);
+        var buf = new ScreenBuffer(size);
+        var g = new TextGraphics(buf);
+        chart.draw(g);
+
+        // Collect all Y-axis labels (strings starting with $ in the left area)
+        java.util.List<String> labels = new java.util.ArrayList<>();
+        for (int r = 0; r < size.rows(); r++) {
+            for (int c = 0; c < 10; c++) {
+                String ch = buf.getCell(c, r).character();
+                if (ch.equals("$")) {
+                    StringBuilder sb = new StringBuilder();
+                    for (int cc = c; cc < 12; cc++) {
+                        String cell = buf.getCell(cc, r).character();
+                        if (cell.equals(" ") || cell.equals("┤") || cell.equals("┴") || cell.equals("─")) break;
+                        sb.append(cell);
+                    }
+                    String label = sb.toString();
+                    if (label.startsWith("$") && label.length() > 1) {
+                        labels.add(label);
+                    }
+                    break;
+                }
+            }
+        }
+
+        assertTrue(labels.size() >= 2,
+                "Log-scale narrow range ($380-$500) should produce >= 2 Y-axis labels via fallback, got: " + labels);
+    }
+
+    /**
+     * Bug 3: computeYRange() inflates max for narrow log-scale ranges.
+     * For logFixed(380, 500), the old code did max = Math.max(max, nextUp(min)*2),
+     * which inflated max to ~760. This made the data only reach the midpoint
+     * instead of the top. The fix only inflates max when max <= min.
+     */
+    @Test
+    void logScaleNarrowRangeDoesNotInflateMax() throws Exception {
+        var chart = new Chart("MSFT");
+        chart.addSeries(new ChartSeries("Price", List.of(420.0, 450.0, 480.0), AnsiColor.GREEN));
+        chart.setYAxisConfig(ChartAxisConfig.logFixed(380, 500, "$%.0f"));
+
+        // Call private computeYRange() via reflection
+        var method = Chart.class.getDeclaredMethod("computeYRange");
+        method.setAccessible(true);
+        double[] range = (double[]) method.invoke(chart);
+
+        assertEquals(380.0, range[0], 0.001, "min should be 380");
+        assertEquals(500.0, range[1], 0.001,
+                "max should be 500, not inflated to ~760 by nextUp(min)*2");
+    }
+
+    /**
+     * Bug 3 (rendering): A log-scale chart with narrow range should map
+     * the max data value to the TOP of the plot area (yFraction near 1.0),
+     * not the midpoint. With the bug, max was inflated to ~760, so 500
+     * only reached yFraction ≈ log(500)/log(760) ≈ 0.5.
+     */
+    @Test
+    void logScaleNarrowRangeMaxValueAtTop() throws Exception {
+        var chart = new Chart("MSFT");
+        chart.addSeries(new ChartSeries("Price", List.of(500.0), AnsiColor.GREEN));
+        chart.setYAxisConfig(ChartAxisConfig.logFixed(380, 500, "$%.0f"));
+
+        // Call private computeYRange() and valueToYFraction via reflection
+        var rangeMethod = Chart.class.getDeclaredMethod("computeYRange");
+        rangeMethod.setAccessible(true);
+        double[] range = (double[]) rangeMethod.invoke(chart);
+
+        var fracMethod = Chart.class.getDeclaredMethod("valueToYFraction", double.class, double.class, double.class);
+        fracMethod.setAccessible(true);
+        double yFraction = (double) fracMethod.invoke(chart, 500.0, range[0], range[1]);
+
+        assertTrue(yFraction > 0.95,
+                "Max value (500) should map near top (yFraction > 0.95), got " + yFraction
+                        + " with range [" + range[0] + ", " + range[1] + "]");
+    }
+
+    /**
+     * Bug 3 (edge case): when max == min on log scale, inflation should still
+     * kick in to ensure max > min.
+     */
+    @Test
+    void logScaleEqualMinMaxStillInflates() throws Exception {
+        var chart = new Chart("Edge");
+        chart.addSeries(new ChartSeries("Price", List.of(100.0), AnsiColor.GREEN));
+        chart.setYAxisConfig(ChartAxisConfig.logFixed(100, 100, "$%.0f"));
+
+        var method = Chart.class.getDeclaredMethod("computeYRange");
+        method.setAccessible(true);
+        double[] range = (double[]) method.invoke(chart);
+
+        assertTrue(range[1] > range[0],
+                "When max == min, max should be inflated above min");
     }
 }

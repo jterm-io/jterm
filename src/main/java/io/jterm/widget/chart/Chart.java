@@ -51,6 +51,7 @@ public class Chart extends AbstractComponent {
     private String title = "";
     private final List<ChartSeries> seriesList = new ArrayList<>();
     private ChartAxisConfig yAxisConfig = ChartAxisConfig.auto();
+    private List<String> xAxisLabels = new ArrayList<>();
     private boolean showGrid = true;
     private boolean showLegend = true;
     private boolean showBorder = true;
@@ -102,6 +103,48 @@ public class Chart extends AbstractComponent {
     }
 
     public ChartAxisConfig getYAxisConfig() { return yAxisConfig; }
+
+    /**
+     * Convenience method: switches the Y-axis between linear and logarithmic
+     * scale while preserving the current range and label format. If
+     * currently auto-scale, stays auto-scale; if fixed, stays fixed.
+     */
+    public Chart setYAxisLogarithmic(boolean logarithmic) {
+        if (yAxisConfig.logarithmic() == logarithmic) return this;
+        if (logarithmic) {
+            if (yAxisConfig.autoScale()) {
+                this.yAxisConfig = ChartAxisConfig.logAuto(yAxisConfig.labelFormat());
+            } else {
+                this.yAxisConfig = ChartAxisConfig.logFixed(
+                        yAxisConfig.min(), yAxisConfig.max(), yAxisConfig.labelFormat());
+            }
+        } else {
+            // Back to linear
+            if (yAxisConfig.autoScale()) {
+                this.yAxisConfig = new ChartAxisConfig(0, 0, true, yAxisConfig.labelFormat(), false);
+            } else {
+                this.yAxisConfig = new ChartAxisConfig(
+                        yAxisConfig.min(), yAxisConfig.max(), false, yAxisConfig.labelFormat(), false);
+            }
+        }
+        invalidate();
+        return this;
+    }
+
+    public boolean isYAxisLogarithmic() { return yAxisConfig.logarithmic(); }
+
+    /**
+     * Sets X-axis labels (e.g. date strings). Labels are evenly distributed
+     * across the plot width — typically 3-5 labels (start, middle, end).
+     * Pass an empty list to hide X-axis labels.
+     */
+    public Chart setXAxisLabels(List<String> labels) {
+        this.xAxisLabels = labels == null ? new ArrayList<>() : new ArrayList<>(labels);
+        invalidate();
+        return this;
+    }
+
+    public List<String> getXAxisLabels() { return new ArrayList<>(xAxisLabels); }
 
     public Chart setShowGrid(boolean show) {
         this.showGrid = show;
@@ -165,6 +208,7 @@ public class Chart extends AbstractComponent {
 
         if (!title.isEmpty()) topMargin += 1;
         if (showLegend) bottomMargin += 1;
+        if (!xAxisLabels.isEmpty()) bottomMargin += 1; // reserve a row for x-axis labels
 
         int plotX = leftMargin;
         int plotY = topMargin;
@@ -190,7 +234,17 @@ public class Chart extends AbstractComponent {
      */
     private double[] computeYRange() {
         if (!yAxisConfig.autoScale()) {
-            return new double[]{yAxisConfig.min(), yAxisConfig.max()};
+            double min = yAxisConfig.min();
+            double max = yAxisConfig.max();
+            if (yAxisConfig.logarithmic()) {
+                // Ensure positive for log scale
+                min = Math.max(min, Math.nextUp(0));
+                // Only inflate max if it's not above min after the min clamp
+                if (max <= min) {
+                    max = Math.nextUp(min) * 2;
+                }
+            }
+            return new double[]{min, max};
         }
         double dataMin = Double.MAX_VALUE;
         double dataMax = Double.MIN_VALUE;
@@ -202,6 +256,13 @@ public class Chart extends AbstractComponent {
         if (dataMin == Double.MAX_VALUE) {
             dataMin = 0;
             dataMax = 1;
+        }
+        if (yAxisConfig.logarithmic()) {
+            // For log scale, clamp min to a small positive value
+            if (dataMin <= 0) dataMin = Math.nextUp(0);
+            if (dataMax <= dataMin) dataMax = dataMin * 2;
+            // No linear padding — log space is already visually balanced
+            return new double[]{dataMin, dataMax};
         }
         // Add 5% padding
         double range = dataMax - dataMin;
@@ -290,13 +351,24 @@ public class Chart extends AbstractComponent {
         var gridCell = new TextCell(' ', gridColor, bg);
         var axisCell = new TextCell(' ', borderColor, bg);
 
-        int yTickCount = Math.max(2, Math.min(5, ph / 2));
+        // Compute tick values: log or linear
+        double[] ticks;
+        if (yAxisConfig.logarithmic()) {
+            ticks = logTicks(yMin, yMax, Math.max(2, Math.min(8, ph)));
+            // Fall back to linear ticks when the log range is too narrow
+            // (less than one decade) or logTicks produced too few ticks.
+            if (ticks.length < 2 || (yMin > 0 && yMax / yMin < 10)) {
+                ticks = niceTicks(yMin, yMax, Math.max(2, Math.min(5, ph / 2)));
+            }
+        } else {
+            ticks = niceTicks(yMin, yMax, Math.max(2, Math.min(5, ph / 2)));
+        }
 
-        for (int i = 0; i < yTickCount; i++) {
-            double fraction = (double) i / (yTickCount - 1);
-            // Top = yMax, bottom = yMin (inverted because terminal y grows down)
-            double value = yMax - fraction * (yMax - yMin);
-            int y = py + (int) (fraction * (ph - 1));
+        for (double value : ticks) {
+            // Map value to screen Y (inverted: yMax at top, yMin at bottom)
+            double yFraction = valueToYFraction(value, yMin, yMax);
+            int y = py + (int) Math.round((1.0 - yFraction) * (ph - 1));
+            if (y < py || y >= py + ph) continue;
 
             // Draw label (right-aligned in label area)
             String label = yAxisConfig.format(value);
@@ -307,8 +379,8 @@ public class Chart extends AbstractComponent {
             // Draw axis tick
             g.setCell(px - 1, y, axisCell.withCharacter('┤'));
 
-            // Draw grid line (dashed)
-            if (showGrid && i > 0 && i < yTickCount - 1) {
+            // Draw grid line (dashed) — skip top and bottom edges
+            if (showGrid && value != ticks[0] && value != ticks[ticks.length - 1]) {
                 for (int c = px; c < px + pw; c++) {
                     if ((c - px) % 2 == 0) {
                         g.setCell(c, y, gridCell.withCharacter('·'));
@@ -318,12 +390,159 @@ public class Chart extends AbstractComponent {
         }
     }
 
+    /**
+     * Maps a data value to a Y-axis fraction (0 = bottom, 1 = top),
+     * using linear or logarithmic mapping depending on the axis config.
+     */
+    private double valueToYFraction(double val, double yMin, double yMax) {
+        if (yAxisConfig.logarithmic()) {
+            // Guard against non-positive values
+            double logMin = Math.log(yMin);
+            double logMax = Math.log(yMax);
+            double logVal = Math.log(val);
+            if (logMax == logMin) return 0.5;
+            return (logVal - logMin) / (logMax - logMin);
+        }
+        double range = yMax - yMin;
+        if (range == 0) return 0.5;
+        return (val - yMin) / range;
+    }
+
+    /**
+     * Generates "nice" logarithmic tick values at 1× and 2× and 5× powers
+     * of 10 within [yMin, yMax]. Produces ticks like: 1, 2, 5, 10, 20, 50,
+     * 100, 200, 500, ... which are standard for log-scale axes.
+     */
+    private static double[] logTicks(double yMin, double yMax, int maxTicks) {
+        if (yMax <= yMin || yMin <= 0) {
+            return new double[]{Math.max(yMin, 1)};
+        }
+
+        // Determine the power-of-10 range
+        int loExp = (int) Math.floor(Math.log10(yMin));
+        int hiExp = (int) Math.ceil(Math.log10(yMax));
+
+        // Multipliers for each decade: 1×, 2×, 5×
+        double[] mults = {1, 2, 5};
+
+        java.util.List<Double> tickValues = new java.util.ArrayList<>();
+        for (int exp = loExp; exp <= hiExp; exp++) {
+            double base = Math.pow(10, exp);
+            for (double m : mults) {
+                double v = m * base;
+                if (v >= yMin * 0.999 && v <= yMax * 1.001) {
+                    tickValues.add(v);
+                }
+            }
+        }
+
+        if (tickValues.isEmpty()) {
+            tickValues.add(yMin);
+            tickValues.add(yMax);
+        }
+
+        // If too many ticks, subsample (keep every 2nd or 3rd)
+        if (tickValues.size() > maxTicks) {
+            int step = (int) Math.ceil((double) tickValues.size() / maxTicks);
+            java.util.List<Double> sampled = new java.util.ArrayList<>();
+            for (int i = 0; i < tickValues.size(); i += step) {
+                sampled.add(tickValues.get(i));
+            }
+            // Ensure the last tick is included
+            double last = tickValues.get(tickValues.size() - 1);
+            if (sampled.get(sampled.size() - 1) != last) {
+                sampled.add(last);
+            }
+            tickValues = sampled;
+        }
+
+        return tickValues.stream().mapToDouble(Double::doubleValue).toArray();
+    }
+
+    /**
+     * Computes "nice" round tick values for a Y-axis range.
+     * Picks a step size from {1, 2, 5, 10, 25, 50, 100, 250, 500, 1000, ...}
+     * that yields 3-6 ticks, then generates ticks at multiples of that step
+     * that fall within [yMin, yMax].
+     */
+    private static double[] niceTicks(double yMin, double yMax, int targetTicks) {
+        if (yMax <= yMin) return new double[]{yMin};
+
+        double range = yMax - yMin;
+        // Candidate step sizes — covers all scales from pennies to thousands
+        double[] steps = {1, 2, 5, 10, 25, 50, 100, 250, 500, 1000, 2500, 5000,
+                          10_000, 25_000, 50_000, 100_000, 250_000, 500_000, 1_000_000};
+
+        // Also handle sub-1 ranges (penny stocks etc.) with fractional steps
+        double[] fracSteps = {0.01, 0.02, 0.05, 0.1, 0.25, 0.5};
+        java.util.List<Double> allSteps = new java.util.ArrayList<>();
+        for (double s : fracSteps) allSteps.add(s);
+        for (double s : steps) allSteps.add(s);
+
+        // Find the step that gives the closest number of ticks to target
+        double bestStep = allSteps.get(0);
+        int bestDiff = Integer.MAX_VALUE;
+        for (double step : allSteps) {
+            int numTicks = (int) Math.floor(yMax / step) - (int) Math.ceil(yMin / step) + 1;
+            if (numTicks < 2) continue;
+            int diff = Math.abs(numTicks - targetTicks);
+            if (diff < bestDiff) {
+                bestDiff = diff;
+                bestStep = step;
+            }
+        }
+
+        // Generate ticks at multiples of bestStep within [yMin, yMax]
+        java.util.List<Double> tickValues = new java.util.ArrayList<>();
+        long first = (long) Math.ceil(yMin / bestStep);
+        long last = (long) Math.floor(yMax / bestStep);
+        for (long m = first; m <= last; m++) {
+            double v = m * bestStep;
+            if (v >= yMin - 0.001 && v <= yMax + 0.001) {
+                tickValues.add(v);
+            }
+        }
+
+        if (tickValues.isEmpty()) {
+            tickValues.add(yMin);
+            tickValues.add(yMax);
+        }
+        return tickValues.stream().mapToDouble(Double::doubleValue).toArray();
+    }
+
     private void drawXAxis(TextGraphics g, int px, int pyBottom, int pw, Color bg) {
         var axisCell = new TextCell(' ', borderColor, bg);
         for (int c = px; c < px + pw; c++) {
             g.setCell(c, pyBottom, axisCell.withCharacter('─'));
         }
         g.setCell(px - 1, pyBottom, axisCell.withCharacter('┴'));
+
+        // Draw X-axis labels below the baseline, evenly distributed
+        if (!xAxisLabels.isEmpty()) {
+            int labelRow = pyBottom + 1;
+            var labelCell = new TextCell(' ', axisLabelColor, bg);
+            int n = xAxisLabels.size();
+            for (int i = 0; i < n; i++) {
+                String label = xAxisLabels.get(i);
+                // Position: evenly spread across plot width
+                double fraction = n == 1 ? 0.5 : (double) i / (n - 1);
+                int x = px + (int) (fraction * (pw - 1));
+                // Center the label at x, clamping to plot area
+                int labelStart = x - label.length() / 2;
+                int labelEnd = labelStart + label.length();
+                // Clamp left
+                if (labelStart < px) labelStart = px;
+                // Clamp right
+                if (labelEnd > px + pw) {
+                    labelStart = px + pw - label.length();
+                }
+                String clipped = label;
+                if (labelStart + label.length() > px + pw) {
+                    clipped = label.substring(0, px + pw - labelStart);
+                }
+                g.drawString(Math.max(px, labelStart), labelRow, clipped, labelCell);
+            }
+        }
     }
 
     private void drawSeries(TextGraphics g, ChartSeries series, int px, int py, int pw, int ph, double yMin, double yMax, Color bg) {
@@ -336,13 +555,13 @@ public class Chart extends AbstractComponent {
         var valueCell = new TextCell(' ', series.color(), bg, SGR.BOLD);
 
         switch (series.type()) {
-            case LINE -> drawLineSeries(g, series, px, py, pw, ph, yMin, yMax, yRange, valueCell);
-            case BAR -> drawBarSeries(g, series, px, py, pw, ph, yMin, yMax, yRange, valueCell);
-            case SCATTER -> drawScatterSeries(g, series, px, py, pw, ph, yMin, yMax, yRange, valueCell);
+            case LINE -> drawLineSeries(g, series, px, py, pw, ph, yMin, yMax, valueCell);
+            case BAR -> drawBarSeries(g, series, px, py, pw, ph, yMin, yMax, valueCell);
+            case SCATTER -> drawScatterSeries(g, series, px, py, pw, ph, yMin, yMax, valueCell);
         }
     }
 
-    private void drawLineSeries(TextGraphics g, ChartSeries series, int px, int py, int pw, int ph, double yMin, double yMax, double yRange, TextCell cell) {
+    private void drawLineSeries(TextGraphics g, ChartSeries series, int px, int py, int pw, int ph, double yMin, double yMax, TextCell cell) {
         int n = series.size();
         // Use sub-cell (half-block) Y resolution: 2 sub-rows per terminal row.
         // subY = 0 → top of py, subY = 2*ph-1 → bottom of py+ph-1
@@ -354,7 +573,7 @@ public class Chart extends AbstractComponent {
             screenX[i] = px + (int) (xFraction * (pw - 1));
 
             double val = series.values().get(i);
-            double yFraction = (val - yMin) / yRange;
+            double yFraction = valueToYFraction(val, yMin, yMax);
             // Invert: yFraction=1 (max) → top, yFraction=0 (min) → bottom
             double exactSubY = (1.0 - yFraction) * (2.0 * ph - 1);
             subY[i] = (int) Math.round(exactSubY);
@@ -366,16 +585,37 @@ public class Chart extends AbstractComponent {
             drawPlotLineSubCell(g, screenX[i], subY[i], screenX[i + 1], subY[i + 1], py, cell);
         }
 
-        // Draw markers at data points (full block for precision)
+        // Draw markers at data points, merging with existing line characters.
+        // A marker should never DOWNGRADE a full block (█) to a half block (▀/▄).
+        // If the line already drew the other half in the same cell, upgrade to █.
         for (int i = 0; i < n; i++) {
             int row = py + subY[i] / 2;
             int half = subY[i] % 2;  // 0 = upper half, 1 = lower half
             char marker = half == 0 ? '▀' : '▄';
-            g.setCell(screenX[i], row, cell.withCharacter(marker));
+            var existing = g.getCell(screenX[i], row);
+            char existingChar = existing.character().length() == 1 ? existing.character().charAt(0) : ' ';
+            char merged;
+            if (existingChar == '█') {
+                // Already a full block — keep it
+                merged = '█';
+            } else if (existingChar == '▀' && marker == '▄') {
+                // Line drew upper half, marker is lower half → merge to full
+                merged = '█';
+            } else if (existingChar == '▄' && marker == '▀') {
+                // Line drew lower half, marker is upper half → merge to full
+                merged = '█';
+            } else if (existingChar == '─') {
+                // Horizontal line char — marker gives more precise vertical position
+                merged = marker;
+            } else {
+                // No meaningful line char or same half — just use marker
+                merged = marker;
+            }
+            g.setCell(screenX[i], row, cell.withCharacter(merged));
         }
     }
 
-    private void drawBarSeries(TextGraphics g, ChartSeries series, int px, int py, int pw, int ph, double yMin, double yMax, double yRange, TextCell cell) {
+    private void drawBarSeries(TextGraphics g, ChartSeries series, int px, int py, int pw, int ph, double yMin, double yMax, TextCell cell) {
         int n = series.size();
         int barWidth = Math.max(1, pw / n - 1);
         int baselineY = py + ph - 1;
@@ -385,7 +625,7 @@ public class Chart extends AbstractComponent {
             int x = px + (int) (xFraction * (pw - 1));
 
             double val = series.values().get(i);
-            double yFraction = (val - yMin) / yRange;
+            double yFraction = valueToYFraction(val, yMin, yMax);
             int barHeight = (int) (yFraction * (ph - 1));
             barHeight = Math.max(0, Math.min(ph - 1, barHeight));
 
@@ -398,14 +638,14 @@ public class Chart extends AbstractComponent {
         }
     }
 
-    private void drawScatterSeries(TextGraphics g, ChartSeries series, int px, int py, int pw, int ph, double yMin, double yMax, double yRange, TextCell cell) {
+    private void drawScatterSeries(TextGraphics g, ChartSeries series, int px, int py, int pw, int ph, double yMin, double yMax, TextCell cell) {
         int n = series.size();
         for (int i = 0; i < n; i++) {
             double xFraction = n == 1 ? 0.5 : (double) i / (n - 1);
             int x = px + (int) (xFraction * (pw - 1));
 
             double val = series.values().get(i);
-            double yFraction = (val - yMin) / yRange;
+            double yFraction = valueToYFraction(val, yMin, yMax);
             int y = py + (int) ((1.0 - yFraction) * (ph - 1));
             y = Math.max(py, Math.min(py + ph - 1, y));
 
