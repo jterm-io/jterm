@@ -1,0 +1,48 @@
+{
+  "board": "datagrid-widget",
+  "branch": "feat/datagrid-widget",
+  "milestones": [
+    {
+      "id": "M1",
+      "title": "CellStyle + GridColumn",
+      "status": "pending",
+      "depends_on": [],
+      "description": "CellStyle record with constants. GridColumn<T> record with factory methods (text, intCol, doubleCol, column) and builder-style copy methods (withAlignment, withStyler, withMinWidth, withMaxWidth). TDD: write tests first, then implement."
+    },
+    {
+      "id": "M2",
+      "title": "GridModel + DefaultGridModel",
+      "status": "pending",
+      "depends_on": ["M1"],
+      "description": "GridListener functional interface. GridModel<T> interface. DefaultGridModel<T> with CopyOnWriteArrayList backing. TDD: write tests first, then implement."
+    },
+    {
+      "id": "M3",
+      "title": "DataGrid Widget — Core Rendering",
+      "status": "pending",
+      "depends_on": ["M1", "M2"],
+      "description": "DataGrid<T> extends AbstractComponent. Column width computation, frozen header row, data row rendering with alignment, format string application, per-cell styler, selected row highlighting. TDD."
+    },
+    {
+      "id": "M4",
+      "title": "DataGrid Widget — Scrolling + Selection",
+      "status": "pending",
+      "depends_on": ["M3"],
+      "description": "Vertical scrolling (arrows, PgUp/PgDn, Home/End, Ctrl+P/N/V). Horizontal scrolling (Shift+arrows). Selection management, selection listeners, ensureVisible. TDD."
+    },
+    {
+      "id": "M5",
+      "title": "DataGrid Widget — Thread Safety + Edge Cases",
+      "status": "pending",
+      "depends_on": ["M4"],
+      "description": "Concurrent add + draw, empty model, single row, wide content truncation, narrow viewport, null values, model swap. TDD."
+    },
+    {
+      "id": "M6",
+      "title": "Demo + Integration",
+      "status": "pending",
+      "depends_on": ["M5"],
+      "description": "Add DataGrid demo to BasicWidgetsDemo. Add to widget coverage tests. Verify full test suite passes."
+    }
+  ]
+}
