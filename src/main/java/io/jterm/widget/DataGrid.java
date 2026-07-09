@@ -2,6 +2,8 @@ package io.jterm.widget;
 
 import io.jterm.core.TerminalPosition;
 import io.jterm.core.TerminalSize;
+import io.jterm.core.input.KeyStroke;
+import io.jterm.core.input.KeyType;
 import io.jterm.graphics.TextGraphics;
 import io.jterm.style.CellStyle;
 import io.jterm.style.Color;
@@ -407,6 +409,113 @@ public class DataGrid<T> extends AbstractComponent implements GridListener {
         if (scrollOffsetY < 0) {
             scrollOffsetY = 0;
         }
+    }
+
+    // ---- Key handling -----------------------------------------------------
+
+    @Override
+    public void handleKeyStroke(KeyStroke keyStroke) {
+        // Emacs-style key bindings (Ctrl+letter arrives as CHARACTER with ctrl=true)
+        if (keyStroke.type() == KeyType.CHARACTER && keyStroke.ctrl()) {
+            switch (keyStroke.character()) {
+                case 'P', 'p' -> { setSelectedRow(selectedRow - 1); return; }
+                case 'N', 'n' -> { setSelectedRow(selectedRow + 1); return; }
+                case 'V', 'v' -> { pageDown(); return; }
+                default -> { return; }  // Ignore other Ctrl+letter combos
+            }
+        }
+        switch (keyStroke.type()) {
+            case ARROW_UP -> setSelectedRow(selectedRow - 1);
+            case ARROW_DOWN -> setSelectedRow(selectedRow + 1);
+            case ARROW_LEFT, ARROW_RIGHT -> {
+                if (keyStroke.type() == KeyType.ARROW_LEFT) scrollLeft();
+                else scrollRight();
+            }
+            case PAGE_UP -> pageUp();
+            case PAGE_DOWN -> pageDown();
+            case HOME -> setSelectedRow(0);
+            case END -> {
+                if (model != null) setSelectedRow(model.getRowCount() - 1);
+            }
+            case ENTER -> fireSelectionChanged();
+            default -> {}
+        }
+    }
+
+    // ---- Page up/down -----------------------------------------------------
+
+    /** Scroll down by one viewport height (page down). */
+    public void pageDown() {
+        var size = getSize();
+        int visibleRows = Math.max(1, size.rows() - 1);
+        int rowCount = model == null ? 0 : model.getRowCount();
+        scrollOffsetY = Math.min(scrollOffsetY + visibleRows, Math.max(0, rowCount - visibleRows));
+        setSelectedRow(scrollOffsetY);
+    }
+
+    /** Scroll up by one viewport height (page up). */
+    public void pageUp() {
+        var size = getSize();
+        int visibleRows = Math.max(1, size.rows() - 1);
+        scrollOffsetY = Math.max(0, scrollOffsetY - visibleRows);
+        setSelectedRow(scrollOffsetY);
+    }
+
+    // ---- Horizontal scrolling --------------------------------------------
+
+    /** Returns the current horizontal scroll offset. */
+    public int getScrollOffsetX() {
+        return scrollOffsetX;
+    }
+
+    /** Returns the current vertical scroll offset. */
+    public int getScrollOffsetY() {
+        return scrollOffsetY;
+    }
+
+    /** Scrolls the grid one column left, clamped at 0. */
+    public void scrollLeft() {
+        scrollOffsetX = Math.max(0, scrollOffsetX - 1);
+        invalidate();
+    }
+
+    /** Scrolls the grid one column right, clamped to max horizontal offset. */
+    public void scrollRight() {
+        scrollOffsetX = Math.min(maxScrollOffsetX(), scrollOffsetX + 1);
+        invalidate();
+    }
+
+    /** Maximum horizontal scroll offset (total column width − viewport width). */
+    private int maxScrollOffsetX() {
+        int colCount = columns == null ? 0 : columns.size();
+        if (colCount == 0) return 0;
+        int totalWidth = totalColumnWidth();
+        int viewportWidth = getSize().columns();
+        return Math.max(0, totalWidth - viewportWidth);
+    }
+
+    /**
+     * Total width of all columns including separators (columnCount − 1).
+     */
+    private int totalColumnWidth() {
+        int colCount = columns == null ? 0 : columns.size();
+        if (colCount == 0) return 0;
+        // columnWidths is populated during draw; fall back to header-based widths
+        int total = 0;
+        for (int c = 0; c < colCount; c++) {
+            int w;
+            if (columnWidths != null && c < columnWidths.length) {
+                w = columnWidths[c];
+            } else {
+                GridColumn<T> col = columns.get(c);
+                w = TerminalTextUtils.getTrueWidth(col.header());
+                if (col.minWidth() > 0) w = Math.max(w, col.minWidth());
+                if (col.maxWidth() > 0) w = Math.min(w, col.maxWidth());
+            }
+            total += w;
+        }
+        total += Math.max(0, colCount - 1); // separators
+        return total;
     }
 
     @Override
