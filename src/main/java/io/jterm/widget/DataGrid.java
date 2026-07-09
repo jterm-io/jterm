@@ -140,6 +140,11 @@ public class DataGrid<T> extends AbstractComponent implements GridListener {
         if (selectedRow >= count) {
             selectedRow = Math.max(0, count - 1);
         }
+        // Clamp scrollOffsetY so it never exceeds the model size after a shrink.
+        int maxScrollY = Math.max(0, count - 1);
+        if (scrollOffsetY > maxScrollY) {
+            scrollOffsetY = maxScrollY;
+        }
         ensureVisible();
         invalidate();
     }
@@ -213,8 +218,16 @@ public class DataGrid<T> extends AbstractComponent implements GridListener {
         int visibleRows = Math.max(1, viewportRows - 1);
         int lastRow = Math.min(rowCount, scrollOffsetY + visibleRows);
         for (int r = scrollOffsetY; r < lastRow && y < viewportRows; r++) {
+            // The model may shrink concurrently (setRows/clear); break if a row
+            // is no longer present rather than throwing IndexOutOfBoundsException.
+            if (model != null && r >= model.getRowCount()) break;
+            T row;
+            try {
+                row = model.getRow(r);
+            } catch (IndexOutOfBoundsException e) {
+                break;
+            }
             boolean selected = (r == selectedRow);
-            T row = model.getRow(r);
             drawDataRow(graphics, size, theme, row, r, selected, startCol, endCol, y);
             y++;
         }
@@ -242,7 +255,16 @@ public class DataGrid<T> extends AbstractComponent implements GridListener {
             int max = TerminalTextUtils.getTrueWidth(col.header());
 
             for (int r = scrollOffsetY; r < lastRow; r++) {
-                T row = model.getRow(r);
+                // The model may shrink concurrently (setRows/clear); tolerate that
+                // by re-checking the live row count and breaking early if a row
+                // is no longer present rather than throwing IndexOutOfBoundsException.
+                if (model != null && r >= model.getRowCount()) break;
+                T row;
+                try {
+                    row = model.getRow(r);
+                } catch (IndexOutOfBoundsException e) {
+                    break;
+                }
                 Object raw = col.accessor().apply(row);
                 String formatted = formatValue(col, raw);
                 max = Math.max(max, TerminalTextUtils.getTrueWidth(formatted));
