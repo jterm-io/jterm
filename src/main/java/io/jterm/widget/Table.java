@@ -102,6 +102,21 @@ public class Table extends AbstractComponent implements TableModelListener {
         }
     }
 
+    /**
+     * Removes all rows from the backing model (if it is a {@link DefaultTableModel}).
+     *
+     * <p>This is the correct way to clear a table's rows. Calling
+     * {@code getTableModelRows().clear()} does <strong>not</strong> work because
+     * {@link #getTableModelRows()} returns a defensive copy of the row data.</p>
+     */
+    public void clearRows() {
+        if (model instanceof DefaultTableModel dtm) {
+            dtm.clear();
+        } else {
+            throw new IllegalStateException("Table was not created with a DefaultTableModel; clear rows via the model");
+        }
+    }
+
     public void setSelectedRow(int index) {
         int count = model == null ? 0 : model.getRowCount();
         this.selectedRow = Math.max(0, Math.min(count - 1, index));

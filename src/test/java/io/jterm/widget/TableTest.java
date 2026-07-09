@@ -315,6 +315,27 @@ class TableTest {
     }
 
     @Test
+    void clearRowsRemovesAllRowsFromModel() {
+        var table = new Table("A", "B");
+        table.addRow("1", "2");
+        table.addRow("3", "4");
+        assertEquals(2, table.getModel().getRowCount());
+        table.clearRows();
+        assertEquals(0, table.getModel().getRowCount());
+        assertTrue(table.getTableModelRows().isEmpty());
+    }
+
+    @Test
+    void clearRowsAllowsAddingNewRowsAfterwards() {
+        var table = new Table("A");
+        table.addRow("old");
+        table.clearRows();
+        table.addRow("new");
+        assertEquals(1, table.getModel().getRowCount());
+        assertEquals("new", table.getModel().getValueAt(0, 0));
+    }
+
+    @Test
     void addRowThrowsWhenModelIsNotDefault() {
         var table = new Table(new io.jterm.widget.model.AbstractTableModel() {
             @Override public int getRowCount() { return 0; }
