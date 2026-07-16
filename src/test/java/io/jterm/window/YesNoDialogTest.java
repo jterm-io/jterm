@@ -196,10 +196,24 @@ class YesNoDialogTest {
 
         dialog.handleKeyStroke(new KeyStroke(KeyType.CHARACTER, 'x', false, false, false));
         dialog.handleKeyStroke(new KeyStroke(KeyType.CHARACTER, 'a', false, false, false));
-        dialog.handleKeyStroke(new KeyStroke(KeyType.ENTER));
 
         assertFalse(anyFired.get());
         assertTrue(gui.containsWindow(dialog));
+    }
+
+    @Test
+    @DisplayName("Enter key confirms (fires onYes)")
+    void enterKeyConfirms() throws Exception {
+        var dialog = new YesNoDialog(gui, "Confirm", "Delete?");
+        dialog.open();
+
+        AtomicBoolean yesFired = new AtomicBoolean(false);
+        dialog.onYes(() -> yesFired.set(true));
+
+        dialog.handleKeyStroke(new KeyStroke(KeyType.ENTER));
+
+        assertTrue(yesFired.get());
+        assertFalse(gui.containsWindow(dialog));
     }
 
     @Test

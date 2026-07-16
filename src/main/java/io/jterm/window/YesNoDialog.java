@@ -160,6 +160,10 @@ public class YesNoDialog extends AbstractWindow {
             cancel();
             return;
         }
+        if (keyStroke.type() == KeyType.ENTER) {
+            yes();
+            return;
+        }
         if (keyStroke.type() == KeyType.CHARACTER) {
             char ch = keyStroke.character();
             if (ch == 'y' || ch == 'Y') {
@@ -171,7 +175,7 @@ public class YesNoDialog extends AbstractWindow {
                 return;
             }
         }
-        // All other keys (Enter, arrows, other characters, etc.) are ignored.
+        // All other keys (arrows, other characters, etc.) are ignored.
         // This is a single-keystroke dialog — no text input fields to forward to.
     }
 }
