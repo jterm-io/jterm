@@ -19,6 +19,7 @@ public class TextBox extends AbstractComponent {
     private volatile boolean masked = false;
     private volatile boolean forceUppercase = false;
     private Color backgroundColorOverride = null;
+    private String placeholder = null;
 
     public TextBox() {}
     public TextBox(int columns) { this.preferredColumns = columns; }
@@ -59,6 +60,14 @@ public class TextBox extends AbstractComponent {
         invalidate();
     }
 
+    /** Sets placeholder text shown in dim color when the field is empty. */
+    public void setPlaceholder(String text) {
+        this.placeholder = text;
+        invalidate();
+    }
+
+    public String getPlaceholder() { return placeholder; }
+
     @Override
     protected TerminalSize calculatePreferredSize() {
         return new TerminalSize(preferredColumns, 1);
@@ -76,6 +85,12 @@ public class TextBox extends AbstractComponent {
         var visible = value.substring(offset, Math.min(value.length(), offset + size.columns()));
         var display = masked ? "*".repeat(visible.length()) : visible;
         graphics.drawString(0, 0, display, style);
+        // Show placeholder text in dim color when empty and not focused
+        if (value.isEmpty() && placeholder != null && !placeholder.isEmpty()) {
+            var phStyle = new TextCell(' ', AnsiColor.BRIGHT_BLACK, bg);
+            int phLen = Math.min(placeholder.length(), size.columns());
+            graphics.drawString(0, 0, placeholder.substring(0, phLen), phStyle);
+        }
         // Only draw cursor when this TextBox has focus
         if (isFocused()) {
             int cursorCol = cursorPosition - viewportOffset;
