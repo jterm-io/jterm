@@ -33,12 +33,21 @@ public abstract class AbstractComponent implements Component {
 
     @Override
     public TerminalSize getPreferredSize() {
+        if (preferredSizeOverride != null) return preferredSizeOverride;
         if (invalid || preferredSize == null) {
             preferredSize = calculatePreferredSize();
             invalid = false;
         }
         return preferredSize;
     }
+
+    /** Override the calculated preferred size. Set to null to revert to auto-calculation. */
+    public void setPreferredSizeOverride(TerminalSize size) {
+        this.preferredSizeOverride = size;
+        invalidate();
+    }
+
+    private volatile TerminalSize preferredSizeOverride;
 
     /**
      * Computes the component's natural preferred size.

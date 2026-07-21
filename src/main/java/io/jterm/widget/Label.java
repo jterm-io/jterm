@@ -12,6 +12,9 @@ import io.jterm.util.TerminalTextUtils;
 public class Label extends AbstractComponent {
     private String text;
     private TextCell style;
+    private HorizontalAlignment horizontalAlignment = HorizontalAlignment.CENTER;
+
+    public enum HorizontalAlignment { LEFT, CENTER, RIGHT }
 
     public Label(String text) {
         this(text, AnsiColor.DEFAULT, AnsiColor.DEFAULT);
@@ -49,6 +52,12 @@ public class Label extends AbstractComponent {
         invalidate();
     }
 
+    /** Set horizontal alignment of text within the label's bounds. */
+    public void setHorizontalAlignment(HorizontalAlignment alignment) {
+        this.horizontalAlignment = alignment;
+        invalidate();
+    }
+
     @Override
     protected TerminalSize calculatePreferredSize() {
         if (text == null || text.isEmpty()) return new TerminalSize(1, 1);
@@ -74,7 +83,13 @@ public class Label extends AbstractComponent {
             var line = lines[i];
             int width = TerminalTextUtils.getTrueWidth(line);
             int x = 0;
-            if (width < size.columns()) x = (size.columns() - width) / 2;
+            if (width < size.columns()) {
+                switch (horizontalAlignment) {
+                    case CENTER -> x = (size.columns() - width) / 2;
+                    case RIGHT  -> x = size.columns() - width;
+                    case LEFT   -> x = 0;
+                }
+            }
             graphics.drawString(x, i, line, effectiveStyle);
         }
     }
