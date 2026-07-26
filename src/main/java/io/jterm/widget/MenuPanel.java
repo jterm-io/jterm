@@ -37,8 +37,25 @@ public class MenuPanel extends AbstractComponent {
 
     private final List<MenuEntry> items = new ArrayList<>();
     private int highlightedIndex = -1;
+    private int columns = 1;
 
     public MenuPanel() {}
+
+    /**
+     * Returns the number of columns used to lay out items.
+     * Default is 1 (single column). Values {@code <} 1 are clamped to 1.
+     */
+    public int getColumns() { return columns; }
+
+    /**
+     * Sets the number of columns used to lay out items. When {@code > 1},
+     * items flow column-major: the first ceil(N/columns) items fill column 0,
+     * the next batch fills column 1, etc.
+     */
+    public void setColumns(int columns) {
+        this.columns = Math.max(1, columns);
+        invalidate();
+    }
 
     /** Adds an item with a shortcut key and description. */
     public void addItem(String key, String description) {
@@ -92,9 +109,18 @@ public class MenuPanel extends AbstractComponent {
             maxDescWidth = Math.max(maxDescWidth, TerminalTextUtils.getTrueWidth(item.description()));
         }
         // 1 leading space + keyColWidth + GAP + desc + 1 trailing space
-        int columns = 1 + keyColWidth + GAP + Math.max(maxDescWidth, MIN_DESC_WIDTH) + 1;
-        int rows = items.size() + VERTICAL_PADDING * 2;
-        return new TerminalSize(columns, rows);
+        int colWidth = 1 + keyColWidth + GAP + Math.max(maxDescWidth, MIN_DESC_WIDTH) + 1;
+
+        if (columns <= 1) {
+            return new TerminalSize(colWidth, items.size() + VERTICAL_PADDING * 2);
+        }
+
+        // Multi-column: distribute items across columns
+        int itemsPerColumn = (int) Math.ceil((double) items.size() / columns);
+        int colGap = 2; // gap between columns
+        int totalWidth = colWidth * columns + colGap * (columns - 1);
+        int totalHeight = itemsPerColumn + VERTICAL_PADDING * 2;
+        return new TerminalSize(totalWidth, totalHeight);
     }
 
     @Override
@@ -105,13 +131,40 @@ public class MenuPanel extends AbstractComponent {
         var bold = new TextCell(' ', theme.foreground(), theme.background(), SGR.BOLD);
 
         int keyColWidth = keyColumnWidth();
+        int colWidth = size.columns(); // single-column: fill entire width
         int availableDescWidth = Math.max(0, size.columns() - 1 - keyColWidth - GAP - 1);
+
+        // For multi-column, recalculate available desc width per column
+        if (columns > 1) {
+            int colGap = 2;
+            // totalNonDesc = leading/key/gap/trailing per column + inter-column gaps
+            int totalNonDesc = (1 + keyColWidth + GAP + 1) * columns + colGap * (columns - 1);
+            availableDescWidth = Math.max(MIN_DESC_WIDTH, (size.columns() - totalNonDesc) / columns);
+            colWidth = 1 + keyColWidth + GAP + availableDescWidth + 1;
+        }
 
         graphics.fillRectangle(0, 0, size.columns(), size.rows(), normal);
 
-        for (int i = 0; i < items.size() && i < size.rows() - VERTICAL_PADDING; i++) {
+        int itemsPerColumn = columns > 1 ? (int) Math.ceil((double) items.size() / columns) : items.size();
+        int colGap = columns > 1 ? 2 : 0;
+        // Single-column matches the original loop bound exactly; multi-column
+        // caps at the total slots across all columns.
+        int maxItems = columns > 1
+                ? itemsPerColumn * columns
+                : size.rows() - VERTICAL_PADDING;
+
+        for (int i = 0; i < items.size() && i < maxItems; i++) {
+            int col = i / itemsPerColumn;
+            int rowInCol = i % itemsPerColumn;
+
+            // Skip if this column+row is out of bounds
+            int row = rowInCol + VERTICAL_PADDING;
+            if (row >= size.rows() - VERTICAL_PADDING) continue;
+
+            int colX = col * (colWidth + colGap);
+            if (colX + colWidth > size.columns()) break;
+
             var item = items.get(i);
-            int row = i + VERTICAL_PADDING;
             boolean highlighted = (i == highlightedIndex);
 
             // Key in brackets: "[M]" — right-padded to keyColWidth
@@ -127,11 +180,11 @@ public class MenuPanel extends AbstractComponent {
             var keyCell = highlighted
                     ? new TextCell(' ', theme.background(), theme.foreground(), SGR.BOLD)
                     : bold;
-            graphics.drawString(1, row, keyText, keyCell);
+            graphics.drawString(colX + 1, row, keyText, keyCell);
 
             // Description: left-aligned after the gap
             String desc = TerminalTextUtils.truncate(item.description(), availableDescWidth);
-            int descX = 1 + keyColWidth + GAP;
+            int descX = colX + 1 + keyColWidth + GAP;
             var descCell = highlighted
                     ? new TextCell(' ', theme.background(), theme.foreground())
                     : normal;
@@ -140,7 +193,7 @@ public class MenuPanel extends AbstractComponent {
             // If highlighted, fill the rest of the row with inverted spaces
             if (highlighted) {
                 int descEnd = descX + TerminalTextUtils.getTrueWidth(desc);
-                int rowEnd = size.columns() - 1; // leave 1 trailing space
+                int rowEnd = colX + colWidth - 1; // leave 1 trailing space
                 if (descEnd < rowEnd) {
                     var fillCell = new TextCell(' ', theme.background(), theme.foreground());
                     graphics.fillRectangle(descEnd, row, rowEnd - descEnd, 1, fillCell);

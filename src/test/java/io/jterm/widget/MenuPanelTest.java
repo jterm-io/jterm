@@ -262,4 +262,116 @@ class MenuPanelTest {
         panel.clearItems();
         assertEquals(-1, panel.getHighlightedIndex());
     }
+
+    // ---- Multi-column tests ----
+
+    @Test
+    void multiColumnPreferredSizeIsWiderAndShorter() {
+        var panel = new MenuPanel();
+        panel.addItem("A", "Item A");
+        panel.addItem("B", "Item B");
+        panel.addItem("C", "Item C");
+        panel.addItem("D", "Item D");
+
+        // Single column: 4 items + 2 padding = 6 rows
+        var singlePs = panel.getPreferredSize();
+        assertEquals(6, singlePs.rows());
+
+        // Two columns: 2 items per column + 2 padding = 4 rows, wider
+        panel.setColumns(2);
+        var multiPs = panel.getPreferredSize();
+        assertEquals(4, multiPs.rows());
+        assertTrue(multiPs.columns() > singlePs.columns(), "multi-column should be wider");
+    }
+
+    @Test
+    void multiColumnDrawsItemsInColumns() {
+        var panel = new MenuPanel();
+        panel.addItem("A", "Item A");
+        panel.addItem("B", "Item B");
+        panel.addItem("C", "Item C");
+        panel.addItem("D", "Item D");
+        panel.setColumns(2);
+
+        var ps = panel.getPreferredSize();
+        panel.setBounds(TerminalPosition.TOP_LEFT, ps);
+        var buf = new ScreenBuffer(ps);
+        panel.draw(new TextGraphics(buf));
+
+        int itemsPerCol = 2; // ceil(4/2) = 2
+        int keyColWidth = 3; // "[A]"
+        int gap = 5;
+        int colWidth = 1 + keyColWidth + gap + 6 + 1; // 1 + 3 + 5 + 6 ("Item A") + 1 = 16
+        int colGap = 2;
+
+        // Column 0, row 1 (first item, after padding): [A] at col 1
+        assertEquals('[', buf.getCell(1, 1).character().charAt(0));
+        assertEquals('A', buf.getCell(2, 1).character().charAt(0));
+        // Column 0, row 2 (second item): [B]
+        assertEquals('[', buf.getCell(1, 2).character().charAt(0));
+        assertEquals('B', buf.getCell(2, 2).character().charAt(0));
+        // Column 1, row 1 (third item): [C] at col 1 + colWidth + colGap
+        int col1Start = colWidth + colGap;
+        assertEquals('[', buf.getCell(col1Start + 1, 1).character().charAt(0));
+        assertEquals('C', buf.getCell(col1Start + 2, 1).character().charAt(0));
+        // Column 1, row 2 (fourth item): [D]
+        assertEquals('[', buf.getCell(col1Start + 1, 2).character().charAt(0));
+        assertEquals('D', buf.getCell(col1Start + 2, 2).character().charAt(0));
+    }
+
+    @Test
+    void multiColumnHighlightWorks() {
+        var panel = new MenuPanel();
+        panel.addItem("A", "Item A");
+        panel.addItem("B", "Item B");
+        panel.addItem("C", "Item C");
+        panel.addItem("D", "Item D");
+        panel.setColumns(2);
+        panel.setBounds(TerminalPosition.TOP_LEFT, panel.getPreferredSize());
+        panel.setHighlightedIndex(2); // item C, column 1, row 0
+
+        var buf = new ScreenBuffer(panel.getPreferredSize());
+        panel.draw(new TextGraphics(buf));
+
+        var theme = ThemeManager.active();
+        // Item C is in column 1, row 1 (after padding)
+        // Check that the highlighted cell is inverted
+        var keyColWidth = 3;
+        int colWidth = 1 + keyColWidth + 5 + 6 + 1; // 16
+        int col1X = colWidth + 2 + 1; // col1Start + 1
+        var hlCell = buf.getCell(col1X, 1);
+        assertEquals(theme.background(), hlCell.fg(), "highlighted item should have inverted colors");
+    }
+
+    @Test
+    void singleColumnDefaultIsUnchanged() {
+        var panel = new MenuPanel();
+        panel.addItem("M", "Message Boards");
+        panel.addItem("C", "Live Chat");
+        // Default columns = 1, should behave exactly as before
+        var ps = panel.getPreferredSize();
+        assertEquals(1 + 3 + 5 + 14 + 1, ps.columns()); // 24
+        assertEquals(4, ps.rows()); // 2 items + 2 padding
+    }
+
+    @Test
+    void setColumnsClampsToOne() {
+        var panel = new MenuPanel();
+        panel.setColumns(0);
+        assertEquals(1, panel.getColumns());
+        panel.setColumns(-5);
+        assertEquals(1, panel.getColumns());
+    }
+
+    @Test
+    void oddItemCountRoundsUp() {
+        var panel = new MenuPanel();
+        for (int i = 0; i < 5; i++) {
+            panel.addItem(String.valueOf((char)('A' + i)), "Item " + (char)('A' + i));
+        }
+        panel.setColumns(2);
+        var ps = panel.getPreferredSize();
+        // ceil(5/2) = 3 items per column + 2 padding = 5 rows
+        assertEquals(5, ps.rows());
+    }
 }
