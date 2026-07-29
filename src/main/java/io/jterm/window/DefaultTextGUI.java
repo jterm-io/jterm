@@ -16,6 +16,7 @@ import io.jterm.widget.RadioButton;
 import io.jterm.widget.Table;
 import io.jterm.widget.TextBox;
 import io.jterm.widget.TextArea;
+import io.jterm.widget.DataGrid;
 import io.jterm.widget.Container;
 import io.jterm.widget.Component;
 import io.jterm.style.ThemeManager;
@@ -154,9 +155,9 @@ public class DefaultTextGUI implements TextGUI, WindowManager {
             // Tab advances focus only if neither the focused component nor the
             // window consumed it. This lets screens intercept Tab for custom
             // focus management (e.g. DatabaseQueryScreen toggles between query
-            // field and results grid).
+            // field and results grid). Shift+Tab reverses focus direction.
             if (!consumed && ks.type() == KeyType.TAB && activeWindow != null) {
-                advanceFocus();
+                advanceFocus(!ks.shift());
             }
             needsRefresh = true;
             return true;
@@ -306,6 +307,10 @@ public class DefaultTextGUI implements TextGUI, WindowManager {
     }
 
     private void advanceFocus() {
+        advanceFocus(true);
+    }
+
+    private void advanceFocus(boolean forward) {
         if (activeWindow == null) return;
         var root = activeWindow.getContents();
         var order = collectFocusable(root);
@@ -313,7 +318,12 @@ public class DefaultTextGUI implements TextGUI, WindowManager {
         var current = activeWindow.getFocusedComponent();
         if (current == null) current = focusManager.getFocusedComponent();
         int idx = current != null ? order.indexOf(current) : -1;
-        int next = (idx + 1) % order.size();
+        int next;
+        if (forward) {
+            next = (idx + 1) % order.size();
+        } else {
+            next = idx <= 0 ? order.size() - 1 : idx - 1;
+        }
         var nextComponent = order.get(next);
         activeWindow.setFocusedComponent(nextComponent);
         focusManager.setFocusedComponent(nextComponent);
@@ -338,6 +348,7 @@ public class DefaultTextGUI implements TextGUI, WindowManager {
                 || component instanceof RadioButton
                 || component instanceof Table
                 || component instanceof TextBox
-                || component instanceof TextArea;
+                || component instanceof TextArea
+                || component instanceof DataGrid;
     }
 }
