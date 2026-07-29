@@ -497,6 +497,7 @@ class ListBoxTest {
         list.addItem("Apple");
         list.addItem("Banana");
         list.setBounds(TerminalPosition.TOP_LEFT, new TerminalSize(10, 3));
+        list.setFocused(true);
         var buf = drawList(list, 10, 3);
         // Row 0 (selected "Apple") should use selection bg (WHITE in DARK theme)
         var selectedCell = buf.getCell(0, 0);

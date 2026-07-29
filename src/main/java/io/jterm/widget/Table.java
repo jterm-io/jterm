@@ -162,7 +162,7 @@ public class Table extends AbstractComponent implements TableModelListener {
         int rowCount = model == null ? 0 : model.getRowCount();
         for (int i = scrollOffset; i < rowCount && y < size.rows(); i++) {
             boolean selected = i == selectedRow;
-            var style = selected
+            var style = (selected && isFocused())
                     ? new TextCell(' ', theme.selectionFg(), theme.selectionBg())
                     : new TextCell(' ', theme.foreground(), theme.background());
             List<String> rowCells = new ArrayList<>();

@@ -215,7 +215,7 @@ public class ListBox<T> extends AbstractComponent implements ListDataListener {
             }
             String text = renderer.apply(model.getElementAt(idx));
             boolean selected = idx == selectedIndex;
-            TextCell style = selected
+            TextCell style = (selected && isFocused())
                 ? new TextCell(' ', theme.selectionFg(), theme.selectionBg())
                 : new TextCell(' ', theme.foreground(), theme.background());
             graphics.fillRectangle(0, r, size.columns(), 1, style);

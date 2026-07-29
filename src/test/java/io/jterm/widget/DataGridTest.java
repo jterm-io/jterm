@@ -174,6 +174,7 @@ class DataGridTest {
     void selectedRowHighlighted() {
         var grid = gridWithRows(30, 5, new TestRow("Alice", 30, 95.5));
         grid.setSelectedRow(0);
+        grid.setFocused(true);
         var buf = drawGrid(grid, 30, 5);
         var theme = ThemeManager.active();
         // First data row (y=1) should use selection colors

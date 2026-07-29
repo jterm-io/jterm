@@ -248,7 +248,7 @@ public class DataGrid<T> extends AbstractComponent implements GridListener {
                 break;
             }
             boolean selected = (r == selectedRow);
-            drawDataRow(graphics, size, theme, row, r, selected, startCol, endCol, y);
+            drawDataRow(graphics, size, theme, row, r, selected, startCol, endCol, y, isFocused());
             y++;
         }
 
@@ -334,7 +334,7 @@ public class DataGrid<T> extends AbstractComponent implements GridListener {
 
     private void drawDataRow(TextGraphics graphics, TerminalSize size, Theme theme,
                               T row, int rowIndex, boolean selected,
-                              int startCol, int endCol, int y) {
+                              int startCol, int endCol, int y, boolean focused) {
         int x = 0;
 
         for (int c = startCol; c < endCol; c++) {
@@ -344,7 +344,8 @@ public class DataGrid<T> extends AbstractComponent implements GridListener {
             // Draw separator before column (except first visible)
             if (c > startCol) {
                 var sepStyle = selected
-                        ? new TextCell(' ', theme.selectionFg(), theme.selectionBg())
+                        ? new TextCell(' ', focused ? theme.selectionFg() : theme.foreground(),
+                                       focused ? theme.selectionBg() : theme.background())
                         : new TextCell(' ', theme.foreground(), theme.background());
                 String sep = showVerticalLines ? "│" : " ";
                 graphics.drawString(x, y, sep, sepStyle);
@@ -362,9 +363,14 @@ public class DataGrid<T> extends AbstractComponent implements GridListener {
             // Determine cell colors
             Color fg;
             Color bg;
-            if (selected) {
+            if (selected && focused) {
                 fg = theme.selectionFg();
                 bg = theme.selectionBg();
+            } else if (selected && !focused) {
+                // Dim selection when grid doesn't have focus — use normal colors
+                // with a subtle indicator (no highlight bar)
+                fg = theme.foreground();
+                bg = theme.background();
             } else if (col.styler() != null) {
                 CellStyle style = col.styler().apply(rawValue);
                 if (style != null) {
@@ -386,7 +392,7 @@ public class DataGrid<T> extends AbstractComponent implements GridListener {
 
         // Fill remaining line with background
         if (x < size.columns()) {
-            var fillStyle = selected
+            var fillStyle = (selected && focused)
                     ? new TextCell(' ', theme.selectionFg(), theme.selectionBg())
                     : new TextCell(' ', theme.foreground(), theme.background());
             graphics.fillRectangle(x, y, size.columns() - x, 1, fillStyle);
