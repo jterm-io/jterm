@@ -139,6 +139,10 @@ public class InputDecoder {
     }
 
     private KeyStroke mapCsi(String params, char finalByte) {
+        // Shift+Tab (ESC [ Z) is a special case — it needs shift=true
+        if (finalByte == 'Z') {
+            return new KeyStroke(KeyType.TAB, '\0', false, false, true);
+        }
         KeyType type = switch (finalByte) {
             case 'A' -> KeyType.ARROW_UP;
             case 'B' -> KeyType.ARROW_DOWN;
@@ -146,7 +150,6 @@ public class InputDecoder {
             case 'D' -> KeyType.ARROW_LEFT;
             case 'H' -> KeyType.HOME;
             case 'F' -> KeyType.END;
-            case 'Z' -> KeyType.TAB; // shift-tab is treated as Tab
             case '~' -> mapTilde(params);
             default -> KeyType.UNKNOWN;
         };
