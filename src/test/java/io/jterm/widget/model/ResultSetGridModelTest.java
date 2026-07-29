@@ -117,4 +117,23 @@ class ResultSetGridModelTest {
         model.close();
         assertDoesNotThrow(() -> model.close()); // second close is a no-op
     }
+
+    @Test
+    void testCreateColumns() throws SQLException {
+        try (Statement stmt = conn.createStatement()) {
+            stmt.execute("INSERT INTO test VALUES (1, 'Alice', 'desc')");
+            ResultSet rs = stmt.executeQuery("SELECT id, name, description FROM test");
+            ResultSetGridModel model = new ResultSetGridModel(rs, stmt);
+            var columns = model.createColumns();
+            assertEquals(3, columns.size());
+            assertEquals("ID", columns.get(0).header());
+            assertEquals("NAME", columns.get(1).header());
+            assertEquals("DESCRIPTION", columns.get(2).header());
+            // Verify accessor works
+            ResultSetRow row = model.getRow(0);
+            assertEquals("1", columns.get(0).accessor().apply(row));
+            assertEquals("Alice", columns.get(1).accessor().apply(row));
+            model.close();
+        }
+    }
 }

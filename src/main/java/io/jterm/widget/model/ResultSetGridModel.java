@@ -126,4 +126,21 @@ public class ResultSetGridModel implements GridModel<ResultSetRow> {
     public void removeGridListener(GridListener listener) {
         listeners.remove(listener);
     }
+
+    /**
+     * Builds DataGrid column definitions from this model's metadata.
+     * Each column uses the ResultSet column label as header and
+     * extracts the value at the corresponding index from ResultSetRow.
+     *
+     * @return list of GridColumn definitions for use with DataGrid
+     */
+    public List<GridColumn<ResultSetRow>> createColumns() {
+        List<GridColumn<ResultSetRow>> cols = new ArrayList<>(columnCount);
+        for (int i = 0; i < columnCount; i++) {
+            final int colIndex = i;
+            String header = columnNames.get(i);
+            cols.add(GridColumn.<ResultSetRow>column(header, row -> row.value(colIndex)));
+        }
+        return cols;
+    }
 }
