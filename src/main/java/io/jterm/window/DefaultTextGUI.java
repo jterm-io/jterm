@@ -133,11 +133,6 @@ public class DefaultTextGUI implements TextGUI, WindowManager {
             if (ks.type() == KeyType.ESCAPE) {
                 // Don't quit on Escape in BBS mode — let screens handle it
             }
-            if (ks.type() == KeyType.TAB) {
-                advanceFocus();
-                needsRefresh = true;
-                return true;
-            }
             var modal = modalWindow();
             if (modal != null && activeWindow != null && !modal.equals(activeWindow)) {
                 return true;
@@ -154,7 +149,14 @@ public class DefaultTextGUI implements TextGUI, WindowManager {
             // Only forward to the window if the focused component didn't consume it
             // AND the active window didn't change (e.g. ESC closing a sub-screen)
             if (!consumed && activeWindow != null && activeWindow == windowBefore) {
-                activeWindow.handleKeyStroke(ks);
+                consumed = activeWindow.handleKeyStroke(ks);
+            }
+            // Tab advances focus only if neither the focused component nor the
+            // window consumed it. This lets screens intercept Tab for custom
+            // focus management (e.g. DatabaseQueryScreen toggles between query
+            // field and results grid).
+            if (!consumed && ks.type() == KeyType.TAB && activeWindow != null) {
+                advanceFocus();
             }
             needsRefresh = true;
             return true;
