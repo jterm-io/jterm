@@ -147,12 +147,13 @@ public class DefaultTextGUI implements TextGUI, WindowManager {
             }
             var focused = activeWindow != null ? activeWindow.getFocusedComponent() : null;
             var windowBefore = activeWindow;
+            boolean consumed = false;
             if (focused != null) {
-                focused.handleKeyStroke(ks);
+                consumed = focused.handleKeyStroke(ks);
             }
             // Only forward to the window if the focused component didn't consume it
-            // by changing the active window (e.g. popping a sub-screen on ESC).
-            if (activeWindow != null && activeWindow == windowBefore) {
+            // AND the active window didn't change (e.g. ESC closing a sub-screen)
+            if (!consumed && activeWindow != null && activeWindow == windowBefore) {
                 activeWindow.handleKeyStroke(ks);
             }
             needsRefresh = true;

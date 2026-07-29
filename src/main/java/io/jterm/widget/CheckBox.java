@@ -42,13 +42,15 @@ public class CheckBox extends AbstractComponent {
     }
 
     @Override
-    public void handleKeyStroke(io.jterm.core.input.KeyStroke keyStroke) {
+    public boolean handleKeyStroke(io.jterm.core.input.KeyStroke keyStroke) {
         if (keyStroke.type() == io.jterm.core.input.KeyType.CHARACTER && keyStroke.character() == ' ') {
             toggle();
+            return true;
         }
         // Enter is intentionally NOT handled here. In dialog contexts, Enter
         // means "submit" — the dialog handles it. If CheckBox also toggled on
         // Enter, the focused checkbox would flip state before the dialog's
         // submit() runs, corrupting the saved state.
+        return false;
     }
 }

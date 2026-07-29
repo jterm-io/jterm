@@ -224,25 +224,25 @@ public class ListBox<T> extends AbstractComponent implements ListDataListener {
     }
 
     @Override
-    public void handleKeyStroke(KeyStroke keyStroke) {
+    public boolean handleKeyStroke(KeyStroke keyStroke) {
         // Emacs-style key bindings (Ctrl+letter arrives as CHARACTER with ctrl=true)
         if (keyStroke.type() == KeyType.CHARACTER && keyStroke.ctrl()) {
             switch (keyStroke.character()) {
-                case 'P', 'p' -> { setSelectedIndex(selectedIndex - 1); return; }
-                case 'N', 'n' -> { setSelectedIndex(selectedIndex + 1); return; }
-                case 'V', 'v' -> { pageDown(); return; }
-                default -> { return; }  // Ignore other Ctrl+letter combos
+                case 'P', 'p' -> { setSelectedIndex(selectedIndex - 1); return true; }
+                case 'N', 'n' -> { setSelectedIndex(selectedIndex + 1); return true; }
+                case 'V', 'v' -> { pageDown(); return true; }
+                default -> { return false; }  // Ignore other Ctrl+letter combos
             }
         }
         switch (keyStroke.type()) {
-            case ARROW_UP -> setSelectedIndex(selectedIndex - 1);
-            case ARROW_DOWN -> setSelectedIndex(selectedIndex + 1);
-            case PAGE_UP -> pageUp();
-            case PAGE_DOWN -> pageDown();
-            case HOME -> setSelectedIndex(0);
-            case END -> setSelectedIndex(model.getSize() - 1);
-            case ENTER -> fireSelectionChanged();
-            default -> {}
+            case ARROW_UP -> { setSelectedIndex(selectedIndex - 1); return true; }
+            case ARROW_DOWN -> { setSelectedIndex(selectedIndex + 1); return true; }
+            case PAGE_UP -> { pageUp(); return true; }
+            case PAGE_DOWN -> { pageDown(); return true; }
+            case HOME -> { setSelectedIndex(0); return true; }
+            case END -> { setSelectedIndex(model.getSize() - 1); return true; }
+            case ENTER -> { fireSelectionChanged(); return true; }
+            default -> { return false; }
         }
     }
 

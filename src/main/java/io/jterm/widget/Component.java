@@ -46,8 +46,12 @@ public interface Component {
     /** Sets parent container. */
     void setParent(Component parent);
 
-    /** Called when this component receives a keyboard event. */
-    void handleKeyStroke(io.jterm.core.input.KeyStroke keyStroke);
+    /**
+     * Called when this component receives a keyboard event.
+     *
+     * @return true if the keystroke was consumed, false to allow the window to handle it
+     */
+    boolean handleKeyStroke(io.jterm.core.input.KeyStroke keyStroke);
 
     /** Whether this component currently has keyboard focus. */
     boolean isFocused();

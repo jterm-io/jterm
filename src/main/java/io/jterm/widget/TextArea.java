@@ -134,20 +134,20 @@ public class TextArea extends AbstractComponent {
     // ── Key handling ──────────────────────────────────────────
 
     @Override
-    public void handleKeyStroke(KeyStroke keyStroke) {
+    public boolean handleKeyStroke(KeyStroke keyStroke) {
         // Emacs-style key bindings (Ctrl+letter)
         if (keyStroke.type() == KeyType.CHARACTER && keyStroke.ctrl()) {
             switch (keyStroke.character()) {
-                case 'A', 'a' -> { cursorCol = 0; adjustViewport(); return; }
-                case 'E', 'e' -> { cursorCol = currentLineLength(); adjustViewport(); return; }
-                case 'K', 'k' -> { killToEndOfLine(); invalidate(); adjustViewport(); return; }
-                case 'F', 'f' -> { moveRight(); return; }
-                case 'B', 'b' -> { moveLeft(); return; }
-                case 'P', 'p' -> { moveUp(); return; }
-                case 'N', 'n' -> { moveDown(); return; }
-                case 'D', 'd' -> { deleteForward(); invalidate(); adjustViewport(); return; }
-                case 'V', 'v' -> { pageDown(); return; }
-                default -> { return; } // Ignore other Ctrl combos
+                case 'A', 'a' -> { cursorCol = 0; adjustViewport(); return true; }
+                case 'E', 'e' -> { cursorCol = currentLineLength(); adjustViewport(); return true; }
+                case 'K', 'k' -> { killToEndOfLine(); invalidate(); adjustViewport(); return true; }
+                case 'F', 'f' -> { moveRight(); return true; }
+                case 'B', 'b' -> { moveLeft(); return true; }
+                case 'P', 'p' -> { moveUp(); return true; }
+                case 'N', 'n' -> { moveDown(); return true; }
+                case 'D', 'd' -> { deleteForward(); invalidate(); adjustViewport(); return true; }
+                case 'V', 'v' -> { pageDown(); return true; }
+                default -> { return false; } // Ignore other Ctrl combos
             }
         }
 
@@ -155,28 +155,32 @@ public class TextArea extends AbstractComponent {
             case CHARACTER -> {
                 insertChar(keyStroke.character());
                 invalidate();
+                return true;
             }
             case ENTER -> {
                 splitLine();
                 invalidate();
+                return true;
             }
             case BACKSPACE -> {
                 backspace();
                 invalidate();
+                return true;
             }
             case DELETE -> {
                 deleteForward();
                 invalidate();
+                return true;
             }
-            case ARROW_LEFT -> moveLeft();
-            case ARROW_RIGHT -> moveRight();
-            case ARROW_UP -> moveUp();
-            case ARROW_DOWN -> moveDown();
-            case HOME -> { cursorCol = 0; adjustViewport(); }
-            case END -> { cursorCol = currentLineLength(); adjustViewport(); }
-            case PAGE_UP -> { pageUp(); }
-            case PAGE_DOWN -> { pageDown(); }
-            default -> {}
+            case ARROW_LEFT -> { moveLeft(); return true; }
+            case ARROW_RIGHT -> { moveRight(); return true; }
+            case ARROW_UP -> { moveUp(); return true; }
+            case ARROW_DOWN -> { moveDown(); return true; }
+            case HOME -> { cursorCol = 0; adjustViewport(); return true; }
+            case END -> { cursorCol = currentLineLength(); adjustViewport(); return true; }
+            case PAGE_UP -> { pageUp(); return true; }
+            case PAGE_DOWN -> { pageDown(); return true; }
+            default -> { return false; }
         }
     }
 

@@ -35,7 +35,7 @@ class ComponentDefaultsTest {
             @Override public void setLayoutData(LayoutData d) { this.data = d; }
             @Override public Component getParent() { return parent; }
             @Override public void setParent(Component p) { this.parent = p; }
-            @Override public void handleKeyStroke(io.jterm.core.input.KeyStroke keyStroke) { }
+            @Override public boolean handleKeyStroke(io.jterm.core.input.KeyStroke keyStroke) { return false; }
             @Override public boolean isFocused() { return focused; }
             @Override public void setFocused(boolean f) { this.focused = f; }
         };

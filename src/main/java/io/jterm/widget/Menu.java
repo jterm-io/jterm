@@ -168,15 +168,15 @@ public class Menu extends AbstractComponent {
     // ── Input handling ─────────────────────────────────────────────
 
     @Override
-    public void handleKeyStroke(KeyStroke keyStroke) {
-        if (!open) return;
+    public boolean handleKeyStroke(KeyStroke keyStroke) {
+        if (!open) return false;
         switch (keyStroke.type()) {
-            case ARROW_DOWN -> moveSelection(1);
-            case ARROW_UP -> moveSelection(-1);
-            case ENTER -> activateSelected();
-            case ESCAPE -> close();
-            case ARROW_LEFT, ARROW_RIGHT -> close();
-            default -> {}
+            case ARROW_DOWN -> { moveSelection(1); return true; }
+            case ARROW_UP -> { moveSelection(-1); return true; }
+            case ENTER -> { activateSelected(); return true; }
+            case ESCAPE -> { close(); return true; }
+            case ARROW_LEFT, ARROW_RIGHT -> { close(); return true; }
+            default -> { return false; }
         }
     }
 

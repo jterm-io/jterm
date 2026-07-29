@@ -34,8 +34,9 @@ public interface Window {
      * or when the window has no focusable children. Default implementation does nothing.
      *
      * @param keyStroke the key stroke to handle
+     * @return true if the keystroke was consumed, false otherwise
      */
-    default void handleKeyStroke(io.jterm.core.input.KeyStroke keyStroke) {}
+    default boolean handleKeyStroke(io.jterm.core.input.KeyStroke keyStroke) { return false; }
 
     /**
      * Called when the window is added to a GUI (e.g. via ScreenManager.push).

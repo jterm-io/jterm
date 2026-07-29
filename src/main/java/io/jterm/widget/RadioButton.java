@@ -56,13 +56,15 @@ public class RadioButton extends AbstractComponent {
     }
 
     @Override
-    public void handleKeyStroke(KeyStroke keyStroke) {
+    public boolean handleKeyStroke(KeyStroke keyStroke) {
         if (keyStroke.type() == KeyType.CHARACTER && keyStroke.character() == ' ') {
             select();
+            return true;
         }
         // Enter is intentionally NOT handled here. In dialog contexts, Enter
         // means "submit" — the dialog handles it. If RadioButton also selected
         // on Enter, the focused radio would change state before the dialog's
         // submit() runs.
+        return false;
     }
 }

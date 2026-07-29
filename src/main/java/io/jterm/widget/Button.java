@@ -56,9 +56,11 @@ public class Button extends AbstractComponent {
     }
 
     @Override
-    public void handleKeyStroke(KeyStroke keyStroke) {
+    public boolean handleKeyStroke(KeyStroke keyStroke) {
         if (keyStroke.type() == KeyType.ENTER || (keyStroke.type() == KeyType.CHARACTER && keyStroke.character() == ' ')) {
             click();
+            return true;
         }
+        return false;
     }
 }

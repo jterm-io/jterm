@@ -155,27 +155,28 @@ public class YesNoDialog extends AbstractWindow {
     }
 
     @Override
-    public void handleKeyStroke(KeyStroke keyStroke) {
+    public boolean handleKeyStroke(KeyStroke keyStroke) {
         if (keyStroke.type() == KeyType.ESCAPE) {
             cancel();
-            return;
+            return true;
         }
         if (keyStroke.type() == KeyType.ENTER) {
             yes();
-            return;
+            return true;
         }
         if (keyStroke.type() == KeyType.CHARACTER) {
             char ch = keyStroke.character();
             if (ch == 'y' || ch == 'Y') {
                 yes();
-                return;
+                return true;
             }
             if (ch == 'n' || ch == 'N') {
                 no();
-                return;
+                return true;
             }
         }
         // All other keys (arrows, other characters, etc.) are ignored.
         // This is a single-keystroke dialog — no text input fields to forward to.
+        return false;
     }
 }

@@ -129,17 +129,17 @@ public class MenuBar extends AbstractComponent {
     }
 
     @Override
-    public void handleKeyStroke(KeyStroke keyStroke) {
+    public boolean handleKeyStroke(KeyStroke keyStroke) {
         // Ctrl+char or Alt+char → open the menu whose mnemonic matches
         if (keyStroke.type() == KeyType.CHARACTER && (keyStroke.ctrl() || keyStroke.alt())) {
             char ch = Character.toLowerCase(keyStroke.character());
             for (int i = 0; i < menus.size(); i++) {
                 if (Character.toLowerCase(menus.get(i).getMnemonic()) == ch) {
                     openMenu(i);
-                    return;
+                    return true;
                 }
             }
-            return;
+            return false;
         }
 
         if (activeMenuIndex >= 0) {
@@ -151,20 +151,20 @@ public class MenuBar extends AbstractComponent {
                     int prev = activeMenuIndex - 1;
                     if (prev < 0) prev = menus.size() - 1;
                     openMenu(prev);
-                    return;
+                    return true;
                 }
                 case ARROW_RIGHT -> {
                     active.setOpen(false);
                     int next = (activeMenuIndex + 1) % menus.size();
                     openMenu(next);
-                    return;
+                    return true;
                 }
                 default -> {
-                    active.handleKeyStroke(keyStroke);
-                    return;
+                    return active.handleKeyStroke(keyStroke);
                 }
             }
         }
+        return false;
     }
 
     private void openMenu(int index) {

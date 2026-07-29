@@ -101,8 +101,9 @@ public abstract class AbstractComponent implements Component {
     public void setFocusable(boolean focusable) { this.focusable = focusable; }
 
     @Override
-    public void handleKeyStroke(io.jterm.core.input.KeyStroke keyStroke) {
-        // default: ignore
+    public boolean handleKeyStroke(io.jterm.core.input.KeyStroke keyStroke) {
+        // default: not consumed
+        return false;
     }
 
     @Override

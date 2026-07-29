@@ -458,31 +458,33 @@ public class DataGrid<T> extends AbstractComponent implements GridListener {
     // ---- Key handling -----------------------------------------------------
 
     @Override
-    public void handleKeyStroke(KeyStroke keyStroke) {
+    public boolean handleKeyStroke(KeyStroke keyStroke) {
         // Emacs-style key bindings (Ctrl+letter arrives as CHARACTER with ctrl=true)
         if (keyStroke.type() == KeyType.CHARACTER && keyStroke.ctrl()) {
             switch (keyStroke.character()) {
-                case 'P', 'p' -> { setSelectedRow(selectedRow - 1); return; }
-                case 'N', 'n' -> { setSelectedRow(selectedRow + 1); return; }
-                case 'V', 'v' -> { pageDown(); return; }
-                default -> { return; }  // Ignore other Ctrl+letter combos
+                case 'P', 'p' -> { setSelectedRow(selectedRow - 1); return true; }
+                case 'N', 'n' -> { setSelectedRow(selectedRow + 1); return true; }
+                case 'V', 'v' -> { pageDown(); return true; }
+                default -> { return false; }  // Ignore other Ctrl+letter combos
             }
         }
         switch (keyStroke.type()) {
-            case ARROW_UP -> setSelectedRow(selectedRow - 1);
-            case ARROW_DOWN -> setSelectedRow(selectedRow + 1);
+            case ARROW_UP -> { setSelectedRow(selectedRow - 1); return true; }
+            case ARROW_DOWN -> { setSelectedRow(selectedRow + 1); return true; }
             case ARROW_LEFT, ARROW_RIGHT -> {
                 if (keyStroke.type() == KeyType.ARROW_LEFT) scrollLeft();
                 else scrollRight();
+                return true;
             }
-            case PAGE_UP -> pageUp();
-            case PAGE_DOWN -> pageDown();
-            case HOME -> setSelectedRow(0);
+            case PAGE_UP -> { pageUp(); return true; }
+            case PAGE_DOWN -> { pageDown(); return true; }
+            case HOME -> { setSelectedRow(0); return true; }
             case END -> {
                 if (model != null) setSelectedRow(model.getRowCount() - 1);
+                return true;
             }
-            case ENTER -> fireSelectionChanged();
-            default -> {}
+            case ENTER -> { fireSelectionChanged(); return true; }
+            default -> { return false; }
         }
     }
 

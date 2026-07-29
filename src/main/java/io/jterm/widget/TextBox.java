@@ -106,19 +106,19 @@ public class TextBox extends AbstractComponent {
     }
 
     @Override
-    public void handleKeyStroke(KeyStroke keyStroke) {
+    public boolean handleKeyStroke(KeyStroke keyStroke) {
         // Emacs-style key bindings (Ctrl+letter arrives as CHARACTER with ctrl=true)
         if (keyStroke.type() == KeyType.CHARACTER && keyStroke.ctrl()) {
             switch (keyStroke.character()) {
-                case 'A', 'a' -> { cursorPosition = 0; adjustViewport(); return; }
-                case 'E', 'e' -> { cursorPosition = value.length(); adjustViewport(); return; }
-                case 'K', 'k' -> { value = value.substring(0, cursorPosition); invalidate(); adjustViewport(); return; }
-                case 'F', 'f' -> { cursorPosition = Math.min(value.length(), cursorPosition + 1); adjustViewport(); return; }
-                case 'B', 'b' -> { cursorPosition = Math.max(0, cursorPosition - 1); adjustViewport(); return; }
-                case 'P', 'p' -> { cursorPosition = Math.max(0, cursorPosition - 1); adjustViewport(); return; }
-                case 'N', 'n' -> { cursorPosition = Math.min(value.length(), cursorPosition + 1); adjustViewport(); return; }
-                case 'D', 'd' -> { deleteForwardTextBox(); return; }
-                default -> { return; }  // Ignore other Ctrl+letter combos
+                case 'A', 'a' -> { cursorPosition = 0; adjustViewport(); return true; }
+                case 'E', 'e' -> { cursorPosition = value.length(); adjustViewport(); return true; }
+                case 'K', 'k' -> { value = value.substring(0, cursorPosition); invalidate(); adjustViewport(); return true; }
+                case 'F', 'f' -> { cursorPosition = Math.min(value.length(), cursorPosition + 1); adjustViewport(); return true; }
+                case 'B', 'b' -> { cursorPosition = Math.max(0, cursorPosition - 1); adjustViewport(); return true; }
+                case 'P', 'p' -> { cursorPosition = Math.max(0, cursorPosition - 1); adjustViewport(); return true; }
+                case 'N', 'n' -> { cursorPosition = Math.min(value.length(), cursorPosition + 1); adjustViewport(); return true; }
+                case 'D', 'd' -> { deleteForwardTextBox(); return true; }
+                default -> { return false; }  // Ignore other Ctrl+letter combos
             }
         }
         switch (keyStroke.type()) {
@@ -128,6 +128,8 @@ public class TextBox extends AbstractComponent {
                 value = value.substring(0, cursorPosition) + ch + value.substring(cursorPosition);
                 cursorPosition++;
                 invalidate();
+                adjustViewport();
+                return true;
             }
             case BACKSPACE -> {
                 if (cursorPosition > 0) {
@@ -135,15 +137,16 @@ public class TextBox extends AbstractComponent {
                     cursorPosition--;
                     invalidate();
                 }
+                adjustViewport();
+                return true;
             }
-            case DELETE -> deleteForwardTextBox();
-            case ARROW_LEFT -> cursorPosition = Math.max(0, cursorPosition - 1);
-            case ARROW_RIGHT -> cursorPosition = Math.min(value.length(), cursorPosition + 1);
-            case HOME -> cursorPosition = 0;
-            case END -> cursorPosition = value.length();
-            default -> {}
+            case DELETE -> { deleteForwardTextBox(); return true; }
+            case ARROW_LEFT -> { cursorPosition = Math.max(0, cursorPosition - 1); adjustViewport(); return true; }
+            case ARROW_RIGHT -> { cursorPosition = Math.min(value.length(), cursorPosition + 1); adjustViewport(); return true; }
+            case HOME -> { cursorPosition = 0; adjustViewport(); return true; }
+            case END -> { cursorPosition = value.length(); adjustViewport(); return true; }
+            default -> { return false; }
         }
-        adjustViewport();
     }
 
     /** Delete the character at the cursor position (forward delete, emacs Ctrl+D / Delete key). */
