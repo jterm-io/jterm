@@ -78,11 +78,11 @@ public class InputDecoder {
     private Optional<KeyStroke> readEscapeSequence(int esc) throws IOException {
         if (input.available() == 0) {
             // Wait briefly to distinguish standalone Escape from Alt+key sequences.
-            // Over network connections (e.g. iPad via SSH), ESC and the following byte
-            // can arrive in separate TCP packets. A 5ms wait gives the next byte
+            // Over network connections (e.g. SSH), ESC and the following byte
+            // can arrive in separate TCP packets. A 50ms wait gives the next byte
             // time to arrive without noticeable latency for real Escape presses.
             try {
-                Thread.sleep(5);
+                Thread.sleep(50);
             } catch (InterruptedException e) {
                 Thread.currentThread().interrupt();
             }
