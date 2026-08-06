@@ -60,30 +60,57 @@ public class CircuitBoard extends AbstractComponent implements AnimatedBackgroun
     private final List<PcbComponent> components = new ArrayList<>();
     private final Set<Integer> componentCells = new HashSet<>();
 
+    /**
+     * Constructs a new CircuitBoard instance.
+     * @param preferredSize the preferred size
+     */
     public CircuitBoard(TerminalSize preferredSize) {
         this.preferredSize = preferredSize;
     }
 
+    /**
+     * Sets the target fps.
+     * @param fps the fps
+     */
     public void setTargetFps(int fps) {
         this.targetFps = Math.max(MIN_FPS, Math.min(MAX_FPS, fps));
     }
 
+    /**
+     * Returns the target fps.
+     * @return the result
+     */
     public int getTargetFps() {
         return targetFps;
     }
 
+    /**
+     * Sets the paused.
+     * @param paused the paused
+     */
     public void setPaused(boolean paused) {
         this.paused = paused;
     }
 
+    /**
+     * Returns whether the paused flag is set.
+     * @return the result
+     */
     public boolean isPaused() {
         return paused;
     }
 
+    /**
+     * Returns the frame.
+     * @return the result
+     */
     public int getFrame() {
         return frame;
     }
 
+    /**
+     * Resets the frame counter and animation time to zero.
+     */
     public void resetFrame() {
         frame = 0;
         lastTickNanos = -1;
@@ -95,14 +122,26 @@ public class CircuitBoard extends AbstractComponent implements AnimatedBackgroun
         componentCells.clear();
     }
 
+    /**
+     * Returns the traces.
+     * @return the result
+     */
     public List<Trace> getTraces() {
         return List.copyOf(traces);
     }
 
+    /**
+     * Returns the pulses.
+     * @return the result
+     */
     public List<Pulse> getPulses() {
         return List.copyOf(pulses);
     }
 
+    /**
+     * Returns the components.
+     * @return the result
+     */
     public List<PcbComponent> getComponents() {
         return List.copyOf(components);
     }
@@ -137,17 +176,30 @@ public class CircuitBoard extends AbstractComponent implements AnimatedBackgroun
     }
 
     @Override
+    /**
+     * Computes the preferred size for this component.
+     * @return the result
+     */
     protected TerminalSize calculatePreferredSize() {
         return preferredSize;
     }
 
     @Override
+    /**
+     * Sets the bounds.
+     * @param position the position
+     * @param size the size
+     */
     public void setBounds(TerminalPosition position, TerminalSize size) {
         super.setBounds(position, size);
         onResize(size);
     }
 
     @Override
+    /**
+     * Reallocates internal buffers for the new terminal size.
+     * @param newSize the new size
+     */
     public void onResize(TerminalSize newSize) {
         int newGridCols = Math.max(1, newSize.columns() / PAD_SPACING);
         int newGridRows = Math.max(1, newSize.rows() / PAD_SPACING);
@@ -166,11 +218,20 @@ public class CircuitBoard extends AbstractComponent implements AnimatedBackgroun
     }
 
     @Override
+    /**
+     * Draws this component into the supplied graphics context.
+     * @param graphics the graphics
+     */
     protected void drawComponent(TextGraphics graphics) {
         renderFrame(graphics, getSize());
     }
 
     @Override
+    /**
+     * Renders one frame of the animation into the given graphics buffer.
+     * @param graphics the graphics
+     * @param size the size
+     */
     public void renderFrame(TextGraphics graphics, TerminalSize size) {
         if (size.columns() <= 0 || size.rows() <= 0) return;
 
@@ -852,21 +913,35 @@ public class CircuitBoard extends AbstractComponent implements AnimatedBackgroun
     }
 
     @Override
+    /**
+     * Starts the animation.
+     */
     public void start() {
         running = true;
     }
 
     @Override
+    /**
+     * Stops the animation.
+     */
     public void stop() {
         running = false;
     }
 
     @Override
+    /**
+     * Returns whether the running flag is set.
+     * @return the result
+     */
     public boolean isRunning() {
         return running;
     }
 
     @Override
+    /**
+     * Returns the target frame rate in frames per second.
+     * @return the result
+     */
     public int targetFps() {
         return targetFps;
     }

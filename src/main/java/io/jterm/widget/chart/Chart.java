@@ -17,7 +17,7 @@ import java.util.List;
  * A terminal-based chart widget that renders one or more {@link ChartSeries}
  * to a character grid. Supports line, bar, and scatter plots.
  *
- * <h3>Features</h3>
+ * <p><b>Features</b></p>
  * <ul>
  *   <li>Automatic or fixed Y-axis scaling</li>
  *   <li>Y-axis labels with configurable formatting</li>
@@ -27,7 +27,7 @@ import java.util.List;
  *   <li>Box border around plot area</li>
  * </ul>
  *
- * <h3>Usage</h3>
+ * <p><b>Usage</b></p>
  * <pre>{@code
  * var chart = new Chart("AAPL — 30 Day");
  * chart.addSeries(new ChartSeries("Close", prices, ChartType.LINE, AnsiColor.GREEN));
@@ -35,7 +35,7 @@ import java.util.List;
  * panel.addComponent(chart);
  * }</pre>
  *
- * <h3>Layout</h3>
+ * <p><b>Layout</b></p>
  * <pre>
  *  ┌─ Title ──────────────────────┐
  *  │ 160 ┤                        │
@@ -64,44 +64,78 @@ public class Chart extends AbstractComponent {
     private static final int Y_AXIS_WIDTH = 1;   // the ┤ column
     private static final int X_AXIS_HEIGHT = 1;  // the ┴ row
 
+    /** Creates a chart with no title. */
     public Chart() {}
 
+    /**
+     * Creates a chart with the given title displayed above the plot area.
+     *
+     * @param title the chart title; {@code null} is treated as empty
+     */
     public Chart(String title) {
         this.title = title;
     }
 
     // ── Configuration ──────────────────────────────────────────
 
+    /**
+     * Sets the chart title shown above the plot area.
+     *
+     * @param title the new title; {@code null} is treated as empty
+     * @return this chart, for method chaining
+     */
     public Chart setTitle(String title) {
         this.title = title == null ? "" : title;
         invalidate();
         return this;
     }
 
+    /** Returns the current chart title. */
     public String getTitle() { return title; }
 
+    /**
+     * Adds a data series to the chart.
+     *
+     * @param series the series to add
+     * @return this chart, for method chaining
+     */
     public Chart addSeries(ChartSeries series) {
         seriesList.add(series);
         invalidate();
         return this;
     }
 
+    /**
+     * Removes the first series whose name matches the given value.
+     *
+     * @param name the series name to remove
+     * @return this chart, for method chaining
+     */
     public Chart removeSeries(String name) {
         seriesList.removeIf(s -> s.name().equals(name));
         invalidate();
         return this;
     }
 
+    /** Returns a defensive copy of the series list. */
     public List<ChartSeries> getSeries() { return new ArrayList<>(seriesList); }
 
+    /** Returns the number of series currently attached to the chart. */
     public int getSeriesCount() { return seriesList.size(); }
 
+    /**
+     * Sets the Y-axis configuration (range, scale, label format).
+     *
+     * @param config the new axis configuration
+     * @return this chart, for method chaining
+     */
     public Chart setYAxisConfig(ChartAxisConfig config) {
         this.yAxisConfig = config;
         invalidate();
         return this;
     }
 
+    /** Returns the current Y-axis configuration. */
     public ChartAxisConfig getYAxisConfig() { return yAxisConfig; }
 
     /**
@@ -131,12 +165,16 @@ public class Chart extends AbstractComponent {
         return this;
     }
 
+    /** Returns whether the Y-axis uses logarithmic scale. */
     public boolean isYAxisLogarithmic() { return yAxisConfig.logarithmic(); }
 
     /**
      * Sets X-axis labels (e.g. date strings). Labels are evenly distributed
      * across the plot width — typically 3-5 labels (start, middle, end).
      * Pass an empty list to hide X-axis labels.
+     *
+     * @param labels the X-axis labels; {@code null} clears them
+     * @return this chart, for method chaining
      */
     public Chart setXAxisLabels(List<String> labels) {
         this.xAxisLabels = labels == null ? new ArrayList<>() : new ArrayList<>(labels);
@@ -144,44 +182,84 @@ public class Chart extends AbstractComponent {
         return this;
     }
 
+    /** Returns a defensive copy of the current X-axis labels. */
     public List<String> getXAxisLabels() { return new ArrayList<>(xAxisLabels); }
 
+    /**
+     * Enables or disables dashed horizontal grid lines.
+     *
+     * @param show {@code true} to show grid lines
+     * @return this chart, for method chaining
+     */
     public Chart setShowGrid(boolean show) {
         this.showGrid = show;
         invalidate();
         return this;
     }
 
+    /** Returns whether horizontal grid lines are drawn. */
     public boolean isShowGrid() { return showGrid; }
 
+    /**
+     * Enables or disables the legend row below the plot.
+     *
+     * @param show {@code true} to show the legend
+     * @return this chart, for method chaining
+     */
     public Chart setShowLegend(boolean show) {
         this.showLegend = show;
         invalidate();
         return this;
     }
 
+    /** Returns whether the legend is shown. */
     public boolean isShowLegend() { return showLegend; }
 
+    /**
+     * Enables or disables the box border around the plot area.
+     *
+     * @param show {@code true} to draw the border
+     * @return this chart, for method chaining
+     */
     public Chart setShowBorder(boolean show) {
         this.showBorder = show;
         invalidate();
         return this;
     }
 
+    /** Returns whether the border is drawn around the plot area. */
     public boolean isShowBorder() { return showBorder; }
 
+    /**
+     * Sets the width in columns reserved for Y-axis labels.
+     *
+     * @param width the label column width; clamped to a minimum of 2
+     * @return this chart, for method chaining
+     */
     public Chart setYLabelWidth(int width) {
         this.yLabelWidth = Math.max(2, width);
         invalidate();
         return this;
     }
 
+    /**
+     * Sets the color used for the plot border.
+     *
+     * @param color the new border color
+     * @return this chart, for method chaining
+     */
     public Chart setBorderColor(Color color) {
         this.borderColor = color;
         invalidate();
         return this;
     }
 
+    /**
+     * Sets the color used for grid lines.
+     *
+     * @param color the new grid color
+     * @return this chart, for method chaining
+     */
     public Chart setGridColor(Color color) {
         this.gridColor = color;
         invalidate();
@@ -190,6 +268,11 @@ public class Chart extends AbstractComponent {
 
     // ── Layout calculations ────────────────────────────────────
 
+    /**
+     * Returns the default preferred size of {@code 40×12} columns.
+     *
+     * @return a 40-column by 12-row terminal size
+     */
     @Override
     protected TerminalSize calculatePreferredSize() {
         // Default preferred size: 40×12 (enough for a useful chart)
@@ -273,6 +356,11 @@ public class Chart extends AbstractComponent {
 
     // ── Rendering ──────────────────────────────────────────────
 
+    /**
+     * Renders the chart: border, title, axes, grid, series, and legend.
+     *
+     * @param graphics the text-graphics target for the current component bounds
+     */
     @Override
     protected void drawComponent(TextGraphics graphics) {
         var size = getSize();

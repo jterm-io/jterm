@@ -16,6 +16,11 @@ public class RadioGroup {
     private RadioButton selected;
     private final List<Runnable> selectionListeners = new ArrayList<>();
 
+    /**
+     * Adds a radio button to this group. The first button added becomes selected.
+     *
+     * @param button the button to add
+     */
     public void add(RadioButton button) {
         if (!buttons.contains(button)) {
             buttons.add(button);
@@ -28,6 +33,11 @@ public class RadioGroup {
         }
     }
 
+    /**
+     * Removes a radio button from this group, selecting another if needed.
+     *
+     * @param button the button to remove
+     */
     public void remove(RadioButton button) {
         buttons.remove(button);
         button.setGroup(null);
@@ -47,10 +57,13 @@ public class RadioGroup {
         notifySelectionListeners();
     }
 
+    /** Returns the currently selected radio button, or {@code null} if none. */
     public RadioButton getSelected() { return selected; }
 
+    /** Adds a listener that fires whenever the selection changes. */
     public void addSelectionListener(Runnable listener) { selectionListeners.add(listener); }
 
+    /** Returns a defensive copy of the buttons in this group. */
     public List<RadioButton> getButtons() { return new ArrayList<>(buttons); }
 
     void notifySelectionListeners() {

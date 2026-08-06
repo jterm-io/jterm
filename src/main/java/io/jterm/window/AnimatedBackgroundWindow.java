@@ -35,6 +35,12 @@ public class AnimatedBackgroundWindow extends WindowImpl {
     /** Size of the last rendered frame, so draw() can detect stale buffers. */
     private volatile TerminalSize frameSize;
 
+    /**
+     * Create a fullscreen background window driven by the given animated background.
+     *
+     * @param background the animation to render
+     * @param gui         the GUI this window belongs to
+     */
     public AnimatedBackgroundWindow(AnimatedBackground background, TextGUI gui) {
         this(background, gui, true);
     }
@@ -119,6 +125,12 @@ public class AnimatedBackgroundWindow extends WindowImpl {
      */
     private TerminalSize lastResizeSize;
 
+    /**
+     * Set the window position and size.
+     *
+     * @param position the terminal position
+     * @param size the terminal dimensions
+     */
     @Override
     public void setBounds(TerminalPosition position, TerminalSize size) {
         super.setBounds(position, size);
@@ -130,6 +142,9 @@ public class AnimatedBackgroundWindow extends WindowImpl {
         }
     }
 
+    /**
+     * Start the animation timer and pre-render initial frames.
+     */
     public void start() {
         background.start();
         // Pre-render several frames so the first visible frame has content
@@ -144,6 +159,9 @@ public class AnimatedBackgroundWindow extends WindowImpl {
         timer.start();
     }
 
+    /**
+     * Stop the animation timer and the underlying background animation.
+     */
     public void stop() {
         if (timer != null) {
             timer.stop();
@@ -151,10 +169,20 @@ public class AnimatedBackgroundWindow extends WindowImpl {
         background.stop();
     }
 
+    /**
+     * Return the animated background rendered by this window.
+     *
+     * @return the animated background
+     */
     public AnimatedBackground getBackground() {
         return background;
     }
 
+    /**
+     * Return the animation timer driving this window.
+     *
+     * @return the animation timer, or null if not started
+     */
     public AnimationTimer getTimer() {
         return timer;
     }

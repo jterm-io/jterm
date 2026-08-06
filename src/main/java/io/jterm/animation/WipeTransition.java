@@ -42,11 +42,17 @@ public class WipeTransition implements TransitionEffect {
     }
 
     @Override
+    /** Returns the transition duration in milliseconds.
+ * @return the duration in ms */
     public long durationMs() {
         return durationMs;
     }
 
     @Override
+    /** Renders a single frame of the wipe transition.
+     * @param graphics the graphics context
+     * @param size the terminal size
+     * @param progress the transition progress (0.0 to 1.0) */
     public void renderFrame(TextGraphics graphics, TerminalSize size, double progress) {
         if (size.rows() <= 0 || size.columns() <= 0) return;
 

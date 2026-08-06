@@ -13,11 +13,15 @@ public abstract class AbstractListModel<T> implements ListModel<T> {
     private final List<ListDataListener> listeners = new CopyOnWriteArrayList<>();
 
     @Override
+    /** Registers a listener to be notified of list data changes.
+     * @param listener the listener to add */
     public void addListDataListener(ListDataListener listener) {
         listeners.add(listener);
     }
 
     @Override
+    /** Removes a previously registered list data listener.
+     * @param listener the listener to remove */
     public void removeListDataListener(ListDataListener listener) {
         listeners.remove(listener);
     }

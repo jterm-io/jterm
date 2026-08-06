@@ -55,52 +55,99 @@ public class PlasmaWash extends AbstractComponent implements AnimatedBackground 
         void render(TextGraphics graphics, double time);
     }
 
+    /**
+     * Constructs a new PlasmaWash instance.
+     * @param preferredSize the preferred size
+     */
     public PlasmaWash(TerminalSize preferredSize) {
         this.preferredSize = preferredSize;
     }
 
+    /**
+     * Sets the target fps.
+     * @param fps the fps
+     */
     public void setTargetFps(int fps) {
         this.targetFps = Math.max(MIN_FPS, Math.min(MAX_FPS, fps));
     }
 
+    /**
+     * Returns the target fps.
+     * @return the result
+     */
     public int getTargetFps() {
         return targetFps;
     }
 
+    /**
+     * Sets the base color.
+     * @param color the color
+     */
     public void setBaseColor(Color color) {
         this.baseColor = color;
         invalidate();
     }
 
+    /**
+     * Returns the base color.
+     * @return the result
+     */
     public Color getBaseColor() {
         return baseColor;
     }
 
+    /**
+     * Sets the paused.
+     * @param paused the paused
+     */
     public void setPaused(boolean paused) {
         this.paused = paused;
     }
 
+    /**
+     * Returns whether the paused flag is set.
+     * @return the result
+     */
     public boolean isPaused() {
         return paused;
     }
 
+    /**
+     * Sets the renderer.
+     * @param renderer the renderer
+     */
     public void setRenderer(Renderer renderer) {
         this.renderer = renderer;
         invalidate();
     }
 
+    /**
+     * Returns the renderer.
+     * @return the result
+     */
     public Renderer getRenderer() {
         return renderer;
     }
 
+    /**
+     * Returns the frame.
+     * @return the result
+     */
     public int getFrame() {
         return frame;
     }
 
+    /**
+     * Returns the time.
+     * @return the result
+     */
     public double getTime() {
         return time;
     }
 
+    /**
+     * Resets the frame counter and animation time to zero.
+     */
     public void resetFrame() {
         frame = 0;
         time = 0.0;
@@ -140,27 +187,49 @@ public class PlasmaWash extends AbstractComponent implements AnimatedBackground 
     }
 
     @Override
+    /**
+     * Computes the preferred size for this component.
+     * @return the result
+     */
     protected TerminalSize calculatePreferredSize() {
         return preferredSize;
     }
 
     @Override
+    /**
+     * Sets the bounds.
+     * @param position the position
+     * @param size the size
+     */
     public void setBounds(TerminalPosition position, TerminalSize size) {
         super.setBounds(position, size);
         onResize(size);
     }
 
     @Override
+    /**
+     * Reallocates internal buffers for the new terminal size.
+     * @param newSize the new size
+     */
     public void onResize(TerminalSize newSize) {
         // Plasma is computed on the fly; no state to reallocate.
     }
 
     @Override
+    /**
+     * Draws this component into the supplied graphics context.
+     * @param graphics the graphics
+     */
     protected void drawComponent(TextGraphics graphics) {
         renderFrame(graphics, getSize());
     }
 
     @Override
+    /**
+     * Renders one frame of the animation into the given graphics buffer.
+     * @param graphics the graphics
+     * @param size the size
+     */
     public void renderFrame(TextGraphics graphics, TerminalSize size) {
         if (size.columns() <= 0 || size.rows() <= 0) return;
 
@@ -252,21 +321,35 @@ public class PlasmaWash extends AbstractComponent implements AnimatedBackground 
     }
 
     @Override
+    /**
+     * Starts the animation.
+     */
     public void start() {
         running = true;
     }
 
     @Override
+    /**
+     * Stops the animation.
+     */
     public void stop() {
         running = false;
     }
 
     @Override
+    /**
+     * Returns whether the running flag is set.
+     * @return the result
+     */
     public boolean isRunning() {
         return running;
     }
 
     @Override
+    /**
+     * Returns the target frame rate in frames per second.
+     * @return the result
+     */
     public int targetFps() {
         return targetFps;
     }

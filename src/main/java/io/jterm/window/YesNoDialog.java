@@ -143,6 +143,11 @@ public class YesNoDialog extends AbstractWindow {
         return statusLabel.getText();
     }
 
+    /**
+     * Compute the preferred size for this dialog based on prompt and status text.
+     *
+     * @return the computed preferred size
+     */
     @Override
     public TerminalSize getPreferredSize() {
         // Width: prompt length + 4 (border padding) or status hint length, whichever is wider
@@ -154,6 +159,13 @@ public class YesNoDialog extends AbstractWindow {
         return new TerminalSize(width, height);
     }
 
+    /**
+     * Handle a key stroke: Escape cancels, Enter or Y confirms, N denies.
+     *
+     * @param keyStroke the key stroke to handle
+     *
+     * @return true if the key stroke was consumed
+     */
     @Override
     public boolean handleKeyStroke(KeyStroke keyStroke) {
         if (keyStroke.type() == KeyType.ESCAPE) {

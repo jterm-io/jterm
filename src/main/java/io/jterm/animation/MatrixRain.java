@@ -51,36 +51,69 @@ public class MatrixRain extends AbstractComponent implements AnimatedBackground 
     private Column[] columns;
     private Color backgroundColor;
 
+    /**
+     * Constructs a new MatrixRain instance.
+     * @param preferredSize the preferred size
+     */
     public MatrixRain(TerminalSize preferredSize) {
         this(preferredSize, false, true);
     }
 
+    /**
+     * Constructs a new MatrixRain instance.
+     * @param preferredSize the preferred size
+     * @param unicodeMode the unicode mode
+     * @param allowColorVariants the allow color variants
+     */
     public MatrixRain(TerminalSize preferredSize, boolean unicodeMode, boolean allowColorVariants) {
         this.preferredSize = preferredSize;
         this.unicodeMode = unicodeMode;
         this.allowColorVariants = allowColorVariants;
     }
 
+    /**
+     * Sets the target fps.
+     * @param fps the fps
+     */
     public void setTargetFps(int fps) {
         this.targetFps = Math.max(MIN_FPS, Math.min(MAX_FPS, fps));
     }
 
+    /**
+     * Returns the target fps.
+     * @return the result
+     */
     public int getTargetFps() {
         return targetFps;
     }
 
+    /**
+     * Sets the paused.
+     * @param paused the paused
+     */
     public void setPaused(boolean paused) {
         this.paused = paused;
     }
 
+    /**
+     * Returns whether the paused flag is set.
+     * @return the result
+     */
     public boolean isPaused() {
         return paused;
     }
 
+    /**
+     * Returns the frame.
+     * @return the result
+     */
     public int getFrame() {
         return frame;
     }
 
+    /**
+     * Resets the frame counter and animation time to zero.
+     */
     public void resetFrame() {
         frame = 0;
         lastTickNanos = -1;
@@ -88,10 +121,18 @@ public class MatrixRain extends AbstractComponent implements AnimatedBackground 
         columns = null;
     }
 
+    /**
+     * Returns whether the unicode mode flag is set.
+     * @return the result
+     */
     public boolean isUnicodeMode() {
         return unicodeMode;
     }
 
+    /**
+     * Returns whether the allow color variants flag is set.
+     * @return the result
+     */
     public boolean isAllowColorVariants() {
         return allowColorVariants;
     }
@@ -124,17 +165,30 @@ public class MatrixRain extends AbstractComponent implements AnimatedBackground 
     }
 
     @Override
+    /**
+     * Computes the preferred size for this component.
+     * @return the result
+     */
     protected TerminalSize calculatePreferredSize() {
         return preferredSize;
     }
 
     @Override
+    /**
+     * Sets the bounds.
+     * @param position the position
+     * @param size the size
+     */
     public void setBounds(TerminalPosition position, TerminalSize size) {
         super.setBounds(position, size);
         onResize(size);
     }
 
     @Override
+    /**
+     * Reallocates internal buffers for the new terminal size.
+     * @param newSize the new size
+     */
     public void onResize(TerminalSize newSize) {
         if (columns == null || columns.length != newSize.columns()) {
             columns = new Column[newSize.columns()];
@@ -149,11 +203,20 @@ public class MatrixRain extends AbstractComponent implements AnimatedBackground 
     }
 
     @Override
+    /**
+     * Draws this component into the supplied graphics context.
+     * @param graphics the graphics
+     */
     protected void drawComponent(TextGraphics graphics) {
         renderFrame(graphics, getSize());
     }
 
     @Override
+    /**
+     * Renders one frame of the animation into the given graphics buffer.
+     * @param graphics the graphics
+     * @param size the size
+     */
     public void renderFrame(TextGraphics graphics, TerminalSize size) {
         if (size.columns() <= 0 || size.rows() <= 0) return;
 
@@ -175,21 +238,35 @@ public class MatrixRain extends AbstractComponent implements AnimatedBackground 
     }
 
     @Override
+    /**
+     * Starts the animation.
+     */
     public void start() {
         running = true;
     }
 
     @Override
+    /**
+     * Stops the animation.
+     */
     public void stop() {
         running = false;
     }
 
     @Override
+    /**
+     * Returns whether the running flag is set.
+     * @return the result
+     */
     public boolean isRunning() {
         return running;
     }
 
     @Override
+    /**
+     * Returns the target frame rate in frames per second.
+     * @return the result
+     */
     public int targetFps() {
         return targetFps;
     }

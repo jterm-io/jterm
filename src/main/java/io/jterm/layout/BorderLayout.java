@@ -12,9 +12,21 @@ public class BorderLayout implements LayoutManager {
 
     public static class BorderLayoutData implements LayoutData {
         public final Region region;
+        /**
+         * Associate a child component with a border-layout region.
+         *
+         * @param region the region to place the component in
+         */
         public BorderLayoutData(Region region) { this.region = region; }
     }
 
+    /**
+     * Compute the preferred size for the given children.
+     *
+     * @param children the child components
+     *
+     * @return the computed preferred size
+     */
     @Override
     public TerminalSize getPreferredSize(List<Component> children) {
         int width = 0, height = 0;
@@ -46,6 +58,12 @@ public class BorderLayout implements LayoutManager {
         return new TerminalSize(Math.max(width, 1), Math.max(height, 1));
     }
 
+    /**
+     * Lay out children within the given area.
+     *
+     * @param area the available area
+     * @param children the child components
+     */
     @Override
     public void doLayout(TerminalSize area, List<Component> children) {
         int northHeight = 0, southHeight = 0, eastWidth = 0, westWidth = 0;

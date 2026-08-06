@@ -35,11 +35,20 @@ public class PacketFlow implements AnimatedBackground {
     private final List<Packet> packets = new ArrayList<>();
     private final List<Integer> pulseFrames = new ArrayList<>();
 
+    /**
+     * Constructs a new PacketFlow instance.
+     * @param preferredSize the preferred size
+     */
     public PacketFlow(TerminalSize preferredSize) {
         onResize(preferredSize);
     }
 
     @Override
+    /**
+     * Renders one frame of the animation into the given graphics buffer.
+     * @param graphics the graphics
+     * @param size the size
+     */
     public void renderFrame(TextGraphics graphics, TerminalSize size) {
         lastSize = size;
         if (size.columns() <= 0 || size.rows() <= 0) {
@@ -233,6 +242,10 @@ public class PacketFlow implements AnimatedBackground {
     }
 
     @Override
+    /**
+     * Reallocates internal buffers for the new terminal size.
+     * @param newSize the new size
+     */
     public synchronized void onResize(TerminalSize newSize) {
         this.lastSize = newSize;
         nodes.clear();
@@ -242,26 +255,44 @@ public class PacketFlow implements AnimatedBackground {
     }
 
     @Override
+    /**
+     * Starts the animation.
+     */
     public void start() {
         running = true;
     }
 
     @Override
+    /**
+     * Stops the animation.
+     */
     public void stop() {
         running = false;
     }
 
     @Override
+    /**
+     * Returns whether the running flag is set.
+     * @return the result
+     */
     public boolean isRunning() {
         return running;
     }
 
     @Override
+    /**
+     * Returns the target frame rate in frames per second.
+     * @return the result
+     */
     public int targetFps() {
         return TARGET_FPS;
     }
 
     @Override
+    /**
+     * Returns the last terminal size the animation was rendered at.
+     * @return the result
+     */
     public TerminalSize lastSize() {
         return lastSize;
     }
@@ -294,6 +325,14 @@ public class PacketFlow implements AnimatedBackground {
         private final int y;
         private final List<Node> neighbors = new ArrayList<>();
 
+        /**
+         * Constructs a new Node with the given index, label, and fixed position.
+         *
+         * @param index the node index
+         * @param label the human-readable node label
+         * @param x the column coordinate
+         * @param y the row coordinate
+         */
         public Node(int index, String label, int x, int y) {
             this.index = index;
             this.label = label;
@@ -301,10 +340,15 @@ public class PacketFlow implements AnimatedBackground {
             this.y = y;
         }
 
+        /** Returns the node index.
+ * @return the index */
+
         public int index() { return index; }
         public String label() { return label; }
         public int x() { return x; }
         public int y() { return y; }
+        /** Returns the list of neighboring nodes.
+ * @return the neighbors */
         public List<Node> neighbors() { return List.copyOf(neighbors); }
     }
 
@@ -313,14 +357,29 @@ public class PacketFlow implements AnimatedBackground {
         private final Node a;
         private final Node b;
 
+        /**
+         * Constructs an undirected edge between the two given nodes.
+         *
+         * @param a the first endpoint
+         * @param b the second endpoint
+         */
         public Edge(Node a, Node b) {
             this.a = a;
             this.b = b;
         }
 
+        /** Returns the first endpoint.
+ * @return endpoint A */
+
         public Node a() { return a; }
         public Node b() { return b; }
 
+        /**
+         * Indicates whether some other object is an edge equal to this one (order-insensitive).
+         *
+         * @param o the object to compare
+         * @return true if the other edge connects the same two nodes
+         */
         @Override
         public boolean equals(Object o) {
             if (this == o) return true;
@@ -328,6 +387,11 @@ public class PacketFlow implements AnimatedBackground {
             return (a == other.a && b == other.b) || (a == other.b && b == other.a);
         }
 
+        /**
+         * Returns the hash code value for this edge.
+         *
+         * @return the hash code
+         */
         @Override
         public int hashCode() {
             return System.identityHashCode(a) + System.identityHashCode(b);
@@ -341,6 +405,14 @@ public class PacketFlow implements AnimatedBackground {
         private double progress;
         private final AnsiColor color;
 
+        /**
+         * Constructs a new packet traveling from source to destination.
+         *
+         * @param source the source node
+         * @param destination the destination node
+         * @param progress the initial travel progress in 0.0..1.0
+         * @param color the color used to render the packet
+         */
         public Packet(Node source, Node destination, double progress, AnsiColor color) {
             this.source = source;
             this.destination = destination;
@@ -348,9 +420,14 @@ public class PacketFlow implements AnimatedBackground {
             this.color = color;
         }
 
+        /** Returns the source node.
+ * @return the source */
+
         public Node source() { return source; }
         public Node destination() { return destination; }
         public double progress() { return progress; }
+        /** Returns the packet color.
+ * @return the color */
         public AnsiColor color() { return color; }
     }
 }

@@ -46,55 +46,89 @@ public class WarpStarfield extends AbstractComponent implements AnimatedBackgrou
     private volatile int centerX;
     private volatile int centerY;
 
+    /**
+     * Creates a WarpStarfield with the given preferred size and 60 stars.
+     *
+     * @param preferredSize the initial preferred terminal size
+     */
     public WarpStarfield(TerminalSize preferredSize) {
         this(preferredSize, 60);
     }
 
+    /**
+     * Creates a WarpStarfield with the given preferred size and star count.
+     *
+     * @param preferredSize the initial preferred terminal size
+     * @param starCount     the number of stars to render; clamped to at least 1
+     */
     public WarpStarfield(TerminalSize preferredSize, int starCount) {
         this.preferredSize = preferredSize;
         this.starCount = Math.max(1, starCount);
     }
 
+    /**
+     * Sets the target frame rate for the animation, clamped to {@code [1, 60]}.
+     *
+     * @param fps the desired frames per second
+     */
     public void setTargetFps(int fps) {
         this.targetFps = Math.max(MIN_FPS, Math.min(MAX_FPS, fps));
     }
 
+    /** Returns the current target frame rate in frames per second. */
     public int getTargetFps() {
         return targetFps;
     }
 
+    /**
+     * Sets the warp speed (depth decrement per tick); clamped to a minimum of 0.001.
+     *
+     * @param speed the new warp speed
+     */
     public void setWarpSpeed(double speed) {
         this.warpSpeed = Math.max(0.001, speed);
     }
 
+    /** Returns the current warp speed. */
     public double getWarpSpeed() {
         return warpSpeed;
     }
 
+    /**
+     * Pauses or resumes the animation.
+     *
+     * @param paused {@code true} to pause, {@code false} to resume
+     */
     public void setPaused(boolean paused) {
         this.paused = paused;
     }
 
+    /** Returns whether the animation is currently paused. */
     public boolean isPaused() {
         return paused;
     }
 
+    /** Returns the current frame counter value. */
     public int getFrame() {
         return frame;
     }
 
+    /** Returns the X coordinate of the starfield center (viewport center). */
     public int getCenterX() {
         return centerX;
     }
 
+    /** Returns the Y coordinate of the starfield center (viewport center). */
     public int getCenterY() {
         return centerY;
     }
 
+    /** Returns the number of stars currently allocated, or 0 before the first resize. */
     public int getStarCount() {
         return stars == null ? 0 : stars.length;
     }
 
+    /** Resets the frame counter and timing accumulator to their initial state. */
     public void resetFrame() {
         frame = 0;
         lastTickNanos = -1;
@@ -130,17 +164,33 @@ public class WarpStarfield extends AbstractComponent implements AnimatedBackgrou
         }
     }
 
+    /**
+     * Returns the preferred terminal size supplied at construction.
+     *
+     * @return the preferred size
+     */
     @Override
     protected TerminalSize calculatePreferredSize() {
         return preferredSize;
     }
 
+    /**
+     * Updates bounds and re-initializes star positions for the new size.
+     *
+     * @param position the new position
+     * @param size     the new size
+     */
     @Override
     public void setBounds(TerminalPosition position, TerminalSize size) {
         super.setBounds(position, size);
         onResize(size);
     }
 
+    /**
+     * Recomputes the viewport center and (re)allocates stars when the size changes.
+     *
+     * @param newSize the new terminal size
+     */
     @Override
     public void onResize(TerminalSize newSize) {
         centerX = newSize.columns() / 2;
@@ -153,11 +203,23 @@ public class WarpStarfield extends AbstractComponent implements AnimatedBackgrou
         }
     }
 
+    /**
+     * Renders the current animation frame to the component's own bounds.
+     *
+     * @param graphics the text-graphics target
+     */
     @Override
     protected void drawComponent(TextGraphics graphics) {
         renderFrame(graphics, getSize());
     }
 
+    /**
+     * Renders the starfield to the given graphics target and size, advancing
+     * each star and drawing it with a depth-based glyph/color.
+     *
+     * @param graphics the text-graphics target
+     * @param size     the area to render into
+     */
     @Override
     public void renderFrame(TextGraphics graphics, TerminalSize size) {
         if (size.columns() <= 0 || size.rows() <= 0) return;
@@ -252,21 +314,25 @@ public class WarpStarfield extends AbstractComponent implements AnimatedBackgrou
         return aWeight >= 0.5 ? a : b;
     }
 
+    /** Returns the configured target frame rate. */
     @Override
     public int targetFps() {
         return targetFps;
     }
 
+    /** Marks the animation as running. */
     @Override
     public void start() {
         running = true;
     }
 
+    /** Marks the animation as stopped. */
     @Override
     public void stop() {
         running = false;
     }
 
+    /** Returns whether the animation is currently running. */
     @Override
     public boolean isRunning() {
         return running;
@@ -278,6 +344,13 @@ public class WarpStarfield extends AbstractComponent implements AnimatedBackgrou
         double y;
         double z;
 
+        /**
+         * Creates a star at the given 3D coordinates.
+         *
+         * @param x the X coordinate in normalized space
+         * @param y the Y coordinate in normalized space
+         * @param z the Z depth coordinate
+         */
         Star(double x, double y, double z) {
             this.x = x;
             this.y = y;

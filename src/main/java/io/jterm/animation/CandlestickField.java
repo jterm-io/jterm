@@ -27,11 +27,20 @@ public class CandlestickField implements AnimatedBackground {
     private volatile TerminalSize lastSize;
     private ChartBand[] bands;
 
+    /**
+     * Constructs a new CandlestickField instance.
+     * @param preferredSize the preferred size
+     */
     public CandlestickField(TerminalSize preferredSize) {
         onResize(preferredSize);
     }
 
     @Override
+    /**
+     * Renders one frame of the animation into the given graphics buffer.
+     * @param graphics the graphics
+     * @param size the size
+     */
     public void renderFrame(TextGraphics graphics, TerminalSize size) {
         lastSize = size;
         if (size.columns() <= 0 || size.rows() <= 0) {
@@ -97,6 +106,10 @@ public class CandlestickField implements AnimatedBackground {
     }
 
     @Override
+    /**
+     * Reallocates internal buffers for the new terminal size.
+     * @param newSize the new size
+     */
     public void onResize(TerminalSize newSize) {
         this.lastSize = newSize;
         if (newSize.columns() > 0 && newSize.rows() > 0) {
@@ -105,15 +118,20 @@ public class CandlestickField implements AnimatedBackground {
     }
 
     @Override
+    /** Starts the animation. */
     public void start() { running = true; }
 
     @Override
     public void stop() { running = false; }
 
     @Override
+    /** Returns whether the animation is running.
+     * @return true if running */
     public boolean isRunning() { return running; }
 
     @Override
+    /** Returns the target frame rate.
+ * @return the target FPS */
     public int targetFps() { return TARGET_FPS; }
 
     @Override
@@ -223,6 +241,9 @@ public class CandlestickField implements AnimatedBackground {
             return Math.max(0, Math.min(height - 1, row));
         }
 
+        /** Returns all candle data.
+ * @return the candle array */
+
         public Candle[] getCandles() { return candles; }
         public int getStartRow() { return startRow; }
         public int getHeight() { return height; }
@@ -242,9 +263,14 @@ public class CandlestickField implements AnimatedBackground {
             this.low = low;
         }
 
+        /** Returns whether this candle is bullish (close >= open).
+ * @return true if bullish */
+
         public boolean isBullish() { return close >= open; }
         public double getOpen() { return open; }
         public double getClose() { return close; }
+        /** Returns the high price.
+ * @return the high price */
         public double getHigh() { return high; }
         public double getLow() { return low; }
     }

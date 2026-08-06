@@ -34,35 +34,67 @@ public class AnimationManager {
     private long lastTickNanos = -1;
     private long accumulatedNs;
 
+    /**
+     * Constructs a new AnimationManager instance.
+     * @param gui the gui
+     */
     public AnimationManager(DefaultTextGUI gui) {
         this(gui, 60);
     }
 
+    /**
+     * Constructs a new AnimationManager instance.
+     * @param gui the gui
+     * @param targetFps the target fps
+     */
     public AnimationManager(DefaultTextGUI gui, int targetFps) {
         this.gui = gui;
         this.targetFps = Math.max(MIN_FPS, Math.min(MAX_FPS, targetFps));
     }
 
+    /**
+     * Returns the target fps.
+     * @return the result
+     */
     public int getTargetFps() {
         return targetFps;
     }
 
+    /**
+     * Sets the target fps.
+     * @param fps the fps
+     */
     public void setTargetFps(int fps) {
         this.targetFps = Math.max(MIN_FPS, Math.min(MAX_FPS, fps));
     }
 
+    /**
+     * Register.
+     * @param background the background
+     */
     public void register(AnimatedBackground background) {
         backgrounds.addIfAbsent(background);
     }
 
+    /**
+     * Unregister.
+     * @param background the background
+     */
     public void unregister(AnimatedBackground background) {
         backgrounds.remove(background);
     }
 
+    /**
+     * Stops the animation.
+     */
     public void stop() {
         running = false;
     }
 
+    /**
+     * Returns whether the running flag is set.
+     * @return the result
+     */
     public boolean isRunning() {
         return running;
     }

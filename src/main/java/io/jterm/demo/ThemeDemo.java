@@ -27,7 +27,7 @@ import java.util.List;
 /**
  * Theme demo: shows all 5 built-in color themes with live switching.
  *
- * <h3>Keyboard</h3>
+ * <p><b>Keyboard</b></p>
  * <ul>
  *   <li><b>t</b> — cycle to next theme</li>
  *   <li><b>1</b> — Dark (white on black)</li>

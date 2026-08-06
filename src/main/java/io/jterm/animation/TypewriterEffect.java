@@ -50,6 +50,12 @@ public class TypewriterEffect extends AbstractComponent implements AnimatedBackg
 
     private TerminalSize preferredSize;
 
+    /**
+     * Constructs a new TypewriterEffect instance.
+     * @param lines the lines
+     * @param color the color
+     * @param backgroundColor the background color
+     */
     public TypewriterEffect(List<String> lines, Color color, Color backgroundColor) {
         this.lines = List.copyOf(lines != null ? lines : List.of());
         this.color = color != null ? color : AnsiColor.DEFAULT;
@@ -57,14 +63,28 @@ public class TypewriterEffect extends AbstractComponent implements AnimatedBackg
         this.preferredSize = computePreferredSize();
     }
 
+    /**
+     * Constructs a new TypewriterEffect instance.
+     * @param text the text
+     * @param color the color
+     * @param backgroundColor the background color
+     */
     public TypewriterEffect(String text, Color color, Color backgroundColor) {
         this(splitLines(text), color, backgroundColor);
     }
 
+    /**
+     * Constructs a new TypewriterEffect instance.
+     * @param lines the lines
+     */
     public TypewriterEffect(List<String> lines) {
         this(lines, ThemeManager.active().foreground(), ThemeManager.active().background());
     }
 
+    /**
+     * Constructs a new TypewriterEffect instance.
+     * @param text the text
+     */
     public TypewriterEffect(String text) {
         this(text, ThemeManager.active().foreground(), ThemeManager.active().background());
     }
@@ -88,78 +108,149 @@ public class TypewriterEffect extends AbstractComponent implements AnimatedBackg
         return new TerminalSize(Math.max(width, 1), Math.max(lines.size(), 1));
     }
 
+    /**
+     * Returns the lines.
+     * @return the result
+     */
     public List<String> getLines() {
         return lines;
     }
 
+    /**
+     * Returns the current line.
+     * @return the result
+     */
     public int getCurrentLine() {
         return currentLine;
     }
 
+    /**
+     * Returns the current col.
+     * @return the result
+     */
     public int getCurrentCol() {
         return currentCol;
     }
 
+    /**
+     * Returns the chars per frame.
+     * @return the result
+     */
     public int getCharsPerFrame() {
         return charsPerFrame;
     }
 
+    /**
+     * Sets the chars per frame.
+     * @param charsPerFrame the chars per frame
+     */
     public void setCharsPerFrame(int charsPerFrame) {
         this.charsPerFrame = Math.max(MIN_CHARS_PER_FRAME, Math.min(MAX_CHARS_PER_FRAME, charsPerFrame));
     }
 
+    /**
+     * Returns the line delay.
+     * @return the result
+     */
     public int getLineDelay() {
         return lineDelay;
     }
 
+    /**
+     * Sets the line delay.
+     * @param lineDelay the line delay
+     */
     public void setLineDelay(int lineDelay) {
         this.lineDelay = Math.max(MIN_LINE_DELAY, Math.min(MAX_LINE_DELAY, lineDelay));
     }
 
+    /**
+     * Returns the target fps.
+     * @return the result
+     */
     public int getTargetFps() {
         return targetFps;
     }
 
+    /**
+     * Sets the target fps.
+     * @param targetFps the target fps
+     */
     public void setTargetFps(int targetFps) {
         this.targetFps = Math.max(MIN_TARGET_FPS, Math.min(MAX_TARGET_FPS, targetFps));
     }
 
+    /**
+     * Returns whether the cursor shown flag is set.
+     * @return the result
+     */
     public boolean isCursorShown() {
         return showCursor;
     }
 
+    /**
+     * Sets the show cursor.
+     * @param showCursor the show cursor
+     */
     public void setShowCursor(boolean showCursor) {
         this.showCursor = showCursor;
     }
 
+    /**
+     * Returns the color.
+     * @return the result
+     */
     public Color getColor() {
         return color;
     }
 
+    /**
+     * Sets the color.
+     * @param color the color
+     */
     public void setColor(Color color) {
         this.color = color != null ? color : AnsiColor.DEFAULT;
         invalidate();
     }
 
+    /**
+     * Returns the background color.
+     * @return the result
+     */
     public Color getBackgroundColor() {
         return backgroundColor;
     }
 
+    /**
+     * Sets the background color.
+     * @param backgroundColor the background color
+     */
     public void setBackgroundColor(Color backgroundColor) {
         this.backgroundColor = backgroundColor != null ? backgroundColor : AnsiColor.DEFAULT;
         invalidate();
     }
 
+    /**
+     * Returns whether the complete flag is set.
+     * @return the result
+     */
     public boolean isComplete() {
         return complete;
     }
 
+    /**
+     * On complete.
+     * @param callback the callback
+     */
     public void onComplete(Runnable callback) {
         if (callback != null) {
             completeCallbacks.add(callback);
         }
     }
 
+    /**
+     * Resets the animation to its initial state.
+     */
     public void reset() {
         currentLine = 0;
         currentCol = 0;
@@ -171,27 +262,49 @@ public class TypewriterEffect extends AbstractComponent implements AnimatedBackg
     }
 
     @Override
+    /**
+     * Computes the preferred size for this component.
+     * @return the result
+     */
     protected TerminalSize calculatePreferredSize() {
         return preferredSize;
     }
 
     @Override
+    /**
+     * Sets the bounds.
+     * @param position the position
+     * @param size the size
+     */
     public void setBounds(TerminalPosition position, TerminalSize size) {
         super.setBounds(position, size);
         onResize(size);
     }
 
     @Override
+    /**
+     * Reallocates internal buffers for the new terminal size.
+     * @param newSize the new size
+     */
     public void onResize(TerminalSize newSize) {
         // No internal buffer to resize; rendering derives everything from size and lines.
     }
 
     @Override
+    /**
+     * Draws this component into the supplied graphics context.
+     * @param graphics the graphics
+     */
     protected void drawComponent(TextGraphics graphics) {
         renderFrame(graphics, getSize());
     }
 
     @Override
+    /**
+     * Renders one frame of the animation into the given graphics buffer.
+     * @param graphics the graphics
+     * @param size the size
+     */
     public void renderFrame(TextGraphics graphics, TerminalSize size) {
         if (size.columns() <= 0 || size.rows() <= 0) {
             return;
@@ -333,21 +446,35 @@ public class TypewriterEffect extends AbstractComponent implements AnimatedBackg
     }
 
     @Override
+    /**
+     * Starts the animation.
+     */
     public void start() {
         running = true;
     }
 
     @Override
+    /**
+     * Stops the animation.
+     */
     public void stop() {
         running = false;
     }
 
     @Override
+    /**
+     * Returns whether the running flag is set.
+     * @return the result
+     */
     public boolean isRunning() {
         return running;
     }
 
     @Override
+    /**
+     * Returns the target frame rate in frames per second.
+     * @return the result
+     */
     public int targetFps() {
         return targetFps;
     }

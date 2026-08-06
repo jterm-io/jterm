@@ -20,32 +20,81 @@ public class LinearLayout implements LayoutManager {
     public enum Alignment { BEGINNING, CENTER, END, FILL }
     public enum GrowPolicy { NONE, CAN_GROW }
 
+    /** Layout data for components in a linear layout.
+     * Specifies alignment and grow flags. */
     public static class LinearLayoutData implements LayoutData {
         private final Alignment alignment;
         private final GrowPolicy growPolicy;
 
+        /**
+         * Create layout data with default center alignment and no growth.
+         */
         public LinearLayoutData() { this(Alignment.CENTER, GrowPolicy.NONE); }
+        /**
+         * Create layout data with the given alignment and no growth.
+         *
+         * @param alignment the alignment within the container
+         */
         public LinearLayoutData(Alignment alignment) { this(alignment, GrowPolicy.NONE); }
+        /**
+         * Create layout data with center alignment and the given growth policy.
+         *
+         * @param growPolicy the growth policy
+         */
         public LinearLayoutData(GrowPolicy growPolicy) { this(Alignment.CENTER, growPolicy); }
+        /**
+         * Create layout data with the given alignment and growth policy.
+         *
+         * @param alignment  the alignment within the container
+         * @param growPolicy the growth policy
+         */
         public LinearLayoutData(Alignment alignment, GrowPolicy growPolicy) {
             this.alignment = alignment;
             this.growPolicy = growPolicy;
         }
 
+        /**
+         * Return the alignment for this layout data.
+         *
+         * @return the alignment
+         */
         public Alignment alignment() { return alignment; }
+        /**
+         * Return the growth policy for this layout data.
+         *
+         * @return the growth policy
+         */
         public GrowPolicy growPolicy() { return growPolicy; }
     }
 
     private final Direction direction;
     private final int spacing;
 
+    /**
+     * Create a linear layout with the given direction and no spacing.
+     *
+     * @param direction the stacking direction
+     */
     public LinearLayout(Direction direction) { this(direction, 0); }
+    /**
+     * Create a linear layout with the given direction and inter-child spacing.
+     *
+     * @param direction the stacking direction
+     * @param spacing   gap between children (must be &gt;= 0)
+     */
     public LinearLayout(Direction direction, int spacing) {
         if (spacing < 0) throw new IllegalArgumentException("spacing must be >= 0");
         this.direction = direction;
         this.spacing = spacing;
     }
 
+    /**
+     * Compute the preferred size for the given children.
+     *
+     * @param children the child components
+     *
+     * @return the computed preferred size
+     */
     @Override
     public TerminalSize getPreferredSize(List<Component> children) {
         int w = 0, h = 0;
@@ -70,6 +119,12 @@ public class LinearLayout implements LayoutManager {
         return new TerminalSize(Math.max(w, 1), Math.max(h, 1));
     }
 
+    /**
+     * Lay out children within the given area.
+     *
+     * @param area the available area
+     * @param children the child components
+     */
     @Override
     public void doLayout(TerminalSize area, List<Component> children) {
         int totalPref = 0;

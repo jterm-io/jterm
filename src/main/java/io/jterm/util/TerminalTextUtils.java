@@ -4,14 +4,35 @@ package io.jterm.util;
 public final class TerminalTextUtils {
     private TerminalTextUtils() {}
 
+    /**
+     * Return whether controlchar is true.
+     *
+     * @param c the character to write
+     *
+     * @return true if controlchar, false otherwise
+     */
     public static boolean isControlChar(char c) {
         return c < 32 || c == 127;
     }
 
+    /**
+     * Return whether printable is true.
+     *
+     * @param c the character to write
+     *
+     * @return true if printable, false otherwise
+     */
     public static boolean isPrintable(char c) {
         return !isControlChar(c) && c != 0x7f;
     }
 
+    /**
+     * Return whether chardoublewidth is true.
+     *
+     * @param c the character to write
+     *
+     * @return true if chardoublewidth, false otherwise
+     */
     public static boolean isCharDoubleWidth(char c) {
         var block = Character.UnicodeBlock.of(c);
         return block == Character.UnicodeBlock.CJK_UNIFIED_IDEOGRAPHS

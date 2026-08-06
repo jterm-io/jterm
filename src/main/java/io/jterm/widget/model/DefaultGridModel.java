@@ -59,21 +59,29 @@ public class DefaultGridModel<T> implements GridModel<T> {
         fireGridChanged();
     }
 
+    /** {@inheritDoc} — returns the current row count. */
     @Override
     public int getRowCount() {
         return rows.size();
     }
 
+    /**
+     * {@inheritDoc} — returns the row at the given index.
+     *
+     * @throws IndexOutOfBoundsException if the index is out of range
+     */
     @Override
     public T getRow(int index) {
         return rows.get(index);  // CopyOnWriteArrayList.get throws IndexOutOfBoundsException for invalid index
     }
 
+    /** {@inheritDoc} — adds a listener to be notified on model changes. */
     @Override
     public void addGridListener(GridListener listener) {
         listeners.add(listener);
     }
 
+    /** {@inheritDoc} — removes a previously added listener. */
     @Override
     public void removeGridListener(GridListener listener) {
         listeners.remove(listener);

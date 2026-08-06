@@ -26,12 +26,27 @@ public class DefaultScreen implements Screen {
      *  delta refreshes know the terminal's actual current SGR state. */
     private final SgrStateTracker sgrState = new SgrStateTracker();
 
+    /**
+     * Return the terminal.
+     *
+     * @return the terminal
+     */
     public Terminal getTerminal() { return terminal; }
 
+    /**
+     * Create a screen backed by a MockTerminal of the given size.
+     *
+     * @param size the screen dimensions
+     */
     public DefaultScreen(TerminalSize size) {
         this(new io.jterm.core.MockTerminal(size));
     }
 
+    /**
+     * Create a screen backed by the given terminal.
+     *
+     * @param terminal the terminal to wrap
+     */
     public DefaultScreen(Terminal terminal) {
         this.terminal = terminal;
         try {
@@ -43,6 +58,11 @@ public class DefaultScreen implements Screen {
         this.frontBuffer = new ScreenBuffer(this.size);
     }
 
+    /**
+     * Enter private mode and prepare the screen for rendering.
+     *
+     * @throws IOException if an I/O error or other failure occurs
+     */
     @Override
     public void startScreen() throws IOException {
         terminal.enterPrivateMode();
@@ -50,6 +70,11 @@ public class DefaultScreen implements Screen {
         started = true;
     }
 
+    /**
+     * Leave private mode and restore the terminal.
+     *
+     * @throws IOException if an I/O error or other failure occurs
+     */
     @Override
     public void stopScreen() throws IOException {
         started = false;
@@ -57,33 +82,70 @@ public class DefaultScreen implements Screen {
         terminal.exitPrivateMode();
     }
 
+    /**
+     * Close the terminal and release resources.
+     *
+     * @throws IOException if an I/O error or other failure occurs
+     */
     @Override
     public void close() throws IOException {
         stopScreen();
         terminal.close();
     }
 
+    /**
+     * Clear the back buffer with the theme background.
+     */
     @Override
     public void clear() {
         var theme = ThemeManager.active();
         backBuffer.fill(new TextCell(' ', theme.foreground(), theme.background()));
     }
 
+    /**
+     * Set a cell in the back buffer.
+     *
+     * @param col the column index (0-based)
+     * @param row the row index (0-based)
+     * @param cell the cell to write
+     */
     @Override
     public void setCell(int col, int row, TextCell cell) {
         backBuffer.setCell(col, row, cell);
     }
 
+    /**
+     * Set a cell in the back buffer.
+     *
+     * @param pos the pos
+     * @param cell the cell to write
+     */
     @Override
     public void setCell(TerminalPosition pos, TextCell cell) {
         backBuffer.setCell(pos, cell);
     }
 
+    /**
+     * Return a cell from the front (visible) buffer.
+     *
+     * @param col the column index (0-based)
+     * @param row the row index (0-based)
+     *
+     * @return the frontcell
+     */
     @Override
     public TextCell getFrontCell(int col, int row) {
         return frontBuffer.getCell(col, row);
     }
 
+    /**
+     * Return a cell from the back (rendering) buffer.
+     *
+     * @param col the column index (0-based)
+     * @param row the row index (0-based)
+     *
+     * @return the backcell
+     */
     @Override
     public TextCell getBackCell(int col, int row) {
         return backBuffer.getCell(col, row);
@@ -92,11 +154,23 @@ public class DefaultScreen implements Screen {
     /** Returns the back buffer so external code (e.g. screen mirroring) can write directly. */
     public ScreenBuffer getBackBuffer() { return backBuffer; }
 
+    /**
+     * Flush the back buffer to the terminal.
+     *
+     * @throws IOException if an I/O error or other failure occurs
+     */
     @Override
     public void refresh() throws IOException {
         refresh(RefreshType.AUTOMATIC);
     }
 
+    /**
+     * Flush the back buffer to the terminal.
+     *
+     * @param type the type
+     *
+     * @throws IOException if an I/O error or other failure occurs
+     */
     @Override
     public void refresh(RefreshType type) throws IOException {
         if (!started) {
@@ -171,11 +245,23 @@ public class DefaultScreen implements Screen {
         terminal.flush();
     }
 
+    /**
+     * Return the current terminal size (columns x rows).
+     *
+     * @return the terminalsize
+     */
     @Override
     public TerminalSize getTerminalSize() {
         return size;
     }
 
+    /**
+     * Check terminal size and resize buffers if changed.
+     *
+     * @return the (possibly updated) terminal size
+     *
+     * @throws IOException if an I/O error or other failure occurs
+     */
     @Override
     public TerminalSize doResizeIfNecessary() throws IOException {
         var newSize = terminal.getTerminalSize();
@@ -187,11 +273,21 @@ public class DefaultScreen implements Screen {
         return size;
     }
 
+    /**
+     * Move the cursor to the specified column and row.
+     *
+     * @param position the terminal position
+     */
     @Override
     public void setCursorPosition(TerminalPosition position) {
         this.cursorPosition = position;
     }
 
+    /**
+     * Return the virtual cursor position.
+     *
+     * @return the cursorposition
+     */
     @Override
     public TerminalPosition getCursorPosition() {
         return cursorPosition;

@@ -23,37 +23,86 @@ public class AbstractWindow implements Window {
     private volatile Component focusedComponent;
     private volatile int titleBarHeight = 1;
 
+    /**
+     * Create a window with the given title.
+     *
+     * @param title the window title
+     */
     public AbstractWindow(String title) {
         this.title = title;
         this.contents = new Panel();
     }
 
+    /**
+     * Create a window with an empty title.
+     */
     public AbstractWindow() { this(""); }
 
+    /**
+     * Return the window title.
+     *
+     * @return the title
+     */
     @Override
     public String getTitle() { return title; }
 
+    /**
+     * Set the window title.
+     *
+     * @param title the window title
+     */
     @Override
     public void setTitle(String title) { this.title = title; }
 
+    /**
+     * Return the root content panel.
+     *
+     * @return the contents
+     */
     @Override
     public Panel getContents() { return contents; }
 
+    /**
+     * Return the window position (top-left corner).
+     *
+     * @return the position
+     */
     @Override
     public TerminalPosition getPosition() { return position; }
 
+    /**
+     * Return the window size.
+     *
+     * @return the size
+     */
     @Override
     public TerminalSize getSize() { return size; }
 
+    /**
+     * Set the window hint flags.
+     *
+     * @param hints the window hints
+     */
     @Override
     public void setHints(List<WindowHint> hints) {
         this.hints.clear();
         this.hints.addAll(hints);
     }
 
+    /**
+     * Return the window hint flags.
+     *
+     * @return the hints
+     */
     @Override
     public List<WindowHint> getHints() { return new ArrayList<>(hints); }
 
+    /**
+     * Set the window position and size.
+     *
+     * @param position the terminal position
+     * @param size the terminal dimensions
+     */
     @Override
     public void setBounds(TerminalPosition position, TerminalSize size) {
         this.position = position;
@@ -67,6 +116,11 @@ public class AbstractWindow implements Window {
         }
     }
 
+    /**
+     * Render this window to the given graphics context.
+     *
+     * @param graphics the graphics context to draw on
+     */
     @Override
     public void draw(TextGraphics graphics) {
         var size = getSize();
@@ -98,6 +152,11 @@ public class AbstractWindow implements Window {
         }
     }
 
+    /**
+     * Draw the window border, title bar, and decorations.
+     *
+     * @param graphics the graphics context to draw on
+     */
     protected void drawDecorations(TextGraphics graphics) {
         var size = getSize();
         var theme = ThemeManager.active();
@@ -117,9 +176,19 @@ public class AbstractWindow implements Window {
         graphics.drawString(0, size.rows() - 1, "└" + "─".repeat(Math.max(0, size.columns() - 2)) + "┘", borderCell);
     }
 
+    /**
+     * Return the component that currently has focus.
+     *
+     * @return the focused component, or null if none has focus
+     */
     @Override
     public Component getFocusedComponent() { return focusedComponent; }
 
+    /**
+     * Set the focused component for this window.
+     *
+     * @param component the component
+     */
     @Override
     public void setFocusedComponent(Component component) {
         if (focusedComponent != null) focusedComponent.setFocused(false);

@@ -10,6 +10,9 @@ public class AnimationTimer {
     private volatile boolean running;
     private Thread animationThread;
 
+    /** Creates a timer with the specified target FPS and frame callback.
+ * @param targetFps the desired frames per second
+ * @param frameCallback the callback to invoke on each frame */
     public AnimationTimer(int targetFps, Runnable frameCallback) {
         if (targetFps <= 0) {
             throw new IllegalArgumentException("targetFps must be positive");
@@ -21,6 +24,7 @@ public class AnimationTimer {
         this.frameCallback = frameCallback;
     }
 
+    /** Starts the animation timer loop. */
     public void start() {
         if (running) return;
         running = true;
@@ -43,6 +47,7 @@ public class AnimationTimer {
         });
     }
 
+    /** Stops the animation timer loop. */
     public void stop() {
         running = false;
         if (animationThread != null) {
@@ -50,10 +55,14 @@ public class AnimationTimer {
         }
     }
 
+    /** Returns whether the timer is currently running.
+ * @return true if running */
     public boolean isRunning() {
         return running;
     }
 
+    /** Returns the target frame rate.
+ * @return the target FPS */
     public int getTargetFps() {
         return targetFps;
     }

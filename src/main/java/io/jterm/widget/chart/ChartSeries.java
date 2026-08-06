@@ -10,7 +10,7 @@ import java.util.List;
  * A single data series for {@link Chart}. Immutable after construction —
  * mutate by replacing the series in the chart.
  *
- * <h3>Usage</h3>
+ * <p><b>Usage</b></p>
  * <pre>{@code
  * var series = new ChartSeries("AAPL", List.of(150.0, 152.0, 149.0, 155.0),
  *         ChartType.LINE, AnsiColor.GREEN);

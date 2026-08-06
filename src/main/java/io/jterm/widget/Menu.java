@@ -17,7 +17,7 @@ import java.util.List;
  * A dropdown menu with a title (shown in the {@link MenuBar}) and a list of
  * {@link MenuItem}s and {@link MenuSeparator}s.
  *
- * <h3>Keyboard interaction</h3>
+ * <p><b>Keyboard interaction</b></p>
  * <ul>
  *   <li><b>Arrow Up/Down</b> — move selection within the dropdown</li>
  *   <li><b>Enter</b> — activate the selected item and close the menu</li>
@@ -56,10 +56,21 @@ public class Menu extends AbstractComponent {
         return new TextCell('─', t.border(), t.background());
     }
 
+    /**
+     * Creates a menu whose mnemonic defaults to the first character of the title.
+     *
+     * @param title the menu title shown in the menu bar
+     */
     public Menu(String title) {
         this(title, title.isEmpty() ? '\0' : Character.toLowerCase(title.charAt(0)));
     }
 
+    /**
+     * Creates a menu with an explicit mnemonic.
+     *
+     * @param title    the menu title shown in the menu bar
+     * @param mnemonic the mnemonic character used for keyboard activation
+     */
     public Menu(String title, char mnemonic) {
         this.title = title;
         this.mnemonic = mnemonic;
@@ -67,31 +78,50 @@ public class Menu extends AbstractComponent {
 
     // ── Configuration ──────────────────────────────────────────────
 
+    /** Returns the menu title. */
     public String getTitle() { return title; }
 
+    /** Returns the mnemonic character. */
     public char getMnemonic() { return mnemonic; }
 
+    /** Adds a {@link MenuItem} to the dropdown. */
     public void addMenuItem(MenuItem item) {
         entries.add(item);
         invalidate();
     }
 
+    /**
+     * Convenience method: creates and adds a {@link MenuItem} with the given label and action.
+     *
+     * @param label  the item label
+     * @param action the action to run when activated
+     */
     public void addMenuItem(String label, Runnable action) {
         entries.add(new MenuItem(label, action));
         invalidate();
     }
 
+    /** Adds a separator line to the dropdown. */
     public void addSeparator() {
         entries.add(new MenuSeparator());
         invalidate();
     }
 
+    /** Returns a defensive copy of the entries (items and separators). */
     public List<Object> getEntries() { return new ArrayList<>(entries); }
 
+    /** Returns whether the dropdown is currently open. */
     public boolean isOpen() { return open; }
 
+    /** Returns the index of the currently selected dropdown entry. */
     public int getSelectedIndex() { return selectedIndex; }
 
+    /**
+     * Opens or closes the dropdown. Opening resets the selection to the first
+     * selectable entry.
+     *
+     * @param open {@code true} to open, {@code false} to close
+     */
     public void setOpen(boolean open) {
         this.open = open;
         if (open) {
@@ -104,6 +134,11 @@ public class Menu extends AbstractComponent {
 
     // ── Layout ─────────────────────────────────────────────────────
 
+    /**
+     * Returns the preferred size of the title bar cell.
+     *
+     * @return the preferred terminal size (title length + 2 padding, 1 row)
+     */
     @Override
     protected TerminalSize calculatePreferredSize() {
         // In the bar, the title is shown as " Title " — 2 chars padding
@@ -130,6 +165,11 @@ public class Menu extends AbstractComponent {
 
     // ── Rendering ─────────────────────────────────────────────────
 
+    /**
+     * Draws the title bar cell and, when open, the dropdown panel below it.
+     *
+     * @param graphics the text-graphics target
+     */
     @Override
     protected void drawComponent(TextGraphics graphics) {
         var size = getSize();
@@ -167,6 +207,12 @@ public class Menu extends AbstractComponent {
 
     // ── Input handling ─────────────────────────────────────────────
 
+    /**
+     * Handles arrow navigation, activation (Enter), and close (Escape/arrows).
+     *
+     * @param keyStroke the keystroke to handle
+     * @return {@code true} if the keystroke was consumed
+     */
     @Override
     public boolean handleKeyStroke(KeyStroke keyStroke) {
         if (!open) return false;

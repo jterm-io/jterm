@@ -11,10 +11,22 @@ public class InputDecoder {
     private int pushback = -1;  // single-byte pushback buffer for \r\n handling
     private boolean skipNextNulOrLf = false;  // set after \r to skip trailing \n/\0
 
+    /**
+     * Create a decoder that reads from the given input stream.
+     *
+     * @param input the input stream to decode
+     */
     public InputDecoder(InputStream input) {
         this.input = input;
     }
 
+    /**
+     * Poll for the next key stroke without blocking.
+     *
+     * @return an Optional containing the next key stroke, or empty if none available
+     *
+     * @throws IOException if an I/O error or other failure occurs
+     */
     public Optional<KeyStroke> poll() throws IOException {
         if (input.available() == 0 && pushback == -1) {
             return Optional.empty();

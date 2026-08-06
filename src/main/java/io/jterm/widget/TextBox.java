@@ -21,10 +21,22 @@ public class TextBox extends AbstractComponent {
     private Color backgroundColorOverride = null;
     private String placeholder = null;
 
+    /** Creates an empty TextBox with default width. */
     public TextBox() {}
+    /**
+     * Creates an empty TextBox with the given preferred column width.
+     *
+     * @param columns the preferred column width
+     */
     public TextBox(int columns) { this.preferredColumns = columns; }
 
+    /** Returns the current text value. */
     public String getValue() { return value; }
+    /**
+     * Sets the text value (uppercase-forced if enabled) and clamps cursor/viewport.
+     *
+     * @param value the new value
+     */
     public void setValue(String value) {
         this.value = forceUppercase ? value.toUpperCase() : value;
         cursorPosition = Math.min(cursorPosition, value.length());
@@ -66,13 +78,24 @@ public class TextBox extends AbstractComponent {
         invalidate();
     }
 
+    /** Returns the placeholder text shown when the field is empty. */
     public String getPlaceholder() { return placeholder; }
 
+    /**
+     * Returns the preferred size (preferred columns × 1 row).
+     *
+     * @return the preferred terminal size
+     */
     @Override
     protected TerminalSize calculatePreferredSize() {
         return new TerminalSize(preferredColumns, 1);
     }
 
+    /**
+     * Renders the value (masked if enabled), placeholder when empty, and cursor.
+     *
+     * @param graphics the text-graphics target
+     */
     @Override
     protected void drawComponent(TextGraphics graphics) {
         var size = getSize();
@@ -105,6 +128,12 @@ public class TextBox extends AbstractComponent {
         }
     }
 
+    /**
+     * Handles Emacs-style and arrow key bindings for editing and cursor movement.
+     *
+     * @param keyStroke the keystroke to handle
+     * @return {@code true} if the keystroke was consumed
+     */
     @Override
     public boolean handleKeyStroke(KeyStroke keyStroke) {
         // Emacs-style key bindings (Ctrl+letter arrives as CHARACTER with ctrl=true)

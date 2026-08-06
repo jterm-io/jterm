@@ -25,12 +25,15 @@ public abstract class AbstractComponent implements Component {
     private volatile boolean focused;
     private volatile boolean focusable = true;
 
+    /** {@inheritDoc} */
     @Override
     public TerminalSize getSize() { return size; }
 
+    /** {@inheritDoc} */
     @Override
     public TerminalPosition getPosition() { return position; }
 
+    /** {@inheritDoc} */
     @Override
     public TerminalSize getPreferredSize() {
         if (preferredSizeOverride != null) return preferredSizeOverride;
@@ -54,12 +57,14 @@ public abstract class AbstractComponent implements Component {
      */
     protected abstract TerminalSize calculatePreferredSize();
 
+    /** {@inheritDoc} */
     @Override
     public void setBounds(TerminalPosition position, TerminalSize size) {
         this.position = position;
         this.size = size;
     }
 
+    /** {@inheritDoc} */
     @Override
     public void invalidate() {
         invalid = true;
@@ -67,45 +72,57 @@ public abstract class AbstractComponent implements Component {
         if (parent != null) parent.invalidate();
     }
 
+    /** {@inheritDoc} */
     @Override
     public boolean isVisible() { return visible; }
 
+    /** {@inheritDoc} */
     @Override
     public void setVisible(boolean visible) {
         this.visible = visible;
         invalidate();
     }
 
+    /** {@inheritDoc} */
     @Override
     public LayoutData getLayoutData() { return layoutData; }
 
+    /** {@inheritDoc} */
     @Override
     public void setLayoutData(LayoutData data) { this.layoutData = data; }
 
+    /** {@inheritDoc} */
     @Override
     public Component getParent() { return parent; }
 
+    /** {@inheritDoc} */
     @Override
     public void setParent(Component parent) { this.parent = parent; }
 
+    /** {@inheritDoc} */
     @Override
     public boolean isFocused() { return focused; }
 
+    /** {@inheritDoc} */
     @Override
     public void setFocused(boolean focused) { this.focused = focused; }
 
+    /** {@inheritDoc} */
     @Override
     public boolean isFocusable() { return focusable; }
 
+    /** {@inheritDoc} */
     @Override
     public void setFocusable(boolean focusable) { this.focusable = focusable; }
 
+    /** {@inheritDoc} */
     @Override
     public boolean handleKeyStroke(io.jterm.core.input.KeyStroke keyStroke) {
         // default: not consumed
         return false;
     }
 
+    /** {@inheritDoc} */
     @Override
     public void draw(TextGraphics graphics) {
         drawComponent(graphics);

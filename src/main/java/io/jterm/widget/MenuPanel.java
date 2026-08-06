@@ -39,6 +39,7 @@ public class MenuPanel extends AbstractComponent {
     private int highlightedIndex = -1;
     private int columns = 1;
 
+    /** Creates an empty MenuPanel with a single column. */
     public MenuPanel() {}
 
     /**
@@ -98,6 +99,11 @@ public class MenuPanel extends AbstractComponent {
         return -1;
     }
 
+    /**
+     * Returns the preferred size based on the widest key/description and item count.
+     *
+     * @return the preferred terminal size
+     */
     @Override
     protected TerminalSize calculatePreferredSize() {
         if (items.isEmpty()) {
@@ -123,6 +129,12 @@ public class MenuPanel extends AbstractComponent {
         return new TerminalSize(totalWidth, totalHeight);
     }
 
+    /**
+     * Renders each menu entry's key (in brackets) and description, with
+     * optional highlight for the selected entry.
+     *
+     * @param graphics the text-graphics target
+     */
     @Override
     protected void drawComponent(TextGraphics graphics) {
         var size = getSize();

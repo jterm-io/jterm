@@ -18,7 +18,7 @@ import java.util.function.Supplier;
 /**
  * Animated stock ticker tape background. Items scroll right-to-left across a
  * single row: symbol, latest close price, and day change percentage. Green for
- * up, red for down. Data is supplied by a {@link PriceDataSupplier}; the default
+ * up, red for down. Data is supplied by a {@code PriceDataSupplier}; the default
  * supplier attempts to read from the family-office screener database and falls
  * back to a small built-in sample list when the driver or database is not
  * available.
@@ -63,6 +63,11 @@ public class TickerTape implements AnimatedBackground {
     }
 
     @Override
+    /**
+     * Renders one frame of the animation into the given graphics buffer.
+     * @param graphics the graphics
+     * @param size the size
+     */
     public void renderFrame(TextGraphics graphics, TerminalSize size) {
         lastSize = size;
         if (size.columns() <= 0 || size.rows() <= 0) {
@@ -133,31 +138,53 @@ public class TickerTape implements AnimatedBackground {
     }
 
     @Override
+    /**
+     * Reallocates internal buffers for the new terminal size.
+     * @param newSize the new size
+     */
     public void onResize(TerminalSize newSize) {
         this.lastSize = newSize;
     }
 
     @Override
+    /**
+     * Starts the animation.
+     */
     public void start() {
         running = true;
     }
 
     @Override
+    /**
+     * Stops the animation.
+     */
     public void stop() {
         running = false;
     }
 
     @Override
+    /**
+     * Returns whether the running flag is set.
+     * @return the result
+     */
     public boolean isRunning() {
         return running;
     }
 
     @Override
+    /**
+     * Returns the target frame rate in frames per second.
+     * @return the result
+     */
     public int targetFps() {
         return TARGET_FPS;
     }
 
     @Override
+    /**
+     * Returns the last terminal size the animation was rendered at.
+     * @return the result
+     */
     public TerminalSize lastSize() {
         return lastSize;
     }
@@ -236,16 +263,31 @@ public class TickerTape implements AnimatedBackground {
         private final double close;
         private final double previousClose;
 
+        /**
+         * Constructs a new immutable TickerItem.
+         *
+         * @param symbol the ticker symbol
+         * @param close the latest closing price
+         * @param previousClose the previous closing price
+         */
         public TickerItem(String symbol, double close, double previousClose) {
             this.symbol = Objects.requireNonNull(symbol, "symbol");
             this.close = close;
             this.previousClose = previousClose;
         }
 
+        /** Returns the ticker symbol.
+ * @return the symbol */
+
         public String symbol() { return symbol; }
         public double close() { return close; }
         public double previousClose() { return previousClose; }
 
+        /**
+         * Returns the percentage change from the previous close to the latest close.
+         *
+         * @return the percentage change, or 0.0 if the previous close was zero
+         */
         public double change() {
             if (previousClose == 0.0) {
                 return 0.0;
@@ -253,11 +295,21 @@ public class TickerTape implements AnimatedBackground {
             return (close - previousClose) / previousClose * 100.0;
         }
 
+        /**
+         * Renders this item as a single-line ticker string.
+         *
+         * @return the formatted ticker string
+         */
         public String renderString() {
             String percent = String.format(java.util.Locale.US, "%.2f%%", change());
             return symbol + " " + String.format(java.util.Locale.US, "%.2f", close) + " " + percent;
         }
 
+        /**
+         * Returns the rendered ticker string for this item.
+         *
+         * @return the rendered ticker string
+         */
         @Override
         public String toString() {
             return renderString();

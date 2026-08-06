@@ -14,15 +14,37 @@ public class Border extends AbstractContainer {
     private final BorderStyle style;
     private String title;
 
+    /**
+     * Creates a border with the default single-line style wrapping the given component.
+     *
+     * @param contents the component to wrap
+     */
     public Border(Component contents) { this(contents, BorderStyle.SINGLE_LINE); }
 
+    /**
+     * Creates a border with the given style wrapping the given component.
+     *
+     * @param contents the component to wrap
+     * @param style    the border style
+     */
     public Border(Component contents, BorderStyle style) {
         this.style = style;
         addComponent(contents);
     }
 
+    /**
+     * Sets the title shown in the top border line.
+     *
+     * @param title the title text
+     */
     public void setTitle(String title) { this.title = title; }
 
+    /**
+     * Returns the preferred size of the wrapped component plus 2 columns/rows
+     * for the border (or unchanged if the style is empty).
+     *
+     * @return the preferred terminal size
+     */
     @Override
     protected TerminalSize calculatePreferredSize() {
         var ps = getChildren().get(0).getPreferredSize();
@@ -30,6 +52,12 @@ public class Border extends AbstractContainer {
         return new TerminalSize(ps.columns() + 2, ps.rows() + 2);
     }
 
+    /**
+     * Lays out the wrapped component inside the border (with 1-cell insets when a border is drawn).
+     *
+     * @param position the new position
+     * @param size     the new size
+     */
     @Override
     public void setBounds(io.jterm.core.TerminalPosition position, TerminalSize size) {
         super.setBounds(position, size);
@@ -42,6 +70,11 @@ public class Border extends AbstractContainer {
         }
     }
 
+    /**
+     * Draws the border frame, optional title, and the wrapped component inside.
+     *
+     * @param graphics the text-graphics target
+     */
     @Override
     protected void drawComponent(TextGraphics graphics) {
         if (style.isEmpty()) {

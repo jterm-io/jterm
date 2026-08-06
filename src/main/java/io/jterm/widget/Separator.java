@@ -13,11 +13,15 @@ public class Separator extends AbstractComponent {
     public Separator() { this(false); }
     public Separator(boolean vertical) { this.vertical = vertical; }
 
+    /** Returns a size of 1×1 — a separator is a thin divider.
+     * @return a 1×1 terminal size */
     @Override
     protected TerminalSize calculatePreferredSize() {
         return vertical ? new TerminalSize(1, 1) : new TerminalSize(1, 1);
     }
 
+    /** Draws a horizontal or vertical divider line using box-drawing characters.
+     * @param graphics the graphics context to draw with */
     @Override
     protected void drawComponent(TextGraphics graphics) {
         var size = getSize();

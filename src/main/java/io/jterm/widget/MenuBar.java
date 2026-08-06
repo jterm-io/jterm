@@ -16,7 +16,7 @@ import java.util.List;
 /**
  * Horizontal menu bar containing {@link Menu}s. Sits at the top of a window.
  *
- * <h3>Keyboard interaction</h3>
+ * <p><b>Keyboard interaction</b></p>
  * <ul>
  *   <li><b>Ctrl+mnemonic</b> or <b>Alt+mnemonic</b> — open the menu whose title starts with that char</li>
  *   <li><b>Arrow Left/Right</b> — switch between open menus</li>
@@ -25,7 +25,7 @@ import java.util.List;
  *   <li><b>Enter</b> — activate the focused menu item</li>
  * </ul>
  *
- * <h3>Usage</h3>
+ * <p><b>Usage</b></p>
  * <pre>{@code
  * var bar = new MenuBar();
  * var fileMenu = new Menu("File");
@@ -44,6 +44,11 @@ public class MenuBar extends AbstractComponent {
         return new TextCell(' ', t.foreground(), t.background());
     }
 
+    /**
+     * Returns the preferred size based on the sum of menu widths plus dropdown height.
+     *
+     * @return the preferred terminal size
+     */
     @Override
     protected TerminalSize calculatePreferredSize() {
         int width = 0;
@@ -58,6 +63,11 @@ public class MenuBar extends AbstractComponent {
         return new TerminalSize(Math.max(1, width), height);
     }
 
+    /**
+     * Adds a menu to the bar.
+     *
+     * @param menu the menu to add
+     */
     public void addMenu(Menu menu) {
         menus.add(menu);
         menu.setCloseCallback(() -> {
@@ -67,10 +77,17 @@ public class MenuBar extends AbstractComponent {
         invalidate();
     }
 
+    /** Returns a defensive copy of the menus in this bar. */
     public List<Menu> getMenus() { return new ArrayList<>(menus); }
 
+    /** Returns the index of the currently open menu, or {@code -1} if none. */
     public int getActiveMenuIndex() { return activeMenuIndex; }
 
+    /**
+     * Draws the menu bar and any open dropdown panels.
+     *
+     * @param graphics the text-graphics target
+     */
     @Override
     protected void drawComponent(TextGraphics graphics) {
         var size = getSize();
@@ -128,6 +145,12 @@ public class MenuBar extends AbstractComponent {
         }
     }
 
+    /**
+     * Routes keystrokes to the open menu or opens menus via Ctrl/Alt+mnemonic.
+     *
+     * @param keyStroke the keystroke to handle
+     * @return {@code true} if the keystroke was consumed
+     */
     @Override
     public boolean handleKeyStroke(KeyStroke keyStroke) {
         // Ctrl+char or Alt+char → open the menu whose mnemonic matches
@@ -175,12 +198,14 @@ public class MenuBar extends AbstractComponent {
         invalidate();
     }
 
+    /** Closes all menus in this bar. */
     public void closeAll() {
         for (var m : menus) m.setOpen(false);
         activeMenuIndex = -1;
         invalidate();
     }
 
+    /** Returns whether any menu in this bar is currently open. */
     public boolean hasOpenMenu() {
         return activeMenuIndex >= 0;
     }

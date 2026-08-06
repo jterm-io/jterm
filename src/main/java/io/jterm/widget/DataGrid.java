@@ -154,6 +154,7 @@ public class DataGrid<T> extends AbstractComponent implements GridListener {
 
     // ---- GridListener -----------------------------------------------------
 
+    /** {@inheritDoc} — clamps selection/scroll on model changes. */
     @Override
     public void gridChanged() {
         int count = model == null ? 0 : model.getRowCount();
@@ -171,6 +172,11 @@ public class DataGrid<T> extends AbstractComponent implements GridListener {
 
     // ---- Rendering --------------------------------------------------------
 
+    /**
+     * Returns the preferred size based on column widths and row count.
+     *
+     * @return the preferred terminal size
+     */
     @Override
     protected TerminalSize calculatePreferredSize() {
         int colCount = columns == null ? 0 : columns.size();
@@ -198,6 +204,11 @@ public class DataGrid<T> extends AbstractComponent implements GridListener {
         return new TerminalSize(Math.max(1, totalWidth), height);
     }
 
+    /**
+     * Renders the frozen header row and visible data rows with per-column alignment.
+     *
+     * @param graphics the text-graphics target
+     */
     @Override
     protected void drawComponent(TextGraphics graphics) {
         var size = getSize();
@@ -463,6 +474,12 @@ public class DataGrid<T> extends AbstractComponent implements GridListener {
 
     // ---- Key handling -----------------------------------------------------
 
+    /**
+     * Handles arrow, page, home/end, and Emacs-style row/column navigation keys.
+     *
+     * @param keyStroke the keystroke to handle
+     * @return {@code true} if the keystroke was consumed
+     */
     @Override
     public boolean handleKeyStroke(KeyStroke keyStroke) {
         // Emacs-style key bindings (Ctrl+letter arrives as CHARACTER with ctrl=true)
@@ -570,6 +587,12 @@ public class DataGrid<T> extends AbstractComponent implements GridListener {
         return total;
     }
 
+    /**
+     * Updates bounds and re-ensures the selected row is visible.
+     *
+     * @param position the new position
+     * @param size     the new size
+     */
     @Override
     public void setBounds(TerminalPosition position, TerminalSize size) {
         super.setBounds(position, size);

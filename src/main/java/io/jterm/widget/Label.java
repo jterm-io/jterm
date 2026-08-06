@@ -16,37 +16,80 @@ public class Label extends AbstractComponent {
 
     public enum HorizontalAlignment { LEFT, CENTER, RIGHT }
 
+    /**
+     * Creates a label with the given text using default colors.
+     *
+     * @param text the label text
+     */
     public Label(String text) {
         this(text, AnsiColor.DEFAULT, AnsiColor.DEFAULT);
     }
 
+    /**
+     * Creates a label with the given text and foreground/background colors.
+     *
+     * @param text the label text
+     * @param fg   the foreground color
+     * @param bg   the background color
+     */
     public Label(String text, io.jterm.style.Color fg, io.jterm.style.Color bg) {
         this.text = text;
         this.style = new TextCell(' ', fg, bg);
     }
 
+    /**
+     * Creates a label with the given text and cell style.
+     *
+     * @param text  the label text
+     * @param style the cell style (foreground, background, character)
+     */
     public Label(String text, TextCell style) {
         this.text = text;
         this.style = style;
     }
 
+    /**
+     * Sets the label text and invalidates the component.
+     *
+     * @param text the new text
+     */
     public void setText(String text) {
         this.text = text;
         invalidate();
     }
 
+    /**
+     * Returns the current label text.
+     *
+     * @return the text
+     */
     public String getText() { return text; }
 
+    /**
+     * Sets the foreground color and invalidates the component.
+     *
+     * @param color the new foreground color
+     */
     public void setForeground(io.jterm.style.Color color) {
         this.style = style.withForeground(color);
         invalidate();
     }
 
+    /**
+     * Sets the background color and invalidates the component.
+     *
+     * @param color the new background color
+     */
     public void setBackground(io.jterm.style.Color color) {
         this.style = style.withBackground(color);
         invalidate();
     }
 
+    /**
+     * Sets the full cell style and invalidates the component.
+     *
+     * @param style the new cell style
+     */
     public void setStyle(TextCell style) {
         this.style = style;
         invalidate();
@@ -58,6 +101,7 @@ public class Label extends AbstractComponent {
         invalidate();
     }
 
+    /** Computes preferred size from the widest line and line count. */
     @Override
     protected TerminalSize calculatePreferredSize() {
         if (text == null || text.isEmpty()) return new TerminalSize(1, 1);
@@ -68,9 +112,10 @@ public class Label extends AbstractComponent {
         return new TerminalSize(max, text.split("\n", -1).length);
     }
 
+    /** Renders each line of text with horizontal alignment, falling back to theme colors when defaults are used. */
     @Override
     protected void drawComponent(TextGraphics graphics) {
-        var lines = text.split("\n", -1);
+        var lines = text.split("\\n", -1);
         var size = getSize();
         // If label uses DEFAULT colors, fall back to theme fg/bg so the
         // label inherits the themed background instead of terminal default.

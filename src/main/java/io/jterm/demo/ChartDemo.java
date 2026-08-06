@@ -26,7 +26,7 @@ import java.util.Random;
  * Chart demo: displays synthetic stock-price data using line, bar, and scatter
  * charts. Simulates a mini trading dashboard.
  *
- * <h3>Keyboard</h3>
+ * <p><b>Keyboard</b></p>
  * <ul>
  *   <li><b>1</b> — Line chart view (price over time)</li>
  *   <li><b>2</b> — Bar chart view (volume)</li>

@@ -10,12 +10,26 @@ public class ClippedTextGraphics extends TextGraphics {
     private final TextGraphics parent;
     private final TerminalPosition offset;
 
+    /**
+     * Create a clipped graphics view that writes through to a parent at an offset.
+     *
+     * @param parent the parent graphics context
+     * @param offset the position offset within the parent
+     * @param size   the size of this clipped region
+     */
     public ClippedTextGraphics(TextGraphics parent, TerminalPosition offset, TerminalSize size) {
         super(new ScreenBuffer(size));
         this.parent = parent;
         this.offset = offset;
     }
 
+    /**
+     * Set a cell in the back buffer.
+     *
+     * @param x the x coordinate
+     * @param y the y coordinate
+     * @param cell the cell to write
+     */
     @Override
     public void setCell(int x, int y, TextCell cell) {
         if (x < 0 || y < 0 || x >= getSize().columns() || y >= getSize().rows()) return;
@@ -23,6 +37,15 @@ public class ClippedTextGraphics extends TextGraphics {
         parent.setCell(offset.column() + x, offset.row() + y, cell);
     }
 
+    /**
+     * Draw a straight line between two points.
+     *
+     * @param x0 the starting x coordinate
+     * @param y0 the starting y coordinate
+     * @param x1 the ending x coordinate
+     * @param y1 the ending y coordinate
+     * @param cell the cell to write
+     */
     @Override
     public void drawLine(int x0, int y0, int x1, int y1, TextCell cell) {
         // TextGraphics.drawLine writes to this.buffer only — we must delegate
@@ -42,6 +65,15 @@ public class ClippedTextGraphics extends TextGraphics {
         }
     }
 
+    /**
+     * Draw a smooth (anti-aliased) line between two points.
+     *
+     * @param x0 the starting x coordinate
+     * @param y0 the starting y coordinate
+     * @param x1 the ending x coordinate
+     * @param y1 the ending y coordinate
+     * @param cell the cell to write
+     */
     @Override
     public void drawLineSmooth(int x0, int y0, int x1, int y1, TextCell cell) {
         // Collect Bresenham path, then write each point via setCell so both
@@ -69,6 +101,15 @@ public class ClippedTextGraphics extends TextGraphics {
         }
     }
 
+    /**
+     * Draw a rectangle border with the given cell.
+     *
+     * @param x the x coordinate
+     * @param y the y coordinate
+     * @param width the width
+     * @param height the height
+     * @param borderCell the cell to use for the border
+     */
     @Override
     public void drawRectangle(int x, int y, int width, int height, TextCell borderCell) {
         int maxCol = x + width - 1;
@@ -83,6 +124,15 @@ public class ClippedTextGraphics extends TextGraphics {
         }
     }
 
+    /**
+     * Fill a rectangular area with the given cell.
+     *
+     * @param x the x coordinate
+     * @param y the y coordinate
+     * @param width the width
+     * @param height the height
+     * @param cell the cell to write
+     */
     @Override
     public void fillRectangle(int x, int y, int width, int height, TextCell cell) {
         for (int r = Math.max(0, y); r < y + height && r < getSize().rows(); r++) {
@@ -92,6 +142,14 @@ public class ClippedTextGraphics extends TextGraphics {
         }
     }
 
+    /**
+     * Draw a string at the given position.
+     *
+     * @param x the x coordinate
+     * @param y the y coordinate
+     * @param text the text to draw
+     * @param template the template cell for styling
+     */
     @Override
     public void drawString(int x, int y, String text, TextCell template) {
         int col = x;

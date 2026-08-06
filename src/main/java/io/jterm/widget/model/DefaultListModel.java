@@ -13,11 +13,16 @@ public class DefaultListModel<T> extends AbstractListModel<T> {
     private final List<T> items = new CopyOnWriteArrayList<>();
 
     @Override
+    /** Returns the number of elements in this list model.
+     * @return the list size */
     public int getSize() {
         return items.size();
     }
 
     @Override
+    /** Returns the element at the specified index.
+     * @param index the zero-based index
+     * @return the element at that index */
     public T getElementAt(int index) {
         return items.get(index);
     }

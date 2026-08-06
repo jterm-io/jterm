@@ -37,14 +37,27 @@ public class TextArea extends AbstractComponent {
 
     // ── Construction ───────────────────────────────────────────
 
+    /** Creates an empty TextArea with a single blank line. */
     public TextArea() {
         lines.add(""); // Start with one empty line
     }
 
+    /**
+     * Creates a TextArea initialized with the given text.
+     *
+     * @param text the initial text; lines are split on {@code \n}
+     */
     public TextArea(String text) {
         setText(text);
     }
 
+    /**
+     * Creates a TextArea with the given text and preferred size.
+     *
+     * @param text    the initial text
+     * @param columns the preferred column width
+     * @param rows    the preferred row height
+     */
     public TextArea(String text, int columns, int rows) {
         this.preferredColumns = columns;
         this.preferredRows = rows;
@@ -53,11 +66,17 @@ public class TextArea extends AbstractComponent {
 
     // ── Public API ─────────────────────────────────────────────
 
+    /** Returns the full text content, with lines joined by {@code \n}. */
     public String getText() {
         if (lines.isEmpty()) return "";
         return String.join("\n", lines);
     }
 
+    /**
+     * Replaces the entire text content and resets cursor/viewport.
+     *
+     * @param text the new text; lines are split on {@code \n}
+     */
     public void setText(String text) {
         lines.clear();
         if (text.isEmpty()) {
@@ -80,16 +99,28 @@ public class TextArea extends AbstractComponent {
         invalidate();
     }
 
+    /** Returns the number of lines in the text. */
     public int getLineCount() {
         return lines.size();
     }
 
+    /**
+     * Returns the line at the given index.
+     *
+     * @param index the line index
+     * @return the line content
+     */
     public String getLine(int index) {
         return lines.get(index);
     }
 
     // ── Layout ────────────────────────────────────────────────
 
+    /**
+     * Returns the preferred size configured at construction.
+     *
+     * @return the preferred terminal size
+     */
     @Override
     protected TerminalSize calculatePreferredSize() {
         return new TerminalSize(preferredColumns, preferredRows);
@@ -97,6 +128,11 @@ public class TextArea extends AbstractComponent {
 
     // ── Rendering ──────────────────────────────────────────────
 
+    /**
+     * Renders the visible lines and highlights the cursor position.
+     *
+     * @param graphics the text-graphics target
+     */
     @Override
     protected void drawComponent(TextGraphics graphics) {
         adjustViewport(); // ensure viewport is correct before drawing
@@ -133,6 +169,12 @@ public class TextArea extends AbstractComponent {
 
     // ── Key handling ──────────────────────────────────────────
 
+    /**
+     * Handles Emacs-style and arrow key bindings for cursor movement and editing.
+     *
+     * @param keyStroke the keystroke to handle
+     * @return {@code true} if the keystroke was consumed
+     */
     @Override
     public boolean handleKeyStroke(KeyStroke keyStroke) {
         // Emacs-style key bindings (Ctrl+letter)

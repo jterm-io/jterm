@@ -33,11 +33,20 @@ public class VoronoiCells implements AnimatedBackground {
         AnsiColor.BRIGHT_RED, AnsiColor.BRIGHT_GREEN
     };
 
+    /**
+     * Constructs a new VoronoiCells instance.
+     * @param preferredSize the preferred size
+     */
     public VoronoiCells(TerminalSize preferredSize) {
         onResize(preferredSize);
     }
 
     @Override
+    /**
+     * Renders one frame of the animation into the given graphics buffer.
+     * @param graphics the graphics
+     * @param size the size
+     */
     public void renderFrame(TextGraphics graphics, TerminalSize size) {
         lastSize = size;
         if (size.columns() <= 0 || size.rows() <= 0) return;
@@ -115,6 +124,10 @@ public class VoronoiCells implements AnimatedBackground {
     }
 
     @Override
+    /**
+     * Reallocates internal buffers for the new terminal size.
+     * @param newSize the new size
+     */
     public void onResize(TerminalSize newSize) {
         this.lastSize = newSize;
         if (newSize.columns() <= 0 || newSize.rows() <= 0) return;
@@ -125,26 +138,44 @@ public class VoronoiCells implements AnimatedBackground {
     }
 
     @Override
+    /**
+     * Starts the animation.
+     */
     public void start() {
         running = true;
     }
 
     @Override
+    /**
+     * Stops the animation.
+     */
     public void stop() {
         running = false;
     }
 
     @Override
+    /**
+     * Returns whether the running flag is set.
+     * @return the result
+     */
     public boolean isRunning() {
         return running;
     }
 
     @Override
+    /**
+     * Returns the target frame rate in frames per second.
+     * @return the result
+     */
     public int targetFps() {
         return TARGET_FPS;
     }
 
     @Override
+    /**
+     * Returns the last terminal size the animation was rendered at.
+     * @return the result
+     */
     public TerminalSize lastSize() {
         return lastSize;
     }
@@ -196,10 +227,15 @@ public class VoronoiCells implements AnimatedBackground {
             if (y >= rows - 1) { y = rows - 1; vy = -vy; }
         }
 
+        /** Returns the X coordinate.
+ * @return the X coordinate */
+
         public double getX() { return x; }
         public double getY() { return y; }
         public double getVx() { return vx; }
         public double getVy() { return vy; }
+        /** Returns the cell color.
+ * @return the color */
         public AnsiColor getColor() { return color; }
     }
 }

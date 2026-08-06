@@ -47,6 +47,11 @@ public class ParticleEffect {
      */
     public record Particle(double x, double y, double vx, double vy, char glyph,
                             Color color, long bornMs, long lifetimeMs) {
+        /**
+         * Returns whether alive.
+         * @param nowMs the now ms value
+         * @return true if the condition holds, false otherwise
+         */
         public boolean isAlive(long nowMs) {
             return (nowMs - bornMs) < lifetimeMs;
         }

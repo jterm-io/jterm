@@ -22,7 +22,7 @@ import java.util.List;
  * <p>SGR escape sequences are preserved within each extracted frame so that
  * colors and styles defined in the source art are retained. Each frame is a
  * standalone ANSI string suitable for direct use with
- * {@link AnsiArtRenderer} or {@link Sprite#addFrame(String)}.
+ * {@code AnsiArtRenderer} or {@link Sprite#addFrame(String)}.
  *
  * <h2>Usage</h2>
  * <pre>{@code

@@ -7,6 +7,15 @@ public record IndexedColor(int index) implements Color {
             throw new IllegalArgumentException("Index must be 0-255, got: " + index);
     }
 
+    /**
+     * Find the closest indexed color for the given RGB values.
+     *
+     * @param r the red component (0-255)
+     * @param g the green component (0-255)
+     * @param b the blue component (0-255)
+     *
+     * @return the nearest IndexedColor in the 256-color palette
+     */
     public static IndexedColor fromRgb(int r, int g, int b) {
         // Try 6×6×6 cube first
         int[] levels = {0x00, 0x5f, 0x87, 0xaf, 0xd7, 0xff};
@@ -40,9 +49,19 @@ public record IndexedColor(int index) implements Color {
 
     private static int grayVal(int idx) { return 0x08 + (idx - 232) * 0x0a; }
 
+    /**
+     * Return the ANSI foreground escape sequence for this color.
+     *
+     * @return the SGR foreground parameter bytes
+     */
     @Override
     public byte[] fgSequence() { return ("38;5;" + index).getBytes(); }
 
+    /**
+     * Return the ANSI background escape sequence for this color.
+     *
+     * @return the SGR background parameter bytes
+     */
     @Override
     public byte[] bgSequence() { return ("48;5;" + index).getBytes(); }
 }

@@ -40,13 +40,28 @@ public class DefaultTextGUI implements TextGUI, WindowManager {
     private volatile boolean forceComplete = true;  // start with a complete refresh
     private final Object screenLock = new Object();
 
+    /**
+     * Create a GUI backed by the given screen.
+     *
+     * @param screen the screen to render to
+     */
     public DefaultTextGUI(Screen screen) {
         this.screen = screen;
     }
 
+    /**
+     * Return the screen backing this GUI.
+     *
+     * @return the screen
+     */
     @Override
     public Screen getScreen() { return screen; }
 
+    /**
+     * Add a window to the GUI and make it active.
+     *
+     * @param window the window to add or remove
+     */
     @Override
     public void addWindow(Window window) {
         windows.add(window);
@@ -59,6 +74,11 @@ public class DefaultTextGUI implements TextGUI, WindowManager {
         forceComplete = true;
     }
 
+    /**
+     * Remove a window from the GUI.
+     *
+     * @param window the window to add or remove
+     */
     @Override
     public void removeWindow(Window window) {
         windowsToRemove.add(window);
@@ -73,9 +93,19 @@ public class DefaultTextGUI implements TextGUI, WindowManager {
         forceComplete = true;
     }
 
+    /**
+     * Return the currently active window.
+     *
+     * @return the activewindow
+     */
     @Override
     public Window getActiveWindow() { return activeWindow; }
 
+    /**
+     * Set the active window by reference.
+     *
+     * @param window the window to add or remove
+     */
     @Override
     public void setActiveWindow(Window window) {
         if (windows.contains(window)) {
@@ -85,6 +115,11 @@ public class DefaultTextGUI implements TextGUI, WindowManager {
         }
     }
 
+    /**
+     * Return all currently managed windows.
+     *
+     * @return the windows
+     */
     @Override
     public Collection<Window> getWindows() {
         if (windowsToRemove.isEmpty()) return new ArrayList<>(windows);
@@ -93,15 +128,32 @@ public class DefaultTextGUI implements TextGUI, WindowManager {
         return visible;
     }
 
+    /**
+     * Check if a window is currently managed by this GUI.
+     *
+     * @param window the window to check
+     *
+     * @return true if the window is present and not pending removal
+     */
     @Override
     public boolean containsWindow(Window window) {
         return windows.contains(window) && !windowsToRemove.contains(window);
     }
 
+    /**
+     * Return the focus manager for this GUI.
+     *
+     * @return the focusmanager
+     */
     public FocusManager getFocusManager() {
         return focusManager;
     }
 
+    /**
+     * Return whether the event loop is still running.
+     *
+     * @return true if running, false otherwise
+     */
     public boolean isRunning() {
         return running;
     }
@@ -111,15 +163,34 @@ public class DefaultTextGUI implements TextGUI, WindowManager {
         needsRefresh = true;
     }
 
+    /**
+     * Signal the event loop to stop.
+     */
     public void stopRunning() {
         running = false;
     }
 
+    /**
+     * Process one input event from the terminal.
+     *
+     * @return true if input was processed, false if none available
+     *
+     * @throws IOException if an I/O error or other failure occurs
+     */
     @Override
     public boolean processInput() throws IOException {
         return processInput(null);
     }
 
+    /**
+     * Process one input event from the terminal.
+     *
+     * @param injected an optional injected key stroke
+     *
+     * @return true if input was processed, false if none available
+     *
+     * @throws IOException if an I/O error or other failure occurs
+     */
     public boolean processInput(KeyStroke injected) throws IOException {
         synchronized (screenLock) {
             var ks = injected != null ? injected : getInput();
@@ -176,6 +247,11 @@ public class DefaultTextGUI implements TextGUI, WindowManager {
                 : null;
     }
 
+    /**
+     * Block until input is available.
+     *
+     * @throws IOException if an I/O error or other failure occurs
+     */
     @Override
     public void waitForInput() throws IOException {
         if (screen instanceof io.jterm.screen.DefaultScreen ds) {
@@ -183,6 +259,11 @@ public class DefaultTextGUI implements TextGUI, WindowManager {
         }
     }
 
+    /**
+     * Render all windows to the screen.
+     *
+     * @throws IOException if an I/O error or other failure occurs
+     */
     @Override
     public void updateScreen() throws IOException {
         synchronized (screenLock) {
@@ -225,6 +306,11 @@ public class DefaultTextGUI implements TextGUI, WindowManager {
 
     private io.jterm.screen.ScreenBuffer gBuffer;
 
+    /**
+     * Run the main event loop until stopped.
+     *
+     * @throws IOException if an I/O error or other failure occurs
+     */
     public void runEventLoop() throws IOException {
         needsRefresh = true;
         while (running) {
@@ -241,6 +327,11 @@ public class DefaultTextGUI implements TextGUI, WindowManager {
         }
     }
 
+    /**
+     * Close the terminal and release resources.
+     *
+     * @throws IOException if an I/O error or other failure occurs
+     */
     @Override
     public void close() throws IOException {
         running = false;

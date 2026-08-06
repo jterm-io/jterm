@@ -9,7 +9,7 @@ package io.jterm.style;
  * holds the active theme; widgets query it for colors instead of hardcoding
  * {@link AnsiColor} values.
  *
- * <h3>Built-in Themes</h3>
+ * <p><b>Built-in Themes</b></p>
  * <ul>
  *   <li>{@link #DARK} — white on black (default, current behavior)</li>
  *   <li>{@link #YELLOW_ON_BLUE} — classic yellow text on blue background</li>

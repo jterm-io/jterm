@@ -14,10 +14,20 @@ public class FocusManager {
     private volatile Component focusedComponent;
     private final List<Listener<Component>> listeners = new java.util.concurrent.CopyOnWriteArrayList<>();
 
+    /**
+     * Return the component that currently has focus.
+     *
+     * @return the focused component, or null if none has focus
+     */
     public Component getFocusedComponent() {
         return focusedComponent;
     }
 
+    /**
+     * Set the focused component for this window.
+     *
+     * @param component the component
+     */
     public void setFocusedComponent(Component component) {
         if (focusedComponent == component) return;
         Component old = focusedComponent;
@@ -29,6 +39,9 @@ public class FocusManager {
         }
     }
 
+    /**
+     * Remove focus from the currently focused component.
+     */
     public void clearFocus() {
         if (focusedComponent != null) {
             Component old = focusedComponent;
@@ -40,10 +53,20 @@ public class FocusManager {
         }
     }
 
+    /**
+     * Register a listener to be notified when focus changes.
+     *
+     * @param listener the listener to register
+     */
     public void addListener(Listener<Component> listener) {
         listeners.add(listener);
     }
 
+    /**
+     * Remove a previously registered focus-change listener.
+     *
+     * @param listener the listener to remove
+     */
     public void removeListener(Listener<Component> listener) {
         listeners.remove(listener);
     }

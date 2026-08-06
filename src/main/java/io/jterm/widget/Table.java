@@ -72,6 +72,7 @@ public class Table extends AbstractComponent implements TableModelListener {
         return model;
     }
 
+    /** {@inheritDoc} — clamps selection/scroll on model changes. */
     @Override
     public void tableChanged(TableModelEvent e) {
         if (e.type() == TableModelEventType.ROWS_REMOVED
@@ -94,6 +95,12 @@ public class Table extends AbstractComponent implements TableModelListener {
         invalidate();
     }
 
+    /**
+     * Convenience: appends a row if the backing model is a {@link DefaultTableModel}.
+     *
+     * @param cells the row cell values
+     * @throws IllegalStateException if the model is not a DefaultTableModel
+     */
     public void addRow(String... cells) {
         if (model instanceof DefaultTableModel dtm) {
             dtm.addRow(cells);
@@ -117,6 +124,11 @@ public class Table extends AbstractComponent implements TableModelListener {
         }
     }
 
+    /**
+     * Sets the selected row, clamped to the valid range.
+     *
+     * @param index the desired row index
+     */
     public void setSelectedRow(int index) {
         int count = model == null ? 0 : model.getRowCount();
         this.selectedRow = Math.max(0, Math.min(count - 1, index));
@@ -124,10 +136,16 @@ public class Table extends AbstractComponent implements TableModelListener {
         invalidate();
     }
 
+    /** Returns the index of the currently selected row. */
     public int getSelectedRow() {
         return selectedRow;
     }
 
+    /**
+     * Computes the preferred size based on column widths and row count.
+     *
+     * @return the preferred terminal size
+     */
     @Override
     protected TerminalSize calculatePreferredSize() {
         int totalWidth = model == null ? 1 : model.getColumnCount() + 1;
@@ -145,6 +163,11 @@ public class Table extends AbstractComponent implements TableModelListener {
         return new TerminalSize(totalWidth, Math.max(3, Math.min(rowCount + 1, 12)));
     }
 
+    /**
+     * Renders the header row and the visible data rows with separators.
+     *
+     * @param graphics the text-graphics target
+     */
     @Override
     protected void drawComponent(TextGraphics graphics) {
         var size = getSize();
@@ -212,6 +235,12 @@ public class Table extends AbstractComponent implements TableModelListener {
         }
     }
 
+    /**
+     * Handles arrow, page, home/end, and Emacs-style row navigation keys.
+     *
+     * @param keyStroke the keystroke to handle
+     * @return {@code true} if the keystroke was consumed
+     */
     @Override
     public boolean handleKeyStroke(io.jterm.core.input.KeyStroke keyStroke) {
         // Emacs-style key bindings (Ctrl+letter arrives as CHARACTER with ctrl=true)
@@ -256,12 +285,23 @@ public class Table extends AbstractComponent implements TableModelListener {
         setSelectedRow(scrollOffset);
     }
 
+    /**
+     * Updates bounds and re-ensures the selected row is visible.
+     *
+     * @param position the new position
+     * @param size     the new size
+     */
     @Override
     public void setBounds(TerminalPosition position, TerminalSize size) {
         super.setBounds(position, size);
         ensureVisible();
     }
 
+    /**
+     * Returns a defensive copy of all rows currently in the backing model.
+     *
+     * @return list of rows; each row is a list of cell strings
+     */
     public List<List<String>> getTableModelRows() {
         int rowCount = model == null ? 0 : model.getRowCount();
         int columnCount = model == null ? 0 : model.getColumnCount();

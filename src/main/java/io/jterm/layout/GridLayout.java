@@ -17,11 +17,24 @@ public class GridLayout implements LayoutManager {
     private final int columns;
     private final int rows;
 
+    /**
+     * Create a grid layout with the given column and row counts.
+     *
+     * @param columns number of columns (0 or negative for auto)
+     * @param rows    number of rows (0 or negative for auto)
+     */
     public GridLayout(int columns, int rows) {
         this.columns = columns;
         this.rows = rows;
     }
 
+    /**
+     * Compute the preferred size for the given children.
+     *
+     * @param children the child components
+     *
+     * @return the computed preferred size
+     */
     @Override
     public TerminalSize getPreferredSize(List<Component> children) {
         int w = 0, h = 0;
@@ -34,6 +47,12 @@ public class GridLayout implements LayoutManager {
         return new TerminalSize(w * dims[0], h * dims[1]);
     }
 
+    /**
+     * Lay out children within the given area.
+     *
+     * @param area the available area
+     * @param children the child components
+     */
     @Override
     public void doLayout(TerminalSize area, List<Component> children) {
         int[] dims = effectiveDimensions(children.size());

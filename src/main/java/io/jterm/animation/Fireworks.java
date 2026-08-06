@@ -31,11 +31,20 @@ public class Fireworks implements AnimatedBackground {
 
     private int launchCooldown;
 
+    /**
+     * Constructs a new Fireworks instance.
+     * @param preferredSize the preferred size
+     */
     public Fireworks(TerminalSize preferredSize) {
         onResize(preferredSize);
     }
 
     @Override
+    /**
+     * Renders one frame of the animation into the given graphics buffer.
+     * @param graphics the graphics
+     * @param size the size
+     */
     public void renderFrame(TextGraphics graphics, TerminalSize size) {
         lastSize = size;
         if (size.columns() <= 0 || size.rows() <= 0) return;
@@ -127,6 +136,10 @@ public class Fireworks implements AnimatedBackground {
     }
 
     @Override
+    /**
+     * Reallocates internal buffers for the new terminal size.
+     * @param newSize the new size
+     */
     public void onResize(TerminalSize newSize) {
         this.lastSize = newSize;
         this.rockets = new ArrayList<>();
@@ -135,26 +148,44 @@ public class Fireworks implements AnimatedBackground {
     }
 
     @Override
+    /**
+     * Starts the animation.
+     */
     public void start() {
         running = true;
     }
 
     @Override
+    /**
+     * Stops the animation.
+     */
     public void stop() {
         running = false;
     }
 
     @Override
+    /**
+     * Returns whether the running flag is set.
+     * @return the result
+     */
     public boolean isRunning() {
         return running;
     }
 
     @Override
+    /**
+     * Returns the target frame rate in frames per second.
+     * @return the result
+     */
     public int targetFps() {
         return TARGET_FPS;
     }
 
     @Override
+    /**
+     * Returns the last terminal size the animation was rendered at.
+     * @return the result
+     */
     public TerminalSize lastSize() {
         return lastSize;
     }
@@ -200,6 +231,9 @@ public class Fireworks implements AnimatedBackground {
             vy += 0.15; // gravity — peaks within 7-13 frames
         }
 
+        /** Returns the X coordinate.
+ * @return the X coordinate */
+
         public double getX() { return x; }
         public double getY() { return y; }
         public double getVx() { return vx; }
@@ -237,8 +271,14 @@ public class Fireworks implements AnimatedBackground {
             life--;
         }
 
+        /** Returns the X coordinate.
+         * @return the X coordinate */
         public double getX() { return x; }
+        /** Returns the Y coordinate.
+         * @return the Y coordinate */
         public double getY() { return y; }
+        /** Returns the particle color.
+ * @return the color */
         public AnsiColor getColor() { return color; }
         public int getLife() { return life; }
         public int getMaxLife() { return maxLife; }

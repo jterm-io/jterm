@@ -19,7 +19,7 @@ import java.util.List;
 /**
  * Interactive text editor demo using the TextArea widget.
  *
- * <h3>Keyboard</h3>
+ * <p><b>Keyboard</b></p>
  * <ul>
  *   <li>Type to insert text</li>
  *   <li><b>Enter</b> — new line</li>

@@ -75,12 +75,18 @@ public class FadeTransition implements TransitionEffect {
     }
 
     @Override
+    /** Returns the transition duration in milliseconds.
+ * @return the duration in ms */
     public long durationMs() { return durationMs; }
 
     @Override
     public int targetFps() { return 10; }
 
     @Override
+    /** Renders a single frame of the fade transition.
+ * @param graphics the graphics context
+ * @param size the terminal size
+ * @param progress the transition progress (0.0 to 1.0) */
     public void renderFrame(TextGraphics graphics, TerminalSize size, double progress) {
         if (size.rows() <= 0 || size.columns() <= 0) return;
         double p = Math.max(0.0, Math.min(1.0, progress));

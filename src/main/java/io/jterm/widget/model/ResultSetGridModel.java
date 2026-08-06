@@ -53,11 +53,17 @@ public class ResultSetGridModel implements GridModel<ResultSetRow> {
         return columnCount;
     }
 
+    /** {@inheritDoc} — returns the number of rows fetched so far. */
     @Override
     public int getRowCount() {
         return rows.size();
     }
 
+    /**
+     * {@inheritDoc} — lazily fetches rows up to the requested index before returning.
+     *
+     * @throws IndexOutOfBoundsException if the index is out of range after fetching
+     */
     @Override
     public ResultSetRow getRow(int index) {
         ensureFetched(index);
@@ -117,11 +123,13 @@ public class ResultSetGridModel implements GridModel<ResultSetRow> {
         }
     }
 
+    /** {@inheritDoc} — adds a listener to be notified on model changes. */
     @Override
     public void addGridListener(GridListener listener) {
         listeners.add(listener);
     }
 
+    /** {@inheritDoc} — removes a previously added listener. */
     @Override
     public void removeGridListener(GridListener listener) {
         listeners.remove(listener);

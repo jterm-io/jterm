@@ -49,6 +49,11 @@ public enum AnsiColor implements Color {
         return nearest(r, g, bl);
     }
 
+    /**
+     * Return the ANSI foreground escape sequence for this color.
+     *
+     * @return the SGR foreground parameter bytes
+     */
     @Override
     public byte[] fgSequence() {
         return switch (index) {
@@ -72,6 +77,11 @@ public enum AnsiColor implements Color {
         };
     }
 
+    /**
+     * Return the ANSI background escape sequence for this color.
+     *
+     * @return the SGR background parameter bytes
+     */
     @Override
     public byte[] bgSequence() {
         return switch (index) {

@@ -22,7 +22,7 @@ import java.util.function.Supplier;
  * color reflects daily unrealized P&amp;L: green for gains, red for losses,
  * with brightness proportional to magnitude.
  *
- * <p>Data is supplied by a {@link PositionDataSupplier}; the default supplier
+ * <p>Data is supplied by a {@code PositionDataSupplier}; the default supplier
  * reads from the family-office portfolio tables (active positions + latest
  * quotes or daily prices) and falls back to decorative random data when the
  * driver or database is unavailable.</p>
@@ -67,6 +67,11 @@ public class PortfolioHeatmap implements AnimatedBackground {
     }
 
     @Override
+    /**
+     * Renders one frame of the animation into the given graphics buffer.
+     * @param graphics the graphics
+     * @param size the size
+     */
     public void renderFrame(TextGraphics graphics, TerminalSize size) {
         lastSize = size;
         if (size.columns() <= 0 || size.rows() <= 0) {
@@ -294,31 +299,53 @@ public class PortfolioHeatmap implements AnimatedBackground {
     }
 
     @Override
+    /**
+     * Reallocates internal buffers for the new terminal size.
+     * @param newSize the new size
+     */
     public void onResize(TerminalSize newSize) {
         this.lastSize = newSize;
     }
 
     @Override
+    /**
+     * Starts the animation.
+     */
     public void start() {
         running = true;
     }
 
     @Override
+    /**
+     * Stops the animation.
+     */
     public void stop() {
         running = false;
     }
 
     @Override
+    /**
+     * Returns whether the running flag is set.
+     * @return the result
+     */
     public boolean isRunning() {
         return running;
     }
 
     @Override
+    /**
+     * Returns the target frame rate in frames per second.
+     * @return the result
+     */
     public int targetFps() {
         return TARGET_FPS;
     }
 
     @Override
+    /**
+     * Returns the last terminal size the animation was rendered at.
+     * @return the result
+     */
     public TerminalSize lastSize() {
         return lastSize;
     }
@@ -407,6 +434,14 @@ public class PortfolioHeatmap implements AnimatedBackground {
         private final double costBasis;
         private final double latestClose;
 
+        /**
+         * Constructs a new immutable Position.
+         *
+         * @param symbol the ticker symbol
+         * @param quantity the number of shares held
+         * @param costBasis the average cost basis per share
+         * @param latestClose the latest closing price per share
+         */
         public Position(String symbol, int quantity, double costBasis, double latestClose) {
             this.symbol = Objects.requireNonNull(symbol, "symbol");
             this.quantity = quantity;
@@ -414,15 +449,30 @@ public class PortfolioHeatmap implements AnimatedBackground {
             this.latestClose = latestClose;
         }
 
+        /** Returns the stock symbol.
+ * @return the symbol */
+
         public String symbol() { return symbol; }
         public int quantity() { return quantity; }
         public double costBasis() { return costBasis; }
+        /** Returns the latest closing price.
+ * @return the latest close */
         public double latestClose() { return latestClose; }
 
+        /**
+         * Returns the current market value of the position.
+         *
+         * @return quantity multiplied by latestClose
+         */
         public double marketValue() {
             return quantity * latestClose;
         }
 
+        /**
+         * Returns the daily P&amp;L percentage relative to the cost basis.
+         *
+         * @return the percentage gain or loss, or 0.0 if either basis is non-positive
+         */
         public double dailyPnlPct() {
             if (costBasis <= 0.0 || latestClose <= 0.0) {
                 return 0.0;
@@ -430,6 +480,11 @@ public class PortfolioHeatmap implements AnimatedBackground {
             return (latestClose - costBasis) / costBasis * 100.0;
         }
 
+        /**
+         * Returns a short string representation of this position.
+         *
+         * @return the symbol and daily P&amp;L percentage
+         */
         @Override
         public String toString() {
             return String.format(java.util.Locale.US, "%s %.2f%%", symbol, dailyPnlPct());

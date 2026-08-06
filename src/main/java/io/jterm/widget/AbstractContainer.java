@@ -19,15 +19,19 @@ public abstract class AbstractContainer extends AbstractComponent implements Con
     private final List<Component> children = new java.util.concurrent.CopyOnWriteArrayList<>();
     private volatile LayoutManager layoutManager;
 
+    /** Creates a container with no layout manager. */
     public AbstractContainer() {}
 
+    /** Creates a container with the specified layout manager. */
     public AbstractContainer(LayoutManager layoutManager) {
         this.layoutManager = layoutManager;
     }
 
+    /** {@inheritDoc} */
     @Override
     public List<Component> getChildren() { return new ArrayList<>(children); }
 
+    /** {@inheritDoc} */
     @Override
     public void addComponent(Component component) {
         children.add(component);
@@ -35,6 +39,7 @@ public abstract class AbstractContainer extends AbstractComponent implements Con
         invalidate();
     }
 
+    /** {@inheritDoc} */
     @Override
     public void addComponent(Component component, Object layoutData) {
         if (layoutData instanceof LayoutData ld) {
@@ -43,6 +48,7 @@ public abstract class AbstractContainer extends AbstractComponent implements Con
         addComponent(component);
     }
 
+    /** {@inheritDoc} */
     @Override
     public void removeComponent(Component component) {
         if (children.remove(component)) {
@@ -51,21 +57,25 @@ public abstract class AbstractContainer extends AbstractComponent implements Con
         }
     }
 
+    /** {@inheritDoc} */
     @Override
     public LayoutManager getLayoutManager() { return layoutManager; }
 
+    /** {@inheritDoc} */
     @Override
     public void setLayoutManager(LayoutManager layoutManager) {
         this.layoutManager = layoutManager;
         invalidate();
     }
 
+    /** Computes the preferred size by delegating to the layout manager. */
     @Override
     protected TerminalSize calculatePreferredSize() {
         if (layoutManager == null) return new TerminalSize(1, 1);
         return layoutManager.getPreferredSize(children);
     }
 
+    /** {@inheritDoc} */
     @Override
     public void setBounds(TerminalPosition position, TerminalSize size) {
         super.setBounds(position, size);
@@ -74,6 +84,7 @@ public abstract class AbstractContainer extends AbstractComponent implements Con
         }
     }
 
+    /** Renders all visible children into sub-graphics contexts. */
     @Override
     protected void drawComponent(TextGraphics graphics) {
         for (var child : children) {

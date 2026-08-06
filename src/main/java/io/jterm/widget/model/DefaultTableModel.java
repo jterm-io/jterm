@@ -13,26 +13,39 @@ public class DefaultTableModel extends AbstractTableModel {
     private final List<String> headers;
     private final List<List<String>> rows = new CopyOnWriteArrayList<>();
 
+    /**
+     * Creates a model with the given column headers.
+     *
+     * @param headers the column headers
+     */
     public DefaultTableModel(String... headers) {
         this.headers = new CopyOnWriteArrayList<>(Arrays.asList(headers));
     }
 
+    /** {@inheritDoc} — returns the current row count. */
     @Override
     public int getRowCount() {
         return rows.size();
     }
 
+    /** {@inheritDoc} — returns the column count from the headers. */
     @Override
     public int getColumnCount() {
         return headers.size();
     }
 
+    /**
+     * {@inheritDoc} — returns the header at the given index, or empty string if out of range.
+     */
     @Override
     public String getColumnName(int col) {
         if (col < 0 || col >= headers.size()) return "";
         return headers.get(col);
     }
 
+    /**
+     * {@inheritDoc} — returns the cell value, or empty string if row/column is out of range.
+     */
     @Override
     public String getValueAt(int row, int col) {
         if (row < 0 || row >= rows.size()) return "";

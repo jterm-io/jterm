@@ -11,11 +11,15 @@ public abstract class AbstractTableModel implements TableModel {
     private final List<TableModelListener> listeners = new CopyOnWriteArrayList<>();
 
     @Override
+    /** Registers a listener to be notified of table model changes.
+     * @param listener the listener to add */
     public void addTableModelListener(TableModelListener listener) {
         listeners.add(listener);
     }
 
     @Override
+    /** Removes a previously registered table model listener.
+     * @param listener the listener to remove */
     public void removeTableModelListener(TableModelListener listener) {
         listeners.remove(listener);
     }

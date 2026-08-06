@@ -96,6 +96,12 @@ public class TwinkleStarfield implements AnimatedBackground {
         return AnsiColor.WHITE;
     }
 
+    /**
+     * Renders a single frame at the current wall-clock time.
+     *
+     * @param graphics the text-graphics target
+     * @param size     the area to render into
+     */
     @Override
     public void renderFrame(TextGraphics graphics, TerminalSize size) {
         lastSize = size;
@@ -153,26 +159,31 @@ public class TwinkleStarfield implements AnimatedBackground {
         };
     }
 
+    /** {@inheritDoc} — records the new size for later use. */
     @Override
     public void onResize(TerminalSize newSize) {
         this.lastSize = newSize;
     }
 
+    /** Marks the animation as running. */
     @Override
     public void start() {
         running = true;
     }
 
+    /** Marks the animation as stopped. */
     @Override
     public void stop() {
         running = false;
     }
 
+    /** Returns whether the animation is currently running. */
     @Override
     public boolean isRunning() {
         return running;
     }
 
+    /** Returns the fixed target frame rate of 10 fps. */
     @Override
     public int targetFps() {
         return 10;

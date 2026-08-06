@@ -11,7 +11,7 @@ import io.jterm.util.Symbols;
  * Factory for common decorative border styles.
  *
  * <p>Each border wraps a single child component and draws a one-cell-thick outline
- * using Unicode box-drawing characters. {@link #empty()} is a special no-op border
+ * using Unicode box-drawing characters. {@link #empty(Component)} is a special no-op border
  * that passes the full area through to its child.</p>
  */
 public final class Borders {

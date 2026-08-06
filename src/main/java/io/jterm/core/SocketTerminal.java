@@ -70,6 +70,11 @@ public class SocketTerminal implements Terminal {
         return new TerminalSize(80, 24);
     }
 
+    /**
+     * Switch to the alternate screen buffer and enable raw mode.
+     *
+     * @throws IOException if an I/O error or other failure occurs
+     */
     @Override
     public void enterPrivateMode() throws IOException {
         writeRaw(AnsiCodes.ENTER_ALT_SCREEN.getBytes(StandardCharsets.UTF_8));
@@ -79,6 +84,11 @@ public class SocketTerminal implements Terminal {
         inPrivateMode = true;
     }
 
+    /**
+     * Leave the alternate screen buffer and restore original terminal settings.
+     *
+     * @throws IOException if an I/O error or other failure occurs
+     */
     @Override
     public void exitPrivateMode() throws IOException {
         if (!inPrivateMode) return;
@@ -88,21 +98,48 @@ public class SocketTerminal implements Terminal {
         inPrivateMode = false;
     }
 
+    /**
+     * Clear the terminal screen.
+     *
+     * @throws IOException if an I/O error or other failure occurs
+     */
     @Override
     public void clearScreen() throws IOException {
         writeRaw(AnsiCodes.CLEAR_SCREEN.getBytes(StandardCharsets.UTF_8));
     }
 
+    /**
+     * Move the cursor to the specified column and row.
+     *
+     * @param column the column index (0-based)
+     * @param row the row index (0-based)
+     *
+     * @throws IOException if an I/O error or other failure occurs
+     */
     @Override
     public void setCursorPosition(int column, int row) throws IOException {
         writeRaw(AnsiCodes.cursorTo(row, column));
     }
 
+    /**
+     * Show or hide the terminal cursor.
+     *
+     * @param visible true to show, false to hide
+     *
+     * @throws IOException if an I/O error or other failure occurs
+     */
     @Override
     public void setCursorVisible(boolean visible) throws IOException {
         writeRaw((visible ? AnsiCodes.SHOW_CURSOR : AnsiCodes.HIDE_CURSOR).getBytes(StandardCharsets.UTF_8));
     }
 
+    /**
+     * Write a single character to the terminal.
+     *
+     * @param c the character to write
+     *
+     * @throws IOException if an I/O error or other failure occurs
+     */
     @Override
     public void putCharacter(char c) throws IOException {
         if (cp437Mode) {
@@ -119,36 +156,81 @@ public class SocketTerminal implements Terminal {
         }
     }
 
+    /**
+     * Flush any buffered output to the underlying stream.
+     *
+     * @throws IOException if an I/O error or other failure occurs
+     */
     @Override
     public void flush() throws IOException {
         out.flush();
     }
 
+    /**
+     * Set the terminal foreground color.
+     *
+     * @param color the color to apply
+     *
+     * @throws IOException if an I/O error or other failure occurs
+     */
     @Override
     public void setForegroundColor(Color color) throws IOException {
         writeRaw(AnsiCodes.setForeground(color));
     }
 
+    /**
+     * Set the terminal background color.
+     *
+     * @param color the color to apply
+     *
+     * @throws IOException if an I/O error or other failure occurs
+     */
     @Override
     public void setBackgroundColor(Color color) throws IOException {
         writeRaw(AnsiCodes.setBackground(color));
     }
 
+    /**
+     * Enable a Select Graphic Rendition attribute.
+     *
+     * @param sgr the SGR attribute
+     *
+     * @throws IOException if an I/O error or other failure occurs
+     */
     @Override
     public void enableSGR(SGR sgr) throws IOException {
         writeRaw(AnsiCodes.enable(sgr));
     }
 
+    /**
+     * Disable a Select Graphic Rendition attribute.
+     *
+     * @param sgr the SGR attribute
+     *
+     * @throws IOException if an I/O error or other failure occurs
+     */
     @Override
     public void disableSGR(SGR sgr) throws IOException {
         writeRaw(AnsiCodes.disable(sgr));
     }
 
+    /**
+     * Reset all colors and SGR attributes to defaults.
+     *
+     * @throws IOException if an I/O error or other failure occurs
+     */
     @Override
     public void resetColorAndSGR() throws IOException {
         writeRaw(AnsiCodes.reset());
     }
 
+    /**
+     * Return the current terminal size (columns x rows).
+     *
+     * @return the terminalsize
+     *
+     * @throws IOException if an I/O error or other failure occurs
+     */
     @Override
     public TerminalSize getTerminalSize() throws IOException {
         return currentSize;
@@ -176,16 +258,35 @@ public class SocketTerminal implements Terminal {
         this.cp437Mode = cp437Mode;
     }
 
+    /**
+     * Return whether CP437 output translation is enabled.
+     *
+     * @return true if cp437mode, false otherwise
+     */
     public boolean isCp437Mode() {
         return cp437Mode;
     }
 
+    /**
+     * Poll for the next key stroke without blocking indefinitely.
+     *
+     * @return an Optional containing the key stroke, or empty if none available
+     *
+     * @throws IOException if an I/O error or other failure occurs
+     */
     @Override
     public Optional<KeyStroke> pollInput() throws IOException {
         if (inputClosed && inputQueue.isEmpty()) return Optional.empty();
         return Optional.ofNullable(inputQueue.poll());
     }
 
+    /**
+     * Block until the next key stroke is available.
+     *
+     * @return the next key stroke
+     *
+     * @throws IOException if an I/O error or other failure occurs
+     */
     @Override
     public KeyStroke readInput() throws IOException {
         try {
@@ -196,6 +297,15 @@ public class SocketTerminal implements Terminal {
         }
     }
 
+    /**
+     * Poll for the next key stroke without blocking indefinitely.
+     *
+     * @param timeoutMillis maximum time to wait in milliseconds
+     *
+     * @return an Optional containing the key stroke, or empty if none available
+     *
+     * @throws IOException if an I/O error or other failure occurs
+     */
     @Override
     public Optional<KeyStroke> pollInput(long timeoutMillis) throws IOException {
         if (timeoutMillis <= 0) return pollInput();
@@ -242,16 +352,31 @@ public class SocketTerminal implements Terminal {
         });
     }
 
+    /**
+     * Register a listener for terminal resize events.
+     *
+     * @param listener the listener to register
+     */
     @Override
     public void addResizeListener(TerminalResizeListener listener) {
         resizeListeners.add(listener);
     }
 
+    /**
+     * Remove a previously registered resize listener.
+     *
+     * @param listener the listener to register
+     */
     @Override
     public void removeResizeListener(TerminalResizeListener listener) {
         resizeListeners.remove(listener);
     }
 
+    /**
+     * Close the terminal and release resources.
+     *
+     * @throws IOException if an I/O error or other failure occurs
+     */
     @Override
     public void close() throws IOException {
         inputClosed = true;

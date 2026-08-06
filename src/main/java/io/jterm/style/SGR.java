@@ -11,6 +11,7 @@ public enum SGR {
     HIDDEN(8),
     STRIKETHROUGH(9);
 
+    /** The numeric SGR parameter code. */
     public final int code;
 
     SGR(int code) { this.code = code; }

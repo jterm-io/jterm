@@ -23,7 +23,7 @@ import java.util.List;
 /**
  * Menu demo: menu bar with File, Edit, and Help menus.
  *
- * <h3>Keyboard</h3>
+ * <p><b>Keyboard</b></p>
  * <ul>
  *   <li><b>Ctrl+F/E/H</b> or <b>Alt+F/E/H</b> — open File / Edit / Help menu</li>
  *   <li><b>Arrow Up/Down</b> — navigate menu items</li>

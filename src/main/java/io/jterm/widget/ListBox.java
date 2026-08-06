@@ -82,6 +82,12 @@ public class ListBox<T> extends AbstractComponent implements ListDataListener {
         }
     }
 
+    /**
+     * Enables or disables auto-scroll: when enabled, the list keeps the last
+     * item visible and disables manual scroll.
+     *
+     * @param autoScroll {@code true} to keep the last item visible
+     */
     public void setAutoScroll(boolean autoScroll) {
         this.autoScroll = autoScroll;
         if (autoScroll) {
@@ -91,10 +97,12 @@ public class ListBox<T> extends AbstractComponent implements ListDataListener {
         invalidate();
     }
 
+    /** Returns whether auto-scroll is enabled. */
     public boolean isAutoScroll() {
         return autoScroll;
     }
 
+    /** Scrolls the list so that the last item is visible. */
     public void scrollToBottom() {
         int rows = getSize().rows();
         int maxOffset = Math.max(0, model.getSize() - rows);
@@ -103,6 +111,7 @@ public class ListBox<T> extends AbstractComponent implements ListDataListener {
         invalidate();
     }
 
+    /** Returns the current scroll offset (the index of the topmost visible item). */
     public int getScrollOffset() {
         return scrollOffset;
     }
@@ -121,6 +130,12 @@ public class ListBox<T> extends AbstractComponent implements ListDataListener {
         setSelectedIndex(scrollOffset);
     }
 
+    /**
+     * Sets the scroll offset, clamped to {@code [0, maxSize - rows]}. Manual
+     * scroll is engaged when the offset is below the maximum.
+     *
+     * @param offset the desired scroll offset
+     */
     public void setScrollOffset(int offset) {
         int rows = getSize().rows();
         int maxOffset = Math.max(0, model.getSize() - rows);
@@ -129,6 +144,7 @@ public class ListBox<T> extends AbstractComponent implements ListDataListener {
         invalidate();
     }
 
+    /** Returns whether the last model item is currently visible. */
     public boolean isLastItemVisible() {
         int rows = getSize().rows();
         int size = model.getSize();
@@ -136,31 +152,48 @@ public class ListBox<T> extends AbstractComponent implements ListDataListener {
         return scrollOffset + rows >= size;
     }
 
+    /**
+     * Sets the function used to render each model element to a display string.
+     *
+     * @param renderer the rendering function
+     */
     public void setRenderer(Function<T, String> renderer) {
         this.renderer = renderer;
         invalidate();
     }
 
+    /** Returns the current rendering function. */
     public Function<T, String> getRenderer() {
         return renderer;
     }
 
+    /** Adds a listener that is fired whenever the selection changes. */
     public void addSelectionListener(Runnable listener) {
         selectionListeners.add(listener);
     }
 
+    /** Returns a defensive copy of the registered selection listeners. */
     public List<Runnable> getSelectionListeners() {
         return new ArrayList<>(selectionListeners);
     }
 
+    /** Returns the currently selected item, or {@code null} if the list is empty. */
     public T getSelectedItem() {
         int size = model.getSize();
         if (size == 0 || selectedIndex < 0 || selectedIndex >= size) return null;
         return model.getElementAt(selectedIndex);
     }
 
+    /** Returns the index of the currently selected item. */
     public int getSelectedIndex() { return selectedIndex; }
 
+    /**
+     * Sets the selected index, clamped to the valid model range, and fires
+     * selection listeners. When auto-scroll is not manually overridden the
+     * selected item is kept visible.
+     *
+     * @param index the desired selection index
+     */
     public void setSelectedIndex(int index) {
         int size = model.getSize();
         if (index < 0) index = 0;
@@ -175,6 +208,7 @@ public class ListBox<T> extends AbstractComponent implements ListDataListener {
         invalidate();
     }
 
+    /** Returns a list of all items currently in the model. */
     public List<T> getItems() {
         List<T> result = new ArrayList<>(model.getSize());
         for (int i = 0; i < model.getSize(); i++) {
@@ -192,6 +226,12 @@ public class ListBox<T> extends AbstractComponent implements ListDataListener {
         if (scrollOffset > maxOffset) scrollOffset = maxOffset;
     }
 
+    /**
+     * Computes the preferred size based on the widest rendered item and the
+     * model size (clamped to 10 rows).
+     *
+     * @return the preferred terminal size
+     */
     @Override
     protected TerminalSize calculatePreferredSize() {
         int maxLen = 4;
@@ -202,6 +242,11 @@ public class ListBox<T> extends AbstractComponent implements ListDataListener {
         return new TerminalSize(maxLen, Math.max(2, Math.min(model.getSize(), 10)));
     }
 
+    /**
+     * Renders the visible portion of the list, highlighting the selected row.
+     *
+     * @param graphics the text-graphics target
+     */
     @Override
     protected void drawComponent(TextGraphics graphics) {
         var size = getSize();
@@ -215,7 +260,7 @@ public class ListBox<T> extends AbstractComponent implements ListDataListener {
             }
             String text = renderer.apply(model.getElementAt(idx));
             boolean selected = idx == selectedIndex;
-            TextCell style = (selected && isFocused())
+            TextCell style = selected
                 ? new TextCell(' ', theme.selectionFg(), theme.selectionBg())
                 : new TextCell(' ', theme.foreground(), theme.background());
             graphics.fillRectangle(0, r, size.columns(), 1, style);
@@ -223,6 +268,12 @@ public class ListBox<T> extends AbstractComponent implements ListDataListener {
         }
     }
 
+    /**
+     * Handles Emacs-style and arrow navigation keys.
+     *
+     * @param keyStroke the keystroke to handle
+     * @return {@code true} if the keystroke was consumed
+     */
     @Override
     public boolean handleKeyStroke(KeyStroke keyStroke) {
         // Emacs-style key bindings (Ctrl+letter arrives as CHARACTER with ctrl=true)
@@ -246,12 +297,19 @@ public class ListBox<T> extends AbstractComponent implements ListDataListener {
         }
     }
 
+    /**
+     * Updates bounds and re-ensures the selected item is visible.
+     *
+     * @param position the new position
+     * @param size     the new size
+     */
     @Override
     public void setBounds(TerminalPosition position, TerminalSize size) {
         super.setBounds(position, size);
         ensureVisible();
     }
 
+    /** {@inheritDoc} — keeps selection valid and scrolls when auto-scroll is on. */
     @Override
     public void intervalAdded(ListDataEvent e) {
         if (autoScroll) {
@@ -263,6 +321,7 @@ public class ListBox<T> extends AbstractComponent implements ListDataListener {
         invalidate();
     }
 
+    /** {@inheritDoc} — keeps selection valid and re-ensures visibility. */
     @Override
     public void intervalRemoved(ListDataEvent e) {
         int oldSelected = selectedIndex;
@@ -276,6 +335,7 @@ public class ListBox<T> extends AbstractComponent implements ListDataListener {
         invalidate();
     }
 
+    /** {@inheritDoc} — clamps the selection and re-renders. */
     @Override
     public void contentsChanged(ListDataEvent e) {
         if (selectedIndex >= model.getSize()) {

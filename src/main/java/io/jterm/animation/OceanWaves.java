@@ -36,6 +36,10 @@ public class OceanWaves implements AnimatedBackground {
     private volatile TerminalSize lastSize;
     private volatile double time;
 
+    /**
+     * Constructs a new OceanWaves instance.
+     * @param preferredSize the preferred size
+     */
     public OceanWaves(TerminalSize preferredSize) {
         onResize(preferredSize);
     }
@@ -90,6 +94,11 @@ public class OceanWaves implements AnimatedBackground {
     }
 
     @Override
+    /**
+     * Renders one frame of the animation into the given graphics buffer.
+     * @param graphics the graphics
+     * @param size the size
+     */
     public void renderFrame(TextGraphics graphics, TerminalSize size) {
         lastSize = size;
         if (size.columns() <= 0 || size.rows() <= 0) return;
@@ -151,32 +160,54 @@ public class OceanWaves implements AnimatedBackground {
     }
 
     @Override
+    /**
+     * Reallocates internal buffers for the new terminal size.
+     * @param newSize the new size
+     */
     public void onResize(TerminalSize newSize) {
         this.lastSize = newSize;
         rebuildWaves(newSize);
     }
 
     @Override
+    /**
+     * Starts the animation.
+     */
     public void start() {
         running = true;
     }
 
     @Override
+    /**
+     * Stops the animation.
+     */
     public void stop() {
         running = false;
     }
 
     @Override
+    /**
+     * Returns whether the running flag is set.
+     * @return the result
+     */
     public boolean isRunning() {
         return running;
     }
 
     @Override
+    /**
+     * Returns the target frame rate in frames per second.
+     * @return the result
+     */
     public int targetFps() {
         return TARGET_FPS;
     }
 
     @Override
+    /**
+     * Returns the last terminal size the animation was rendered at.
+     * @return the result
+     */
     public TerminalSize lastSize() {
         return lastSize;
     }
