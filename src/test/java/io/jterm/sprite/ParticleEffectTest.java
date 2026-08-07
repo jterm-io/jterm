@@ -147,4 +147,87 @@ class ParticleEffectTest {
         fx.tick(600);
         assertEquals(0, fx.particleCount()); // dies after 500ms
     }
+
+    // ── radialExplosion tests ────────────────────────────────────────────────
+
+    @Test
+    @DisplayName("radialExplosion has no gravity")
+    void radialExplosionHasNoGravity() {
+        var fx = ParticleEffect.radialExplosion(40, 12, 10, AnsiColor.BRIGHT_RED);
+        assertEquals(0.0, fx.getGravity(), "radial explosion should have no gravity");
+    }
+
+    @Test
+    @DisplayName("radialExplosion has fade enabled")
+    void radialExplosionHasFadeEnabled() {
+        var fx = ParticleEffect.radialExplosion(40, 12, 10, AnsiColor.BRIGHT_RED);
+        assertTrue(fx.isFade(), "radial explosion should have fade enabled");
+    }
+
+    @Test
+    @DisplayName("radialExplosion particles all use the given color")
+    void radialExplosionParticlesUseGivenColor() {
+        var color = AnsiColor.BRIGHT_YELLOW;
+        var fx = ParticleEffect.radialExplosion(40, 12, 10, color);
+        assertEquals(10, fx.particleCount());
+        for (var p : fx.getParticles()) {
+            assertEquals(color, p.color(), "all particles should use the given color");
+        }
+    }
+
+    @Test
+    @DisplayName("radialExplosion particles radiate outward after one tick")
+    void radialExplosionParticlesRadiateOutward() {
+        int cx = 40, cy = 12;
+        var fx = ParticleEffect.radialExplosion(cx, cy, 20, AnsiColor.BRIGHT_RED);
+        // At spawn, all particles are at the center
+        for (var p : fx.getParticles()) {
+            assertEquals(cx, p.x(), 0.001, "particle should start at center x");
+            assertEquals(cy, p.y(), 0.001, "particle should start at center y");
+        }
+        fx.tick(100);
+        // After one tick, particles should be farther from center than at spawn
+        boolean moved = false;
+        for (var p : fx.getParticles()) {
+            double dist = Math.hypot(p.x() - cx, p.y() - cy);
+            if (dist > 0.01) {
+                moved = true;
+                break;
+            }
+        }
+        assertTrue(moved, "at least one particle should have moved away from center");
+    }
+
+    @Test
+    @DisplayName("fade dims particle color after half lifetime")
+    void fadeDimsParticleColor() {
+        var fx = new ParticleEffect();
+        fx.setFade(true);
+        // Spawn a particle with 1000ms lifetime
+        fx.spawn(40, 12, 0, 0, '*', AnsiColor.BRIGHT_WHITE, 1000);
+        fx.tick(0);
+        // At birth, fadedColor should match original color
+        var p0 = fx.getParticles().get(0);
+        assertEquals(AnsiColor.BRIGHT_WHITE, p0.fadedColor(),
+                "at birth fadedColor should be full brightness");
+        // Tick past half lifetime (600ms)
+        fx.tick(600);
+        var p1 = fx.getParticles().get(0);
+        // fadedColor should be different (dimmed) from original
+        assertNotEquals(AnsiColor.BRIGHT_WHITE, p1.fadedColor(),
+                "after 60% lifetime, fadedColor should be dimmed (different from original)");
+    }
+
+    @Test
+    @DisplayName("fade reaches black at end of life (particle is removed)")
+    void fadeReachesBlackAtEndOfLife() {
+        var fx = new ParticleEffect();
+        fx.setFade(true);
+        fx.spawn(40, 12, 0, 0, '*', AnsiColor.BRIGHT_RED, 500);
+        fx.tick(0);
+        assertEquals(1, fx.particleCount());
+        // Tick well past lifetime — particle should be removed (dead)
+        fx.tick(2000);
+        assertEquals(0, fx.particleCount(), "particle should be removed after lifetime expires");
+    }
 }

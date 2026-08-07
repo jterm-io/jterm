@@ -41,12 +41,23 @@ public class ParticleEffect {
 
     private volatile double gravity = 0.0;
     private volatile double friction = 1.0; // 1.0 = no friction, < 1 = slows
+    private volatile boolean fade = false; // when true, particles dim toward black as they age
 
     /**
      * A single particle. Exposed as a record so tests can snapshot state.
+     *
+     * @param x          spawn column
+     * @param y          spawn row
+     * @param vx         horizontal velocity
+     * @param vy         vertical velocity
+     * @param glyph      character to display
+     * @param color      original (birth) color
+     * @param fadedColor  current color after fade (equals color when fade is off)
+     * @param bornMs     timestamp the particle was born (0-based)
+     * @param lifetimeMs lifetime in ms
      */
     public record Particle(double x, double y, double vx, double vy, char glyph,
-                            Color color, long bornMs, long lifetimeMs) {
+                            Color color, Color fadedColor, long bornMs, long lifetimeMs) {
         /**
          * Returns whether alive.
          * @param nowMs the now ms value
@@ -96,6 +107,26 @@ public class ParticleEffect {
     }
 
     /**
+     * Spawn a top-down radial explosion — particles radiate outward from the
+     * given point with no gravity, strong friction, and color fading to black.
+     * Suitable for top-down games (e.g. Robotron) where gravity-based fireworks
+     * would look wrong.
+     *
+     * @param x     spawn column
+     * @param y     spawn row
+     * @param count number of particles
+     * @param color color for all particles (fades to black as they die)
+     * @return a new ParticleEffect with fade and friction pre-configured
+     */
+    public static ParticleEffect radialExplosion(int x, int y, int count, Color color) {
+        var fx = new ParticleEffect();
+        fx.setFriction(0.85);
+        fx.setFade(true);
+        fx.spawnRadialExplosion(x, y, count, color);
+        return fx;
+    }
+
+    /**
      * Spawn an explosion (radial burst) at the given position.
      *
      * @param x      spawn column
@@ -116,7 +147,7 @@ public class ParticleEffect {
             char glyph = glyphs[random.nextInt(glyphs.length)];
             Color color = palette[random.nextInt(palette.length)];
             long life = 300 + random.nextInt(400);
-            particles.add(new Particle(x, y, vx, vy, glyph, color, 0, life));
+            particles.add(new Particle(x, y, vx, vy, glyph, color, color, 0, life));
         }
     }
 
@@ -140,7 +171,31 @@ public class ParticleEffect {
             char glyph = glyphs[random.nextInt(glyphs.length)];
             Color color = palette[random.nextInt(palette.length)];
             long life = 200 + random.nextInt(600);
-            particles.add(new Particle(x + dx, y + dy, vx, vy, glyph, color, 0, life));
+            particles.add(new Particle(x + dx, y + dy, vx, vy, glyph, color, color, 0, life));
+        }
+    }
+
+    /**
+     * Spawn a top-down radial explosion — all particles use the same color,
+     * radiate outward from (x, y) with short contained speeds, and have short
+     * punchy lifetimes. The effect should also have fade enabled and friction
+     * set (see {@link #radialExplosion(int, int, int, Color)}).
+     *
+     * @param x     spawn column
+     * @param y     spawn row
+     * @param count number of particles
+     * @param color color for all particles
+     */
+    public void spawnRadialExplosion(int x, int y, int count, Color color) {
+        char[] glyphs = {'*', '+', '.', 'x'};
+        for (int i = 0; i < count; i++) {
+            double angle = random.nextDouble() * 2 * Math.PI;
+            double speed = 0.5 + random.nextDouble() * 2.0; // 0.5 to 2.5
+            double vx = Math.cos(angle) * speed;
+            double vy = Math.sin(angle) * speed;
+            char glyph = glyphs[random.nextInt(glyphs.length)];
+            long life = 300 + random.nextInt(300); // 300-600ms
+            particles.add(new Particle(x, y, vx, vy, glyph, color, color, 0, life));
         }
     }
 
@@ -157,7 +212,7 @@ public class ParticleEffect {
      */
     public void spawn(double x, double y, double vx, double vy,
                       char glyph, Color color, long lifetimeMs) {
-        particles.add(new Particle(x, y, vx, vy, glyph, color, 0, lifetimeMs));
+        particles.add(new Particle(x, y, vx, vy, glyph, color, color, 0, lifetimeMs));
     }
 
     /**
@@ -189,8 +244,17 @@ public class ParticleEffect {
             vy += gravity * dt * 10.0;
             double nx = p.x() + vx * dt * 10.0;
             double ny = p.y() + vy * dt * 10.0;
+            // compute faded color: at birth full brightness, at death black
+            Color fadedColor = p.color();
+            if (fade && p.color() instanceof AnsiColor ac && p.lifetimeMs() > 0) {
+                long elapsed = now - p.bornMs();
+                double fadeFactor = 1.0 - ((double) elapsed / p.lifetimeMs());
+                if (fadeFactor < 0.0) fadeFactor = 0.0;
+                if (fadeFactor > 1.0) fadeFactor = 1.0;
+                fadedColor = AnsiColor.blendAnsi(ac, AnsiColor.BLACK, fadeFactor);
+            }
             alive.add(new Particle(nx, ny, vx, vy, p.glyph(), p.color(),
-                    p.bornMs(), p.lifetimeMs()));
+                    fadedColor, p.bornMs(), p.lifetimeMs()));
         }
         particles.clear();
         particles.addAll(alive);
@@ -208,7 +272,8 @@ public class ParticleEffect {
             if (col < 0 || row < 0) continue;
             var size = g.getSize();
             if (col >= size.columns() || row >= size.rows()) continue;
-            g.setCell(col, row, new TextCell(p.glyph(), p.color(), AnsiColor.DEFAULT));
+            Color drawColor = fade ? p.fadedColor() : p.color();
+            g.setCell(col, row, new TextCell(p.glyph(), drawColor, AnsiColor.DEFAULT));
         }
     }
 
@@ -243,11 +308,33 @@ public class ParticleEffect {
     /** Lightweight position record for snapshots. */
     public record Pos(double x, double y) {}
 
-    /**
-     * Clear all particles.
-     */
+    /** Clear all particles. */
     public void reset() {
         particles.clear();
+    }
+
+    /**
+     * @return an unmodifiable view of the current particles (for testing)
+     */
+    public List<Particle> getParticles() {
+        return List.copyOf(particles);
+    }
+
+    /**
+     * Enable or disable color fading. When enabled, particles dim toward
+     * {@link AnsiColor#BLACK} as they age (at birth full brightness, at death black).
+     *
+     * @param fade true to enable fading
+     */
+    public void setFade(boolean fade) {
+        this.fade = fade;
+    }
+
+    /**
+     * @return whether color fading is enabled
+     */
+    public boolean isFade() {
+        return fade;
     }
 
     /**
