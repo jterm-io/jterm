@@ -65,8 +65,11 @@ public class SocketTerminal implements Terminal {
     }
 
     private static TerminalSize queryTerminalSize(InputStream in, OutputStream out) throws IOException {
-        // TODO: implement TIOCGWINSZ-over-ANSI (ESC [ 18 t / ESC [ 8 ; rows ; cols t)
-        // For now, return a safe default. Network terminals should prefer the size constructor.
+        // 1. Try ANSI ESC[18t query
+        var size = TerminalSizeQuery.query(in, out, 500);
+        if (size != null) return size;
+
+        // 2. Final fallback — no stty on network connections
         return new TerminalSize(80, 24);
     }
 

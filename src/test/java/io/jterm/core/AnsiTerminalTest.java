@@ -483,6 +483,48 @@ class AnsiTerminalTest {
         assertEquals(40, size.rows());
     }
 
+    @Test
+    void getTerminalSizeFromEsc18tResponse() throws Exception {
+        // Pre-load the input stream with ESC[8;rows;cols t response
+        var response = "\033[8;30;120t";
+        var captured = new ByteArrayOutputStream();
+        var in = new ByteArrayInputStream(response.getBytes(StandardCharsets.UTF_8));
+        // Two-arg package-private constructor queries size via ESC[18t
+        var term = new AnsiTerminal(captured, in);
+        var size = term.getTerminalSize();
+        assertEquals(120, size.columns());
+        assertEquals(30, size.rows());
+        // Verify ESC[18t was sent on the output stream
+        term.flush();
+        var outStr = captured.toString(StandardCharsets.UTF_8);
+        assertTrue(outStr.contains("\033[18t"), "should send ESC[18t query");
+    }
+
+    @Test
+    void getTerminalSizeFallsBackTo80x24WhenNoResponse() throws Exception {
+        var captured = new ByteArrayOutputStream();
+        var in = new ByteArrayInputStream(new byte[0]);
+        // No response data — should fall back to 80x24
+        var term = new AnsiTerminal(captured, in);
+        var size = term.getTerminalSize();
+        assertEquals(80, size.columns());
+        assertEquals(24, size.rows());
+    }
+
+    @Test
+    void getTerminalSizeCachesResult() throws Exception {
+        // Verify that getTerminalSize() returns cached value, doesn't re-query
+        var response = "\033[8;40;100t";
+        var captured = new ByteArrayOutputStream();
+        var in = new ByteArrayInputStream(response.getBytes(StandardCharsets.UTF_8));
+        var term = new AnsiTerminal(captured, in);
+        var first = term.getTerminalSize();
+        var second = term.getTerminalSize();
+        assertEquals(first, second);
+        assertEquals(100, first.columns());
+        assertEquals(40, first.rows());
+    }
+
     // ---- pollInput / readInput ----
 
     @Test

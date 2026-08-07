@@ -59,6 +59,30 @@ public class AnsiTerminal implements Terminal {
         startReaderThread();
     }
 
+    /**
+     * Package-private constructor for testing: uses provided streams and queries
+     * terminal size dynamically via ESC[18t (no stty, no /dev/tty). Does not
+     * own stty since these are not the real terminal.
+     */
+    AnsiTerminal(OutputStream out, InputStream in) {
+        this.out = new BufferedOutputStream(out, 4096);
+        this.in = in;
+        this.decoder = new InputDecoder(in);
+        this.fixedSize = null;
+        this.lastSize = queryTerminalSize(in, out);
+        this.originalStty = null;
+        this.ownStty = false;
+        startReaderThread();
+    }
+
+    private static TerminalSize queryTerminalSize(InputStream in, OutputStream out) {
+        // 1. Try ANSI ESC[18t query over the provided streams
+        var size = TerminalSizeQuery.query(in, out, 500);
+        if (size != null) return size;
+        // 2. Final fallback
+        return new TerminalSize(80, 24);
+    }
+
     private static String captureStty() throws IOException {
         try {
             var pb = new ProcessBuilder("sh", "-c", "stty -g </dev/tty").redirectErrorStream(true);
@@ -89,6 +113,11 @@ public class AnsiTerminal implements Terminal {
     }
 
     private static TerminalSize queryTerminalSize() {
+        // 1. Try ANSI ESC[18t query over System.in/System.out
+        var size = TerminalSizeQuery.query(System.in, System.out, 500);
+        if (size != null) return size;
+
+        // 2. Last resort: stty size (local only)
         try {
             var pb = new ProcessBuilder("sh", "-c", "stty size </dev/tty").redirectErrorStream(true);
             var p = pb.start();
@@ -101,6 +130,8 @@ public class AnsiTerminal implements Terminal {
         } catch (Exception e) {
             // fall through
         }
+
+        // 3. Final fallback
         return new TerminalSize(80, 24);
     }
 
@@ -260,7 +291,7 @@ public class AnsiTerminal implements Terminal {
     @Override
     public TerminalSize getTerminalSize() throws IOException {
         if (fixedSize != null) return fixedSize;
-        return queryTerminalSize();
+        return lastSize;
     }
 
     /**

@@ -32,7 +32,7 @@ Three layers, each building on the one below:
 5. **No `SGR.REVERSE` for cursors.** Swap fg/bg directly in the TextCell — not all terminals implement REVERSE.
 6. **No native terminal cursor.** Draw your own virtual cursor. The real cursor is hidden (`ESC[?25l`).
 7. **Widgets query theme at draw time**, not in constructors. Theme can change at runtime.
-8. **Event loop must sleep when idle.** `Thread.sleep(16)` when no input — otherwise 100% CPU spin.
+8. **Event loop uses blocking input**, not sleep-poll. `getInput()` calls `pollInput(5ms)` which blocks on the terminal's `BlockingQueue` and returns immediately when input arrives. No `Thread.sleep(16)` — the loop calls `Thread.yield()` when idle to let background threads run.
 9. **Call `gui.requestRefresh()` before `gui.updateScreen()`** if handling keys directly.
 10. **`TextCell` is immutable.** Safe to share between buffers, no defensive copies needed.
 

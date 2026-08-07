@@ -90,6 +90,32 @@ class SocketTerminalExtraTest {
     }
 
     @Test
+    void dynamicSizeConstructorWithEsc18tResponse() throws Exception {
+        // Pre-load input with ESC[8;rows;cols t response
+        var response = "\033[8;40;150t";
+        var captured = new ByteArrayOutputStream();
+        var in = new ByteArrayInputStream(response.getBytes(StandardCharsets.UTF_8));
+        var t = new SocketTerminal(in, captured);
+        var size = t.getTerminalSize();
+        assertEquals(150, size.columns());
+        assertEquals(40, size.rows());
+        // Verify ESC[18t was sent
+        var outStr = captured.toString(StandardCharsets.UTF_8);
+        assertTrue(outStr.contains("\033[18t"), "should send ESC[18t query");
+    }
+
+    @Test
+    void dynamicSizeConstructorWithEsc18tResponseSmallTerminal() throws Exception {
+        var response = "\033[8;25;90t";
+        var captured = new ByteArrayOutputStream();
+        var in = new ByteArrayInputStream(response.getBytes(StandardCharsets.UTF_8));
+        var t = new SocketTerminal(in, captured);
+        var size = t.getTerminalSize();
+        assertEquals(90, size.columns());
+        assertEquals(25, size.rows());
+    }
+
+    @Test
     void pollInputTimeoutZeroReturnsQueuedInput() throws Exception {
         var h = newHolder("k".getBytes(StandardCharsets.UTF_8));
         Thread.sleep(20);
