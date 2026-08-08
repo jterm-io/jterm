@@ -120,7 +120,7 @@ public class ParticleEffect {
      */
     public static ParticleEffect radialExplosion(int x, int y, int count, Color color) {
         var fx = new ParticleEffect();
-        fx.setFriction(0.85);
+        fx.setFriction(0.97);
         fx.setFade(true);
         fx.spawnRadialExplosion(x, y, count, color);
         return fx;
@@ -190,11 +190,11 @@ public class ParticleEffect {
         char[] glyphs = {'*', '+', '.', 'x'};
         for (int i = 0; i < count; i++) {
             double angle = random.nextDouble() * 2 * Math.PI;
-            double speed = 0.5 + random.nextDouble() * 2.0; // 0.5 to 2.5
+            double speed = 1.5 + random.nextDouble() * 2.0; // 1.5 to 3.5
             double vx = Math.cos(angle) * speed;
             double vy = Math.sin(angle) * speed;
             char glyph = glyphs[random.nextInt(glyphs.length)];
-            long life = 300 + random.nextInt(300); // 300-600ms
+            long life = 400 + random.nextInt(300); // 400-700ms
             particles.add(new Particle(x, y, vx, vy, glyph, color, color, 0, life));
         }
     }
