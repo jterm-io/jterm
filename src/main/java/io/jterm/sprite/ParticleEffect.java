@@ -244,14 +244,18 @@ public class ParticleEffect {
             vy += gravity * dt * 10.0;
             double nx = p.x() + vx * dt * 10.0;
             double ny = p.y() + vy * dt * 10.0;
-            // compute faded color: at birth full brightness, at death black
+            // compute faded color using discrete ANSI palette steps.
+            // Blending in RGB space snaps to wrong colors due to the coarse
+            // 16-color palette (e.g. dimming BRIGHT_RED by 20% → BLACK).
+            // Instead, step down through palette levels:
+            //   100-66% life: BRIGHT_* (original color)
+            //   66-33% life: normal version (RED, CYAN, etc.)
+            //   33-0% life: BRIGHT_BLACK (dark gray)
             Color fadedColor = p.color();
             if (fade && p.color() instanceof AnsiColor ac && p.lifetimeMs() > 0) {
                 long elapsed = now - p.bornMs();
-                double fadeFactor = 1.0 - ((double) elapsed / p.lifetimeMs());
-                if (fadeFactor < 0.0) fadeFactor = 0.0;
-                if (fadeFactor > 1.0) fadeFactor = 1.0;
-                fadedColor = AnsiColor.blendAnsi(ac, AnsiColor.BLACK, fadeFactor);
+                double lifeFraction = (double) elapsed / p.lifetimeMs(); // 0=birth, 1=death
+                fadedColor = stepFade(ac, lifeFraction);
             }
             alive.add(new Particle(nx, ny, vx, vy, p.glyph(), p.color(),
                     fadedColor, p.bornMs(), p.lifetimeMs()));
@@ -335,6 +339,46 @@ public class ParticleEffect {
      */
     public boolean isFade() {
         return fade;
+    }
+
+    /**
+     * Step-fade an AnsiColor through discrete palette levels based on life fraction.
+     *
+     * <p>Uses 3 steps to avoid the 16-color palette snapping problem:
+     * <ul>
+     *   <li>0.0–0.33: original bright color (full life)</li>
+     *   <li>0.33–0.66: normal (dim) version of the color</li>
+     *   <li>0.66–1.0: BRIGHT_BLACK (dark gray, near death)</li>
+     * </ul>
+     *
+     * @param color the original particle color
+     * @param lifeFraction 0.0 at birth, 1.0 at death
+     * @return the stepped-down color
+     */
+    static AnsiColor stepFade(AnsiColor color, double lifeFraction) {
+        if (lifeFraction < 0.33) return color;
+        if (lifeFraction < 0.66) return toDim(color);
+        return AnsiColor.BRIGHT_BLACK;
+    }
+
+    /**
+     * Map a BRIGHT_* color to its normal (dim) counterpart.
+     *
+     * @param color a bright ANSI color
+     * @return the normal-intensity version, or BRIGHT_BLACK if no mapping exists
+     */
+    private static AnsiColor toDim(AnsiColor color) {
+        return switch (color) {
+            case BRIGHT_BLACK -> AnsiColor.BLACK;
+            case BRIGHT_RED -> AnsiColor.RED;
+            case BRIGHT_GREEN -> AnsiColor.GREEN;
+            case BRIGHT_YELLOW -> AnsiColor.YELLOW;
+            case BRIGHT_BLUE -> AnsiColor.BLUE;
+            case BRIGHT_MAGENTA -> AnsiColor.MAGENTA;
+            case BRIGHT_CYAN -> AnsiColor.CYAN;
+            case BRIGHT_WHITE -> AnsiColor.WHITE;
+            default -> AnsiColor.BRIGHT_BLACK; // already dim or DEFAULT
+        };
     }
 
     /**
