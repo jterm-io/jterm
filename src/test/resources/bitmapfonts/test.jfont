@@ -1,0 +1,19 @@
+font test
+width 3
+height 3
+---
+char A
+111
+121
+113
+---
+char B
+010
+111
+010
+---
+char  
+000
+000
+000
+---
