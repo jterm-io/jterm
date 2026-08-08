@@ -210,13 +210,13 @@ class ParticleEffectTest {
         var p0 = fx.getParticles().get(0);
         assertEquals(AnsiColor.BRIGHT_WHITE, p0.fadedColor(),
                 "at birth fadedColor should be full brightness");
-        // Tick to 40% lifetime (400ms) — should step down to normal WHITE
+        // Tick to 40% lifetime (400ms total) — should step down to normal WHITE
         fx.tick(400);
         var p1 = fx.getParticles().get(0);
         assertEquals(AnsiColor.WHITE, p1.fadedColor(),
                 "at 40% lifetime, fadedColor should step down to normal WHITE");
-        // Tick to 70% lifetime (700ms) — should step down to BRIGHT_BLACK (gray)
-        fx.tick(700);
+        // Tick to 70% lifetime (300ms more, 700ms total) — should step down to BRIGHT_BLACK (gray)
+        fx.tick(300);
         var p2 = fx.getParticles().get(0);
         assertEquals(AnsiColor.BRIGHT_BLACK, p2.fadedColor(),
                 "at 70% lifetime, fadedColor should be BRIGHT_BLACK (dark gray)");

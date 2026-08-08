@@ -39,6 +39,9 @@ public class ParticleEffect {
     private final List<Particle> particles = new ArrayList<>();
     private final Random random = new Random();
 
+    /** Accumulated simulation clock in ms. Advances by deltaMs on each tick. */
+    private long clock = 0;
+
     private volatile double gravity = 0.0;
     private volatile double friction = 1.0; // 1.0 = no friction, < 1 = slows
     private volatile boolean fade = false; // when true, particles dim toward black as they age
@@ -147,7 +150,7 @@ public class ParticleEffect {
             char glyph = glyphs[random.nextInt(glyphs.length)];
             Color color = palette[random.nextInt(palette.length)];
             long life = 300 + random.nextInt(400);
-            particles.add(new Particle(x, y, vx, vy, glyph, color, color, 0, life));
+            particles.add(new Particle(x, y, vx, vy, glyph, color, color, clock, life));
         }
     }
 
@@ -171,7 +174,7 @@ public class ParticleEffect {
             char glyph = glyphs[random.nextInt(glyphs.length)];
             Color color = palette[random.nextInt(palette.length)];
             long life = 200 + random.nextInt(600);
-            particles.add(new Particle(x + dx, y + dy, vx, vy, glyph, color, color, 0, life));
+            particles.add(new Particle(x + dx, y + dy, vx, vy, glyph, color, color, clock, life));
         }
     }
 
@@ -195,7 +198,7 @@ public class ParticleEffect {
             double vy = Math.sin(angle) * speed;
             char glyph = glyphs[random.nextInt(glyphs.length)];
             long life = 400 + random.nextInt(300); // 400-700ms
-            particles.add(new Particle(x, y, vx, vy, glyph, color, color, 0, life));
+            particles.add(new Particle(x, y, vx, vy, glyph, color, color, clock, life));
         }
     }
 
@@ -212,7 +215,7 @@ public class ParticleEffect {
      */
     public void spawn(double x, double y, double vx, double vy,
                       char glyph, Color color, long lifetimeMs) {
-        particles.add(new Particle(x, y, vx, vy, glyph, color, color, 0, lifetimeMs));
+        particles.add(new Particle(x, y, vx, vy, glyph, color, color, clock, lifetimeMs));
     }
 
     /**
@@ -223,14 +226,11 @@ public class ParticleEffect {
      *                wall-clock; the first call seeds time zero)
      */
     public void tick(long deltaMs) {
-        // We use deltaMs as both elapsed time and "current time" for simplicity.
-        // The first call seeds born=0 and tests pass deltaMs as elapsed time.
-        // For tests, we keep particle.bornMs = 0 (set at spawn time) and
-        // treat deltaMs as elapsed time.
+        clock += deltaMs;
         double dt = deltaMs / 1000.0; // seconds
         List<Particle> alive = new ArrayList<>();
         for (Particle p : particles) {
-            long now = deltaMs;
+            long now = clock;
             if (!p.isAlive(now)) continue;
             // apply friction (velocity damping)
             double vx = p.vx();
