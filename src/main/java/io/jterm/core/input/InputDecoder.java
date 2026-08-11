@@ -155,6 +155,26 @@ public class InputDecoder {
         if (finalByte == 'Z') {
             return new KeyStroke(KeyType.TAB, '\0', false, false, true);
         }
+
+        // Parse modifier code from params. Modern terminals encode modifiers as
+        // ESC[keyId;modifierCode finalByte where modifierCode 2=Shift, 3=Alt,
+        // 4=Alt+Shift, 5=Ctrl, 6=Ctrl+Shift, 7=Ctrl+Alt, 8=Ctrl+Alt+Shift.
+        // (modifierCode - 1) is a bitmask: bit 0 = Shift, bit 1 = Alt, bit 2 = Ctrl.
+        String keyParam = params;
+        boolean shift = false, alt = false, ctrl = false;
+        int semicolon = params.indexOf(';');
+        if (semicolon >= 0) {
+            keyParam = params.substring(0, semicolon);
+            String modStr = params.substring(semicolon + 1);
+            int modCode = parseModCode(modStr);
+            if (modCode > 0) {
+                int mask = modCode - 1;
+                shift = (mask & 1) != 0;
+                alt = (mask & 2) != 0;
+                ctrl = (mask & 4) != 0;
+            }
+        }
+
         KeyType type = switch (finalByte) {
             case 'A' -> KeyType.ARROW_UP;
             case 'B' -> KeyType.ARROW_DOWN;
@@ -162,10 +182,25 @@ public class InputDecoder {
             case 'D' -> KeyType.ARROW_LEFT;
             case 'H' -> KeyType.HOME;
             case 'F' -> KeyType.END;
-            case '~' -> mapTilde(params);
+            case '~' -> mapTilde(keyParam);
             default -> KeyType.UNKNOWN;
         };
-        return new KeyStroke(type);
+        return new KeyStroke(type, '\0', ctrl, alt, shift);
+    }
+
+    /**
+     * Parse the modifier code substring (the part after the semicolon in CSI params).
+     *
+     * @param modStr the modifier code string, e.g. {@code "2"} for Shift
+     * @return the modifier code, or 0 if the string is empty or not a valid number
+     */
+    private int parseModCode(String modStr) {
+        if (modStr.isEmpty()) return 0;
+        try {
+            return Integer.parseInt(modStr);
+        } catch (NumberFormatException e) {
+            return 0;
+        }
     }
 
     private KeyType mapTilde(String params) {

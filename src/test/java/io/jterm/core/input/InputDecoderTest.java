@@ -365,8 +365,12 @@ class InputDecoderTest {
 
     @Test
     void csiSequenceWithSemicolon() {
-        // params with ';', final byte '~' with unknown params -> UNKNOWN
-        assertEquals(KeyType.UNKNOWN, decode("\033[2;3~".getBytes()).type());
+        // ESC[2;3~ = Insert with Alt modifier (2=Insert, 3=Alt)
+        var ks = decode("\033[2;3~".getBytes());
+        assertEquals(KeyType.INSERT, ks.type());
+        assertTrue(ks.alt());
+        assertFalse(ks.shift());
+        assertFalse(ks.ctrl());
     }
 
     @Test
@@ -806,5 +810,88 @@ class InputDecoderTest {
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
+    }
+
+    // ---------- New tests: CSI modifier codes ----------
+
+    @Test
+    void shiftArrowUp() {
+        var ks = decode("\033[1;2A".getBytes());
+        assertEquals(KeyType.ARROW_UP, ks.type());
+        assertTrue(ks.shift());
+        assertFalse(ks.ctrl());
+        assertFalse(ks.alt());
+    }
+
+    @Test
+    void ctrlArrowUp() {
+        var ks = decode("\033[1;5A".getBytes());
+        assertEquals(KeyType.ARROW_UP, ks.type());
+        assertTrue(ks.ctrl());
+        assertFalse(ks.shift());
+        assertFalse(ks.alt());
+    }
+
+    @Test
+    void altArrowUp() {
+        var ks = decode("\033[1;3A".getBytes());
+        assertEquals(KeyType.ARROW_UP, ks.type());
+        assertTrue(ks.alt());
+        assertFalse(ks.shift());
+        assertFalse(ks.ctrl());
+    }
+
+    @Test
+    void shiftArrowDown() {
+        var ks = decode("\033[1;2B".getBytes());
+        assertEquals(KeyType.ARROW_DOWN, ks.type());
+        assertTrue(ks.shift());
+        assertFalse(ks.ctrl());
+        assertFalse(ks.alt());
+    }
+
+    @Test
+    void ctrlShiftArrowUp() {
+        var ks = decode("\033[1;6A".getBytes());
+        assertEquals(KeyType.ARROW_UP, ks.type());
+        assertTrue(ks.ctrl());
+        assertTrue(ks.shift());
+        assertFalse(ks.alt());
+    }
+
+    @Test
+    void shiftHome() {
+        var ks = decode("\033[1;2H".getBytes());
+        assertEquals(KeyType.HOME, ks.type());
+        assertTrue(ks.shift());
+        assertFalse(ks.ctrl());
+        assertFalse(ks.alt());
+    }
+
+    @Test
+    void shiftEnd() {
+        var ks = decode("\033[1;2F".getBytes());
+        assertEquals(KeyType.END, ks.type());
+        assertTrue(ks.shift());
+        assertFalse(ks.ctrl());
+        assertFalse(ks.alt());
+    }
+
+    @Test
+    void shiftPageUp() {
+        var ks = decode("\033[5;2~".getBytes());
+        assertEquals(KeyType.PAGE_UP, ks.type());
+        assertTrue(ks.shift());
+        assertFalse(ks.ctrl());
+        assertFalse(ks.alt());
+    }
+
+    @Test
+    void arrowUpNoParamsHasNoModifiers() {
+        var ks = decode("\033[A".getBytes());
+        assertEquals(KeyType.ARROW_UP, ks.type());
+        assertFalse(ks.shift());
+        assertFalse(ks.ctrl());
+        assertFalse(ks.alt());
     }
 }
