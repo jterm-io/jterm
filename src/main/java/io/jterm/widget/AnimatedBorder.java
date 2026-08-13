@@ -125,7 +125,9 @@ public class AnimatedBorder extends Border {
         var bgCell = new TextCell(' ', theme.foreground(), theme.background());
         graphics.fillRectangle(0, 0, size.columns(), size.rows(), bgCell);
 
-        var borderCell = new TextCell(' ', theme.border(), theme.background());
+        // Use context border color override if set, otherwise theme default
+        var borderFg = ctx.getBorderColor() != null ? ctx.getBorderColor() : theme.border();
+        var borderCell = new TextCell(' ', borderFg, theme.background());
 
         // Top edge: corner + horizontal chars + corner
         StringBuilder top = new StringBuilder();

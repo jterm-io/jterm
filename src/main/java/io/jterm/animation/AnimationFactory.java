@@ -43,6 +43,11 @@ public final class AnimationFactory {
         return new RotatingDashCornersEffect();
     }
 
+    /** Returns a new {@link ColorPulseEffect} with default 10 frames per color. */
+    public static ColorPulseEffect colorPulse() {
+        return new ColorPulseEffect(10);
+    }
+
     /** Returns a randomly chosen animation using a fresh {@link Random}. */
     public static AnimatedBackground random() {
         return random(new Random());

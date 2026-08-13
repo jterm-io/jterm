@@ -1,6 +1,7 @@
 package io.jterm.animation;
 
 import io.jterm.core.TerminalSize;
+import io.jterm.style.AnsiColor;
 import io.jterm.widget.Border;
 
 import java.util.EnumMap;
@@ -31,6 +32,9 @@ public class BorderContext {
 
     private final EnumMap<Corner, String> corners = new EnumMap<>(Corner.class);
     private final Map<String, String> edges = new HashMap<>();
+
+    /** Foreground color override for border cells, or null to use theme default. */
+    private AnsiColor borderColor;
 
     /**
      * Creates a border context for the given size and style.
@@ -94,15 +98,31 @@ public class BorderContext {
         };
     }
 
+    // ---- Border color ----
+
+    /** Sets the foreground color for all border cells (corners + edges).
+     *  When set, the border renderer will use this color instead of
+     *  the theme's border color for all perimeter cells. */
+    public void setBorderColor(AnsiColor color) {
+        this.borderColor = color;
+    }
+
+    /** Returns the current border foreground color override, or null if
+     *  the theme default should be used. */
+    public AnsiColor getBorderColor() {
+        return borderColor;
+    }
+
     // ---- Reset ----
 
-    /** Restores all corners and edges to the base style defaults. */
+    /** Restores all corners, edges, and border color to the base style defaults. */
     public void resetToStyle() {
         corners.put(Corner.TL, style.topLeft());
         corners.put(Corner.TR, style.topRight());
         corners.put(Corner.BL, style.bottomLeft());
         corners.put(Corner.BR, style.bottomRight());
         edges.clear();
+        borderColor = null;
     }
 
     private static String edgeKey(Side side, int position) {
