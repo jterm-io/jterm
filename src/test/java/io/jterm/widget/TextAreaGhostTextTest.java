@@ -17,9 +17,9 @@ import static org.junit.jupiter.api.Assertions.*;
  * Tests for ghost text (inline completion) rendering and acceptance in
  * {@link TextArea}, including multi-line contexts.
  *
- * <p>Note: in the rendering, ghost text is drawn starting at the cursor's
- * screen column, then the cursor cell is drawn on top, overwriting the first
- * ghost character. So visible ghost characters start at cursorCol + 1.
+ * <p>Note: in the rendering, ghost text is drawn starting one cell after the
+ * cursor's screen column (cursorCol + 1), so the cursor cell keeps its
+ * inverted-color highlight and the full ghost text is visible from cursorCol + 1.
  */
 class TextAreaGhostTextTest {
 
@@ -51,12 +51,17 @@ class TextAreaGhostTextTest {
         ta.setCompletionProvider((text, pos) -> "llo");
 
         var buf = drawArea(ta, 20, 5);
-        // Ghost text "llo" drawn at cols 2,3,4. Cursor overwrites col 2.
-        // Visible ghost: col 3 = 'l' (2nd l), col 4 = 'o'
+        var theme = ThemeManager.active();
+        // Cursor at (0,2), shown with swapped fg/bg.
+        // Ghost text "llo" starts at col 3 (cursor + 1) in BRIGHT_BLACK.
+        assertEquals(theme.selectionFg(), buf.getCell(2, 0).fg(), "cursor cell should have selection fg");
+        assertEquals(theme.selectionBg(), buf.getCell(2, 0).bg(), "cursor cell should have selection bg");
         assertEquals(AnsiColor.BRIGHT_BLACK, buf.getCell(3, 0).fg());
         assertTrue(buf.getCell(3, 0).is('l'));
         assertEquals(AnsiColor.BRIGHT_BLACK, buf.getCell(4, 0).fg());
-        assertTrue(buf.getCell(4, 0).is('o'));
+        assertTrue(buf.getCell(4, 0).is('l'));
+        assertEquals(AnsiColor.BRIGHT_BLACK, buf.getCell(5, 0).fg());
+        assertTrue(buf.getCell(5, 0).is('o'));
     }
 
     @Test
@@ -133,10 +138,15 @@ class TextAreaGhostTextTest {
         ta.setCompletionProvider((text, pos) -> "ld");
 
         var buf = drawArea(ta, 20, 5);
-        // Ghost "ld" at row 1, cols 3,4. Cursor overwrites col 3.
-        // Visible: col 4 = 'd'
+        var theme = ThemeManager.active();
+        // Cursor at (1,3), shown with swapped selection fg/bg.
+        // Ghost "ld" starts at col 4 (cursor + 1) in BRIGHT_BLACK.
+        assertEquals(theme.selectionFg(), buf.getCell(3, 1).fg(), "cursor cell should have selection fg");
+        assertEquals(theme.selectionBg(), buf.getCell(3, 1).bg(), "cursor cell should have selection bg");
         assertEquals(AnsiColor.BRIGHT_BLACK, buf.getCell(4, 1).fg());
-        assertTrue(buf.getCell(4, 1).is('d'));
+        assertTrue(buf.getCell(4, 1).is('l'));
+        assertEquals(AnsiColor.BRIGHT_BLACK, buf.getCell(5, 1).fg());
+        assertTrue(buf.getCell(5, 1).is('d'));
     }
 
     @Test
@@ -148,13 +158,17 @@ class TextAreaGhostTextTest {
         ta.setCompletionProvider((text, pos) -> "Extra");
 
         var buf = drawArea(ta, 20, 5);
-        // Ghost "Extra" at row 1, cols 5,6,7,8,9. Cursor overwrites col 5.
-        // Visible: col 6='x', col 7='t', col 8='r', col 9='a'
+        var theme = ThemeManager.active();
+        // Cursor at (1,5), shown with swapped selection fg/bg.
+        // Ghost "Extra" starts at col 6 (cursor + 1) in BRIGHT_BLACK.
+        assertEquals(theme.selectionFg(), buf.getCell(5, 1).fg(), "cursor cell should have selection fg");
+        assertEquals(theme.selectionBg(), buf.getCell(5, 1).bg(), "cursor cell should have selection bg");
         assertEquals(AnsiColor.BRIGHT_BLACK, buf.getCell(6, 1).fg());
-        assertTrue(buf.getCell(6, 1).is('x'));
-        assertTrue(buf.getCell(7, 1).is('t'));
-        assertTrue(buf.getCell(8, 1).is('r'));
-        assertTrue(buf.getCell(9, 1).is('a'));
+        assertTrue(buf.getCell(6, 1).is('E'));
+        assertTrue(buf.getCell(7, 1).is('x'));
+        assertTrue(buf.getCell(8, 1).is('t'));
+        assertTrue(buf.getCell(9, 1).is('r'));
+        assertTrue(buf.getCell(10, 1).is('a'));
     }
 
     @Test
@@ -166,12 +180,16 @@ class TextAreaGhostTextTest {
         ta.setCompletionProvider((text, pos) -> "text");
 
         var buf = drawArea(ta, 20, 5);
-        // Ghost "text" at row 1, cols 0,1,2,3. Cursor overwrites col 0.
-        // Visible: col 1='e', col 2='x', col 3='t'
+        var theme = ThemeManager.active();
+        // Cursor at (1,0), shown with swapped selection fg/bg.
+        // Ghost "text" starts at col 1 (cursor + 1) in BRIGHT_BLACK.
+        assertEquals(theme.selectionFg(), buf.getCell(0, 1).fg(), "cursor cell should have selection fg");
+        assertEquals(theme.selectionBg(), buf.getCell(0, 1).bg(), "cursor cell should have selection bg");
         assertEquals(AnsiColor.BRIGHT_BLACK, buf.getCell(1, 1).fg());
-        assertTrue(buf.getCell(1, 1).is('e'));
-        assertTrue(buf.getCell(2, 1).is('x'));
-        assertTrue(buf.getCell(3, 1).is('t'));
+        assertTrue(buf.getCell(1, 1).is('t'));
+        assertTrue(buf.getCell(2, 1).is('e'));
+        assertTrue(buf.getCell(3, 1).is('x'));
+        assertTrue(buf.getCell(4, 1).is('t'));
     }
 
     @Test
@@ -183,10 +201,15 @@ class TextAreaGhostTextTest {
         ta.setCompletionProvider((text, pos) -> "DE");
 
         var buf = drawArea(ta, 20, 5);
-        // Ghost "DE" at row 2, cols 1,2. Cursor overwrites col 1.
-        // Visible: col 2 = 'E'
+        var theme = ThemeManager.active();
+        // Cursor at (2,1), shown with swapped selection fg/bg.
+        // Ghost "DE" starts at col 2 (cursor + 1) in BRIGHT_BLACK.
+        assertEquals(theme.selectionFg(), buf.getCell(1, 2).fg(), "cursor cell should have selection fg");
+        assertEquals(theme.selectionBg(), buf.getCell(1, 2).bg(), "cursor cell should have selection bg");
         assertEquals(AnsiColor.BRIGHT_BLACK, buf.getCell(2, 2).fg());
-        assertTrue(buf.getCell(2, 2).is('E'));
+        assertTrue(buf.getCell(2, 2).is('D'));
+        assertEquals(AnsiColor.BRIGHT_BLACK, buf.getCell(3, 2).fg());
+        assertTrue(buf.getCell(3, 2).is('E'));
     }
 
     // -- Ghost text wrapping --
@@ -200,15 +223,19 @@ class TextAreaGhostTextTest {
         ta.setCompletionProvider((text, pos) -> "loWorld");
 
         var buf = drawArea(ta, 5, 3);
-        // Ghost "loWorld" starts at col 3 (row 0). Cols 3,4 = "lo", wraps to row 1 cols 0-4 = "World"
-        // Cursor overwrites col 3. Visible: col 4='o' (row 0), "World" on row 1
+        var theme = ThemeManager.active();
+        // Ghost "loWorld" starts at col 4 (cursor + 1) in BRIGHT_BLACK.
+        // col 4 = 'l' (row 0), wraps to row 1: "oWorl" (cols 0-4), 'd' on row 2 col 0.
+        assertEquals(theme.selectionFg(), buf.getCell(3, 0).fg(), "cursor cell should have selection fg");
+        assertEquals(theme.selectionBg(), buf.getCell(3, 0).bg(), "cursor cell should have selection bg");
         assertEquals(AnsiColor.BRIGHT_BLACK, buf.getCell(4, 0).fg());
-        assertTrue(buf.getCell(4, 0).is('o'));
-        assertTrue(buf.getCell(0, 1).is('W'));
-        assertTrue(buf.getCell(1, 1).is('o'));
-        assertTrue(buf.getCell(2, 1).is('r'));
-        assertTrue(buf.getCell(3, 1).is('l'));
-        assertTrue(buf.getCell(4, 1).is('d'));
+        assertTrue(buf.getCell(4, 0).is('l'));
+        assertTrue(buf.getCell(0, 1).is('o'));
+        assertTrue(buf.getCell(1, 1).is('W'));
+        assertTrue(buf.getCell(2, 1).is('o'));
+        assertTrue(buf.getCell(3, 1).is('r'));
+        assertTrue(buf.getCell(4, 1).is('l'));
+        assertTrue(buf.getCell(0, 2).is('d'));
     }
 
     @Test
@@ -220,13 +247,17 @@ class TextAreaGhostTextTest {
         ta.setCompletionProvider((text, pos) -> "BCDEF");
 
         var buf = drawArea(ta, 3, 5);
-        // Ghost "BCDEF" starts at col 1 (row 0). Cols 1,2 = "BC", wraps to row 1 cols 0,1,2 = "DEF"
-        // Cursor overwrites col 1. Visible: col 2='C' (row 0), "DEF" on row 1
-        assertTrue(buf.getCell(2, 0).is('C'));
+        var theme = ThemeManager.active();
+        // Ghost "BCDEF" starts at col 2 (cursor + 1) in BRIGHT_BLACK.
+        // col 2 = 'B' (row 0), wraps to row 1: "CDE" (cols 0,1,2), 'F' on row 2 col 0.
+        assertEquals(theme.selectionFg(), buf.getCell(1, 0).fg(), "cursor cell should have selection fg");
+        assertEquals(theme.selectionBg(), buf.getCell(1, 0).bg(), "cursor cell should have selection bg");
         assertEquals(AnsiColor.BRIGHT_BLACK, buf.getCell(2, 0).fg());
-        assertTrue(buf.getCell(0, 1).is('D'));
-        assertTrue(buf.getCell(1, 1).is('E'));
-        assertTrue(buf.getCell(2, 1).is('F'));
+        assertTrue(buf.getCell(2, 0).is('B'));
+        assertTrue(buf.getCell(0, 1).is('C'));
+        assertTrue(buf.getCell(1, 1).is('D'));
+        assertTrue(buf.getCell(2, 1).is('E'));
+        assertTrue(buf.getCell(0, 2).is('F'));
     }
 
     // -- Provider receives current line text --
@@ -268,10 +299,10 @@ class TextAreaGhostTextTest {
         assertEquals("World", captured.get());
     }
 
-    // -- Space accepts completion --
+    // -- Space dismisses ghost text and inserts literal space --
 
     @Test
-    void spaceAcceptsCompletionOnSingleLine() {
+    void spaceDismissesGhostTextAndInsertsLiteralSpaceOnSingleLine() {
         var ta = new TextArea("", 20, 5);
         ta.setText("he");
         setCursor(ta, 0, 2);
@@ -282,13 +313,13 @@ class TextAreaGhostTextTest {
         assertEquals("llo", ta.getCurrentGhostText());
 
         ta.handleKeyStroke(KeyStroke.character(' ', false, false, false));
-        assertEquals("hello ", ta.getText());
+        assertEquals("he ", ta.getText());
         assertEquals(0, getCursorRow(ta));
-        assertEquals(6, getCursorCol(ta));
+        assertEquals(3, getCursorCol(ta));
     }
 
     @Test
-    void spaceAcceptsCompletionOnSecondLine() {
+    void spaceDismissesGhostTextAndInsertsLiteralSpaceOnSecondLine() {
         var ta = new TextArea("", 20, 5);
         ta.setText("Hello\nwor");
         setCursor(ta, 1, 3);
@@ -299,9 +330,9 @@ class TextAreaGhostTextTest {
         assertEquals("ld", ta.getCurrentGhostText());
 
         ta.handleKeyStroke(KeyStroke.character(' ', false, false, false));
-        assertEquals("Hello\nworld ", ta.getText());
+        assertEquals("Hello\nwor ", ta.getText());
         assertEquals(1, getCursorRow(ta));
-        assertEquals(6, getCursorCol(ta));
+        assertEquals(4, getCursorCol(ta));
     }
 
     @Test
@@ -497,16 +528,16 @@ class TextAreaGhostTextTest {
 
     @Test
     void ghostTextRendersWhenCursorIsAtEndOfVisibleArea() {
-        var ta = new TextArea("", 5, 3);
+        var ta = new TextArea("", 7, 3);
         ta.setText("Hello");
         setCursor(ta, 0, 5);
         ta.setFocused(true);
         ta.setCompletionProvider((text, pos) -> " World");
 
-        var buf = drawArea(ta, 5, 3);
+        var buf = drawArea(ta, 7, 3);
         boolean foundGhost = false;
         for (int r = 0; r < 3; r++) {
-            for (int c = 0; c < 5; c++) {
+            for (int c = 0; c < 7; c++) {
                 if (buf.getCell(c, r).fg() == AnsiColor.BRIGHT_BLACK) {
                     foundGhost = true;
                     break;

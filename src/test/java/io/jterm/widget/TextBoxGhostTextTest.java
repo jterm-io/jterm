@@ -49,13 +49,17 @@ class TextBoxGhostTextTest {
         box.setCompletionProvider((text, pos) -> "llo");
 
         var buf = drawBox(box, 20);
-        // Cursor is at column 2 (end of "he"), which takes priority (swapped fg/bg).
-        // Ghost text "llo" starts at column 2, but the cursor cell overwrites col 2.
-        // So ghost text is visible from col 3 onwards in BRIGHT_BLACK.
+        var theme = ThemeManager.active();
+        // Cursor is at column 2 (end of "he"), shown with swapped fg/bg.
+        // Ghost text "llo" starts at column 3 (cursor + 1) in BRIGHT_BLACK.
+        assertEquals(theme.background(), buf.getCell(2, 0).fg(), "cursor cell should have swapped fg");
+        assertEquals(theme.foreground(), buf.getCell(2, 0).bg(), "cursor cell should have swapped bg");
         assertEquals(AnsiColor.BRIGHT_BLACK, buf.getCell(3, 0).fg(), "ghost char 'l' should be BRIGHT_BLACK");
         assertTrue(buf.getCell(3, 0).is('l'));
-        assertEquals(AnsiColor.BRIGHT_BLACK, buf.getCell(4, 0).fg(), "ghost char 'o' should be BRIGHT_BLACK");
-        assertTrue(buf.getCell(4, 0).is('o'));
+        assertEquals(AnsiColor.BRIGHT_BLACK, buf.getCell(4, 0).fg(), "ghost char 'l' should be BRIGHT_BLACK");
+        assertTrue(buf.getCell(4, 0).is('l'));
+        assertEquals(AnsiColor.BRIGHT_BLACK, buf.getCell(5, 0).fg(), "ghost char 'o' should be BRIGHT_BLACK");
+        assertTrue(buf.getCell(5, 0).is('o'));
     }
 
     @Test
@@ -113,10 +117,10 @@ class TextBoxGhostTextTest {
         assertEquals(theme.background(), buf.getCell(3, 0).bg(), "ghost text should use theme background");
     }
 
-    // ── Space accepts completion ───────────────────────────────
+    // ── Space dismisses ghost text and inserts literal space ──
 
     @Test
-    void spaceAcceptsCompletion() {
+    void spaceDismissesGhostTextAndInsertsLiteralSpace() {
         var box = new TextBox(20);
         box.setBounds(TerminalPosition.TOP_LEFT, new TerminalSize(20, 1));
         box.setValue("he");
@@ -129,14 +133,15 @@ class TextBoxGhostTextTest {
         drawBox(box, 20);
         assertEquals("llo", box.getCurrentGhostText(), "ghost text should be set after draw");
 
-        // Press space to accept
+        // Press space — dismisses ghost text and inserts a literal space
         box.handleKeyStroke(KeyStroke.character(' ', false, false, false));
-        assertEquals("hello ", box.getValue(), "space should accept completion and add trailing space");
-        assertEquals(6, getCursor(box), "cursor should advance past completion and space");
+        assertEquals("he ", box.getValue(), "space should dismiss ghost text and insert literal space");
+        assertNull(box.getCurrentGhostText(), "ghost text should be cleared after space");
+        assertEquals(3, getCursor(box), "cursor should advance past the space");
     }
 
     @Test
-    void spaceAcceptsCompletionAndInsertsSpace() {
+    void spaceDismissesGhostTextAndInsertsLiteralSpaceVerifyValue() {
         var box = new TextBox(20);
         box.setBounds(TerminalPosition.TOP_LEFT, new TerminalSize(20, 1));
         box.setValue("he");
@@ -146,8 +151,8 @@ class TextBoxGhostTextTest {
 
         drawBox(box, 20);
         box.handleKeyStroke(KeyStroke.character(' ', false, false, false));
-        // After accepting "llo", a space is also inserted
-        assertEquals("hello ", box.getValue());
+        // Space dismisses ghost text and inserts a literal space (no completion accepted)
+        assertEquals("he ", box.getValue());
     }
 
     // ── Tab accepts completion ─────────────────────────────────
