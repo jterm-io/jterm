@@ -114,23 +114,18 @@ public class GhostTextSupport {
     }
 
     /**
-     * Attempts to accept the ghost text with a typed character.
+     * Processes a typed character in the context of ghost text completion.
      *
-     * <p>If the typed character is a space and ghost text is active, the suffix
-     * is accepted (appended at the cursor). The space is consumed and not
-     * inserted as a literal character. Any other character dismisses the ghost
-     * text and is processed normally by the widget.
+     * <p>Space is always treated as a literal character — it never accepts
+     * the completion. This matches the behavior of modern editors (VS Code,
+     * fish shell) where Tab is the dedicated accept key. Any typed character
+     * dismisses the current ghost text suggestion.
      *
      * @param ch the character that was typed
      * @return the suffix to insert if accepted, or {@code null} if not accepted
      */
     public String tryAccept(char ch) {
-        if (hasGhostText() && ch == ' ') {
-            String accepted = ghostText;
-            ghostText = null;
-            return accepted;
-        }
-        // Any other character dismisses the ghost text
+        // Any character dismisses ghost text; only Tab accepts (see tryAcceptTab)
         if (hasGhostText()) {
             ghostText = null;
         }

@@ -198,35 +198,37 @@ public class TextArea extends AbstractComponent {
             }
         }
 
-        // Draw cursor (highlight: swapped fg/bg) BEFORE ghost text so that
-        // when a suggestion is active, the ghost text overwrites the cursor cell
-        // and all suggestion characters are visible.
+        // Query completion provider and render ghost text when focused.
+        // Ghost text starts AFTER the cursor cell so the cursor highlight
+        // remains visible.
         int cursorScreenRow = cursorRow - viewportRow;
         int cursorScreenCol = cursorCol - viewportCol;
-        if (cursorScreenRow >= 0 && cursorScreenRow < size.rows()
-                && cursorScreenCol >= 0 && cursorScreenCol < size.columns()) {
-            String line = cursorRow < lines.size() ? lines.get(cursorRow) : "";
-            char c = cursorCol < line.length() ? line.charAt(cursorCol) : ' ';
-            graphics.setCell(cursorScreenCol, cursorScreenRow,
-                    new TextCell(c, theme.selectionFg(), theme.selectionBg()));
-        }
-
-        // Query completion provider and render ghost text when focused.
-        // Drawn after the cursor so the full suggestion is visible (the first
-        // ghost char replaces the cursor cell).
         if (isFocused() && ghostTextSupport.getProvider() != null) {
             String currentLine = cursorRow < lines.size() ? lines.get(cursorRow) : "";
             ghostTextSupport.refresh(currentLine, cursorCol);
             if (ghostTextSupport.hasGhostText()) {
+                int ghostStartCol = cursorScreenCol + 1;
                 if (cursorScreenRow >= 0 && cursorScreenRow < size.rows()
-                        && cursorScreenCol >= 0 && cursorScreenCol < size.columns()) {
+                        && ghostStartCol >= 0 && ghostStartCol < size.columns()) {
                     ghostTextSupport.drawGhostTextMultiLine(
-                            graphics, cursorScreenCol, cursorScreenRow,
+                            graphics, ghostStartCol, cursorScreenRow,
                             size.columns(), size.rows(), bg);
                 }
             }
         } else if (!isFocused()) {
             ghostTextSupport.clear();
+        }
+
+        // Draw cursor (highlight: swapped fg/bg) AFTER ghost text so the
+        // cursor cell shows the character with inverted colors.
+        if (isFocused()) {
+            if (cursorScreenRow >= 0 && cursorScreenRow < size.rows()
+                    && cursorScreenCol >= 0 && cursorScreenCol < size.columns()) {
+                String line = cursorRow < lines.size() ? lines.get(cursorRow) : "";
+                char c = cursorCol < line.length() ? line.charAt(cursorCol) : ' ';
+                graphics.setCell(cursorScreenCol, cursorScreenRow,
+                        new TextCell(c, theme.selectionFg(), theme.selectionBg()));
+            }
         }
     }
 
@@ -258,16 +260,11 @@ public class TextArea extends AbstractComponent {
             }
         }
 
-        // Space accepts ghost text if present, then inserts a space
+        // Space is always a literal space — it dismisses ghost text but never accepts.
+        // Only Tab accepts completions.
         if (keyStroke.type() == KeyType.CHARACTER && keyStroke.character() == ' ') {
-            String accepted = ghostTextSupport.tryAccept(' ');
-            if (accepted != null) {
-                insertTextAtCursor(accepted);
-                // Also insert the space that triggered acceptance
-                insertChar(' ');
-                invalidate();
-                return true;
-            }
+            ghostTextSupport.tryAccept(' ');  // dismisses ghost text, returns null
+            // Falls through to normal character insertion below
         }
 
         // Tab accepts ghost text if present (no tab character inserted)

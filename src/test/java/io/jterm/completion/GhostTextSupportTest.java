@@ -82,12 +82,12 @@ class GhostTextSupportTest {
     }
 
     @Test
-    void tryAcceptSpaceReturnsSuffix() {
+    void tryAcceptSpaceReturnsNullAndClears() {
         var support = new GhostTextSupport((text, pos) -> "llo");
         support.refresh("he", 2);
         String accepted = support.tryAccept(' ');
-        assertEquals("llo", accepted);
-        assertFalse(support.hasGhostText(), "ghost text should be cleared after accept");
+        assertNull(accepted, "space should never accept completion — only Tab accepts");
+        assertFalse(support.hasGhostText(), "ghost text should be cleared on space");
     }
 
     @Test

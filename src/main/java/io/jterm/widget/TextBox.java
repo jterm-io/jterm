@@ -150,12 +150,14 @@ public class TextBox extends AbstractComponent {
             int phLen = Math.min(placeholder.length(), size.columns());
             graphics.drawString(0, 0, placeholder.substring(0, phLen), phStyle);
         }
-        // Query completion provider and render ghost text when focused and not masked
+        // Query completion provider and render ghost text when focused and not masked.
+        // Ghost text starts AFTER the cursor cell so the cursor highlight remains visible.
         if (isFocused() && !masked && ghostTextSupport.getProvider() != null) {
             ghostTextSupport.refresh(value, cursorPosition);
             int cursorCol = cursorPosition - offset;
-            if (ghostTextSupport.hasGhostText() && cursorCol >= 0 && cursorCol < size.columns()) {
-                ghostTextSupport.drawGhostText(graphics, cursorCol, 0, size.columns(), bg);
+            int ghostStartCol = cursorCol + 1;
+            if (ghostTextSupport.hasGhostText() && ghostStartCol >= 0 && ghostStartCol < size.columns()) {
+                ghostTextSupport.drawGhostText(graphics, ghostStartCol, 0, size.columns(), bg);
             }
         } else if (!isFocused()) {
             ghostTextSupport.clear();
@@ -198,19 +200,11 @@ public class TextBox extends AbstractComponent {
                 default -> { return false; }  // Ignore other Ctrl+letter combos
             }
         }
-        // Space accepts ghost text if present, then inserts a space
+        // Space is always a literal space — it dismisses ghost text but never accepts.
+        // Only Tab accepts completions.
         if (keyStroke.type() == KeyType.CHARACTER && keyStroke.character() == ' ') {
-            String accepted = ghostTextSupport.tryAccept(' ');
-            if (accepted != null) {
-                value = value.substring(0, cursorPosition) + accepted + value.substring(cursorPosition);
-                cursorPosition += accepted.length();
-                // Also insert the space that triggered acceptance
-                value = value.substring(0, cursorPosition) + ' ' + value.substring(cursorPosition);
-                cursorPosition++;
-                invalidate();
-                adjustViewport();
-                return true;
-            }
+            ghostTextSupport.tryAccept(' ');  // dismisses ghost text, returns null
+            // Falls through to normal character insertion below
         }
         // Tab accepts ghost text if present (no tab character inserted)
         if (keyStroke.type() == KeyType.TAB) {
