@@ -38,6 +38,11 @@ public final class AnimationFactory {
         return new MarchingAntsEffect();
     }
 
+    /** Returns a new {@link RotatingDashCornersEffect} for animated borders. */
+    public static RotatingDashCornersEffect rotatingDashCorners() {
+        return new RotatingDashCornersEffect();
+    }
+
     /** Returns a randomly chosen animation using a fresh {@link Random}. */
     public static AnimatedBackground random() {
         return random(new Random());
