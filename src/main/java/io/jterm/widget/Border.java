@@ -120,5 +120,18 @@ public class Border extends AbstractContainer {
         }
 
         boolean isEmpty() { return this == EMPTY; }
+
+        /** Top-left corner character. */
+        public String topLeft() { return tl; }
+        /** Top-right corner character. */
+        public String topRight() { return tr; }
+        /** Bottom-left corner character. */
+        public String bottomLeft() { return bl; }
+        /** Bottom-right corner character. */
+        public String bottomRight() { return br; }
+        /** Horizontal edge character. */
+        public String horizontal() { return h; }
+        /** Vertical edge character. */
+        public String vertical() { return v; }
     }
 }

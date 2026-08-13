@@ -1,5 +1,6 @@
 package io.jterm.widget;
 
+import io.jterm.animation.AnimatedBorderEffect;
 import io.jterm.core.TerminalPosition;
 import io.jterm.core.TerminalSize;
 import io.jterm.graphics.TextGraphics;
@@ -43,6 +44,16 @@ public final class Borders {
     /** No visible border; contents occupy the full bounds. */
     public static Border empty(Component contents) {
         return new Border(contents, Border.BorderStyle.EMPTY);
+    }
+
+    /** Animated single-line border with the given effect. */
+    public static Border animated(Component contents, AnimatedBorderEffect effect) {
+        return new AnimatedBorder(contents, effect);
+    }
+
+    /** Animated border with the given style and effect. */
+    public static Border animated(Component contents, Border.BorderStyle style, AnimatedBorderEffect effect) {
+        return new AnimatedBorder(contents, style, effect);
     }
 
     /** Adds the named title to an existing border. */
