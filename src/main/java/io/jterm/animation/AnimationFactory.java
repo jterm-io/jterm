@@ -53,6 +53,23 @@ public final class AnimationFactory {
         return new ScanningLineEffect();
     }
 
+    /** Returns a randomly chosen animated border effect using a fresh {@link Random}. */
+    public static AnimatedBorderEffect randomBorderEffect() {
+        return randomBorderEffect(new Random());
+    }
+
+    /** Returns a randomly chosen animated border effect using the supplied {@link Random}. */
+    public static AnimatedBorderEffect randomBorderEffect(Random random) {
+        java.util.function.Supplier<AnimatedBorderEffect>[] effects = new java.util.function.Supplier[]{
+                SparkleCornersEffect::new,
+                MarchingAntsEffect::new,
+                RotatingDashCornersEffect::new,
+                ColorPulseEffect::new,
+                ScanningLineEffect::new
+        };
+        return effects[random.nextInt(effects.length)].get();
+    }
+
     /** Returns a randomly chosen animation using a fresh {@link Random}. */
     public static AnimatedBackground random() {
         return random(new Random());

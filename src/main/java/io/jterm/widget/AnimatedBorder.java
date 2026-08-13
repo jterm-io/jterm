@@ -207,17 +207,24 @@ public class AnimatedBorder extends Border {
             super.drawComponent(graphics);
             return;
         }
-        // When animating, the timer handles rendering via drawWithBorderContext.
-        // When stopped, draw the standard border.
-        // For now, delegate to parent for static rendering.
-        super.drawComponent(graphics);
+        // When animating, render with the latest border context (custom chars from the effect)
+        var ctx = currentContext;
+        if (ctx != null) {
+            drawWithBorderContext(graphics, ctx);
+        } else {
+            super.drawComponent(graphics);
+        }
     }
+
+    /** The latest border context produced by the effect, or null if not animating. */
+    private volatile BorderContext currentContext;
 
     // ---- Internal ----
 
     private void onFrame() {
         var ctx = createContext();
         effect.update(frameCounter++, ctx);
+        currentContext = ctx;
         invalidate();
     }
 }
