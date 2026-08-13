@@ -48,6 +48,11 @@ public final class AnimationFactory {
         return new ColorPulseEffect(10);
     }
 
+    /** Returns a new {@link ScanningLineEffect} with default highlight char (■) and speed 1. */
+    public static ScanningLineEffect scanningLine() {
+        return new ScanningLineEffect();
+    }
+
     /** Returns a randomly chosen animation using a fresh {@link Random}. */
     public static AnimatedBackground random() {
         return random(new Random());

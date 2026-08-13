@@ -8,6 +8,8 @@ import java.util.EnumMap;
 import java.util.HashMap;
 import java.util.Map;
 
+import static java.util.Map.entry;
+
 /**
  * Mutable context passed to {@link AnimatedBorderEffect} on each frame.
  *
@@ -33,7 +35,13 @@ public class BorderContext {
     private final EnumMap<Corner, String> corners = new EnumMap<>(Corner.class);
     private final Map<String, String> edges = new HashMap<>();
 
-    /** Foreground color override for border cells, or null to use theme default. */
+    /** Per-corner foreground color overrides, or null for theme/border default. */
+    private final EnumMap<Corner, AnsiColor> cornerColors = new EnumMap<>(Corner.class);
+
+    /** Per-edge foreground color overrides, or null for theme/border default. */
+    private final Map<String, AnsiColor> edgeColors = new HashMap<>();
+
+    /** Foreground color override for all border cells, or null to use theme default. */
     private AnsiColor borderColor;
 
     /**
@@ -70,9 +78,26 @@ public class BorderContext {
         corners.put(corner, ch);
     }
 
+    /** Sets a corner character with a per-cell foreground color override. */
+    public void setCorner(Corner corner, char ch, AnsiColor color) {
+        corners.put(corner, String.valueOf(ch));
+        cornerColors.put(corner, color);
+    }
+
+    /** Sets a corner character with a per-cell foreground color override (multi-codepoint safe). */
+    public void setCorner(Corner corner, String ch, AnsiColor color) {
+        corners.put(corner, ch);
+        cornerColors.put(corner, color);
+    }
+
     /** Returns the current character for the given corner. */
     public String getCorner(Corner corner) {
         return corners.get(corner);
+    }
+
+    /** Returns the per-cell foreground color override for the given corner, or null if none. */
+    public AnsiColor getCornerColor(Corner corner) {
+        return cornerColors.get(corner);
     }
 
     // ---- Edges ----
@@ -87,6 +112,18 @@ public class BorderContext {
         edges.put(edgeKey(side, position), ch);
     }
 
+    /** Sets an edge character at the given position with a per-cell foreground color override. */
+    public void setEdge(Side side, int position, char ch, AnsiColor color) {
+        edges.put(edgeKey(side, position), String.valueOf(ch));
+        edgeColors.put(edgeKey(side, position), color);
+    }
+
+    /** Sets an edge character at the given position with a per-cell foreground color override (multi-codepoint safe). */
+    public void setEdge(Side side, int position, String ch, AnsiColor color) {
+        edges.put(edgeKey(side, position), ch);
+        edgeColors.put(edgeKey(side, position), color);
+    }
+
     /** Returns the current character for the given edge position,
      *  falling back to the style default if not overridden. */
     public String getEdge(Side side, int position) {
@@ -96,6 +133,11 @@ public class BorderContext {
             case TOP, BOTTOM -> style.horizontal();
             case LEFT, RIGHT -> style.vertical();
         };
+    }
+
+    /** Returns the per-cell foreground color override for the given edge position, or null if none. */
+    public AnsiColor getEdgeColor(Side side, int position) {
+        return edgeColors.get(edgeKey(side, position));
     }
 
     // ---- Border color ----
@@ -115,13 +157,15 @@ public class BorderContext {
 
     // ---- Reset ----
 
-    /** Restores all corners, edges, and border color to the base style defaults. */
+    /** Restores all corners, edges, corner colors, edge colors, and border color to the base style defaults. */
     public void resetToStyle() {
         corners.put(Corner.TL, style.topLeft());
         corners.put(Corner.TR, style.topRight());
         corners.put(Corner.BL, style.bottomLeft());
         corners.put(Corner.BR, style.bottomRight());
         edges.clear();
+        cornerColors.clear();
+        edgeColors.clear();
         borderColor = null;
     }
 

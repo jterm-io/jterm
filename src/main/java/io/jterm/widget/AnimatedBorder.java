@@ -5,7 +5,9 @@ import io.jterm.animation.AnimationTimer;
 import io.jterm.animation.BorderContext;
 import io.jterm.core.TerminalSize;
 import io.jterm.graphics.TextGraphics;
+import io.jterm.style.Color;
 import io.jterm.style.TextCell;
+import io.jterm.style.Theme;
 import io.jterm.style.ThemeManager;
 
 /**
@@ -113,6 +115,10 @@ public class AnimatedBorder extends Border {
      * method renders the border with those (possibly overridden)
      * characters.</p>
      *
+     * <p>Per-cell foreground color overrides take precedence over the
+     * border-wide color (from {@link BorderContext#getBorderColor()}),
+     * which in turn takes precedence over the theme default.</p>
+     *
      * @param graphics the text-graphics target
      * @param ctx      the border context with (possibly custom) characters
      */
@@ -125,38 +131,55 @@ public class AnimatedBorder extends Border {
         var bgCell = new TextCell(' ', theme.foreground(), theme.background());
         graphics.fillRectangle(0, 0, size.columns(), size.rows(), bgCell);
 
-        // Use context border color override if set, otherwise theme default
-        var borderFg = ctx.getBorderColor() != null ? ctx.getBorderColor() : theme.border();
-        var borderCell = new TextCell(' ', borderFg, theme.background());
+        // Base border foreground: per-cell > border color > theme default
+        var baseBorderFg = ctx.getBorderColor() != null ? ctx.getBorderColor() : theme.border();
 
-        // Top edge: corner + horizontal chars + corner
-        StringBuilder top = new StringBuilder();
-        top.append(ctx.getCorner(BorderContext.Corner.TL));
+        // ---- Top row ----
+        // TL corner
+        drawBorderCell(graphics, 0, 0, ctx.getCorner(BorderContext.Corner.TL),
+                ctx.getCornerColor(BorderContext.Corner.TL), baseBorderFg, theme);
+        // Top edge
         for (int c = 1; c < size.columns() - 1; c++) {
-            top.append(ctx.getEdge(BorderContext.Side.TOP, c - 1));
+            drawBorderCell(graphics, c, 0, ctx.getEdge(BorderContext.Side.TOP, c - 1),
+                    ctx.getEdgeColor(BorderContext.Side.TOP, c - 1), baseBorderFg, theme);
         }
-        top.append(ctx.getCorner(BorderContext.Corner.TR));
-        graphics.drawString(0, 0, top.toString(), borderCell);
+        // TR corner
+        drawBorderCell(graphics, size.columns() - 1, 0, ctx.getCorner(BorderContext.Corner.TR),
+                ctx.getCornerColor(BorderContext.Corner.TR), baseBorderFg, theme);
 
-        // Side edges
+        // ---- Side edges ----
         for (int r = 1; r < size.rows() - 1; r++) {
-            String left = ctx.getEdge(BorderContext.Side.LEFT, r - 1);
-            String right = ctx.getEdge(BorderContext.Side.RIGHT, r - 1);
-            graphics.drawString(0, r, left, borderCell);
-            graphics.drawString(size.columns() - 1, r, right, borderCell);
+            drawBorderCell(graphics, 0, r, ctx.getEdge(BorderContext.Side.LEFT, r - 1),
+                    ctx.getEdgeColor(BorderContext.Side.LEFT, r - 1), baseBorderFg, theme);
+            drawBorderCell(graphics, size.columns() - 1, r, ctx.getEdge(BorderContext.Side.RIGHT, r - 1),
+                    ctx.getEdgeColor(BorderContext.Side.RIGHT, r - 1), baseBorderFg, theme);
         }
 
-        // Bottom edge: corner + horizontal chars + corner
-        StringBuilder bottom = new StringBuilder();
-        bottom.append(ctx.getCorner(BorderContext.Corner.BL));
+        // ---- Bottom row ----
+        // BL corner
+        drawBorderCell(graphics, 0, size.rows() - 1, ctx.getCorner(BorderContext.Corner.BL),
+                ctx.getCornerColor(BorderContext.Corner.BL), baseBorderFg, theme);
+        // Bottom edge
         for (int c = 1; c < size.columns() - 1; c++) {
-            bottom.append(ctx.getEdge(BorderContext.Side.BOTTOM, c - 1));
+            drawBorderCell(graphics, c, size.rows() - 1, ctx.getEdge(BorderContext.Side.BOTTOM, c - 1),
+                    ctx.getEdgeColor(BorderContext.Side.BOTTOM, c - 1), baseBorderFg, theme);
         }
-        bottom.append(ctx.getCorner(BorderContext.Corner.BR));
-        graphics.drawString(0, size.rows() - 1, bottom.toString(), borderCell);
+        // BR corner
+        drawBorderCell(graphics, size.columns() - 1, size.rows() - 1, ctx.getCorner(BorderContext.Corner.BR),
+                ctx.getCornerColor(BorderContext.Corner.BR), baseBorderFg, theme);
 
         // Draw children only (skip Border.drawComponent which would overwrite)
         drawChildren(graphics);
+    }
+
+    /**
+     * Draws a single border cell, using per-cell color if set, falling back to the base border fg.
+     */
+    private void drawBorderCell(TextGraphics graphics, int col, int row, String ch,
+                                Color cellColor, Color baseFg, Theme theme) {
+        var fg = cellColor != null ? cellColor : baseFg;
+        var cell = new TextCell(ch.charAt(0), fg, theme.background());
+        graphics.setCell(col, row, cell);
     }
 
     /**
