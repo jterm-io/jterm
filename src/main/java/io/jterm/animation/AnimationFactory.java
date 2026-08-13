@@ -28,6 +28,11 @@ public final class AnimationFactory {
 
     private AnimationFactory() {}
 
+    /** Returns a new {@link SparkleCornersEffect} for animated borders. */
+    public static SparkleCornersEffect sparkleCorners() {
+        return new SparkleCornersEffect();
+    }
+
     /** Returns a randomly chosen animation using a fresh {@link Random}. */
     public static AnimatedBackground random() {
         return random(new Random());
