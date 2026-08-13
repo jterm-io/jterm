@@ -372,4 +372,118 @@ class ScanningLineEffectTest {
                 () -> new ScanningLineEffect(-1),
                 "Should reject negative speed");
     }
+
+    // ---- BR corner highlight ----
+
+    @Test
+    @DisplayName("highlight reaches BR corner at the correct frame")
+    void highlightReachesBRCorner() {
+        var effect = new ScanningLineEffect();
+        // BR corner is at position cols+rows-2 = 10+6-2 = 14
+        int brPosition = SIZE.columns() - 1 + SIZE.rows() - 1; // 9 + 5 = 14
+        var ctx = newContext();
+        effect.update(brPosition, ctx);
+        assertNotNull(ctx.getCornerColor(BorderContext.Corner.BR),
+                "BR corner should be highlighted at its position");
+    }
+
+    // ---- BL corner highlight ----
+
+    @Test
+    @DisplayName("highlight reaches BL corner at the correct frame")
+    void highlightReachesBLCorner() {
+        var effect = new ScanningLineEffect();
+        // BL corner is at position 2*(cols-1)+(rows-1) = 2*9+5 = 23
+        int blPosition = 2 * (SIZE.columns() - 1) + SIZE.rows() - 1;
+        var ctx = newContext();
+        effect.update(blPosition, ctx);
+        assertNotNull(ctx.getCornerColor(BorderContext.Corner.BL),
+                "BL corner should be highlighted at its position");
+    }
+
+    // ---- Left edge highlight ----
+
+    @Test
+    @DisplayName("highlight reaches left edge (between BL and TL)")
+    void highlightReachesLeftEdge() {
+        var effect = new ScanningLineEffect();
+        // Left edge starts after BL corner
+        // Left edge is walked bottom-to-top, so first position after BL
+        // maps to the bottom-most left edge (index rows-2-1)
+        int blPosition = 2 * (SIZE.columns() - 1) + SIZE.rows() - 1;
+        int leftEdgePos = blPosition + 1; // first left edge position
+        var ctx = newContext();
+        effect.update(leftEdgePos, ctx);
+        // Left edge is indexed bottom-to-top: edgeIndex = leftEdgeCount-1 - (pos - blPos - 1)
+        // For position 24 in a 10x6: leftEdgeCount=4, edgeIndex = 4-1-(24-23-1) = 3
+        assertNotNull(ctx.getEdgeColor(BorderContext.Side.LEFT, 3),
+                "Left edge should be highlighted after BL corner");
+    }
+
+    // ---- Right edge highlight ----
+
+    @Test
+    @DisplayName("highlight reaches right edge (between TR and BR)")
+    void highlightReachesRightEdge() {
+        var effect = new ScanningLineEffect();
+        // Right edge starts after TR corner at position cols (10)
+        int rightEdgePos = SIZE.columns(); // position 10
+        var ctx = newContext();
+        effect.update(rightEdgePos, ctx);
+        assertNotNull(ctx.getEdgeColor(BorderContext.Side.RIGHT, 0),
+                "Right edge position 0 should be highlighted");
+    }
+
+    // ---- Bottom edge highlight ----
+
+    @Test
+    @DisplayName("highlight reaches bottom edge (between BR and BL)")
+    void highlightReachesBottomEdge() {
+        var effect = new ScanningLineEffect();
+        // Bottom edge starts after BR corner
+        // Bottom edge is walked right-to-left, so first position after BR
+        // maps to the rightmost bottom edge (index cols-2-1)
+        int brPosition = SIZE.columns() - 1 + SIZE.rows() - 1;
+        int bottomEdgePos = brPosition + 1;
+        var ctx = newContext();
+        effect.update(bottomEdgePos, ctx);
+        // Bottom edge is indexed right-to-left: edgeIndex = bottomEdgeCount-1 - (pos - brPos - 1)
+        // For position 15 in a 10x6: bottomEdgeCount=8, edgeIndex = 8-1-(15-14-1) = 7
+        assertNotNull(ctx.getEdgeColor(BorderContext.Side.BOTTOM, 7),
+                "Bottom edge should be highlighted after BR corner");
+    }
+
+    // ---- Small border (2x2) ----
+
+    @Test
+    @DisplayName("getPerimeterLength returns 0 for too-small border")
+    void perimeterLengthReturns0ForTooSmall() {
+        var effect = new ScanningLineEffect();
+        assertEquals(0, effect.getPerimeterLength(new TerminalSize(1, 1)));
+        assertEquals(0, effect.getPerimeterLength(new TerminalSize(1, 5)));
+        assertEquals(0, effect.getPerimeterLength(new TerminalSize(5, 1)));
+    }
+
+    @Test
+    @DisplayName("update does nothing when perimeter is 0")
+    void updateDoesNothingForTooSmallBorder() {
+        var effect = new ScanningLineEffect();
+        var ctx = new BorderContext(new TerminalSize(1, 1), Border.BorderStyle.SINGLE_LINE);
+        // Should not throw and should not modify corners
+        assertDoesNotThrow(() -> effect.update(0, ctx));
+        // Corners should remain as style defaults (resetToStyle was called)
+        assertEquals(Border.BorderStyle.SINGLE_LINE.topLeft(), ctx.getCorner(BorderContext.Corner.TL));
+    }
+
+    // ---- Custom highlight char and speed ----
+
+    @Test
+    @DisplayName("custom highlight char with custom speed")
+    void customHighlightCharWithSpeed() {
+        var effect = new ScanningLineEffect('>', 3);
+        var ctx = newContext();
+        effect.update(0, ctx);
+        assertEquals(">", ctx.getCorner(BorderContext.Corner.TL),
+                "Custom highlight char should be used");
+    }
 }

@@ -265,4 +265,34 @@ class ColorPulseEffectTest {
         ctx.setBorderColor(AnsiColor.BLUE);
         assertEquals(AnsiColor.BLUE, ctx.getBorderColor());
     }
+
+    // ---- Constructor validation ----
+
+    @Test
+    @DisplayName("constructor rejects framesPerColor < 1")
+    void constructorRejectsInvalidFramesPerColor() {
+        assertThrows(IllegalArgumentException.class,
+                () -> new ColorPulseEffect(0),
+                "Should reject framesPerColor 0");
+        assertThrows(IllegalArgumentException.class,
+                () -> new ColorPulseEffect(-1),
+                "Should reject negative framesPerColor");
+    }
+
+    @Test
+    @DisplayName("framesPerColor = 1 changes color every frame")
+    void framesPerColorOne() {
+        var effect = new ColorPulseEffect(1);
+        var ctx0 = newContext();
+        effect.update(0, ctx0);
+        assertEquals(AnsiColor.RED, ctx0.getBorderColor(), "frame 0 → RED");
+
+        var ctx1 = newContext();
+        effect.update(1, ctx1);
+        assertEquals(AnsiColor.GREEN, ctx1.getBorderColor(), "frame 1 → GREEN");
+
+        var ctx2 = newContext();
+        effect.update(2, ctx2);
+        assertEquals(AnsiColor.YELLOW, ctx2.getBorderColor(), "frame 2 → YELLOW");
+    }
 }

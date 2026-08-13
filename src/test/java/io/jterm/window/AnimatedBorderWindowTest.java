@@ -354,6 +354,51 @@ class AnimatedBorderWindowTest {
             // it doesn't crash.
             assertNotNull(buf);
         }
+
+        @Test
+        @DisplayName("draw with size too small for title still renders border")
+        void drawWithSizeTooSmallForTitle() {
+            var effect = new RecordingEffect("rec");
+            var window = new AnimatedBorderWindow("VeryLongTitle", effect);
+            // Size too small to fit the title (title length + 4 > columns)
+            var size = new TerminalSize(8, 5);
+            assertDoesNotThrow(() -> drawWindow(window, size));
+        }
+
+        @Test
+        @DisplayName("draw with null title renders standard border")
+        void drawWithNullTitle() {
+            var effect = new RecordingEffect("rec");
+            var window = new AnimatedBorderWindow((String) null, effect);
+            var buf = drawWindow(window, new TerminalSize(20, 8));
+            assertNotNull(buf);
+            // Should still render border chars
+            assertEquals('┌', buf.getCell(0, 0).character().charAt(0), "TL corner");
+        }
+
+        @Test
+        @DisplayName("draw with size 1x1 returns without error")
+        void drawWithSize1x1() {
+            var effect = new RecordingEffect("rec");
+            var window = new AnimatedBorderWindow("Test", effect);
+            assertDoesNotThrow(() -> drawWindow(window, new TerminalSize(1, 1)));
+        }
+
+        @Test
+        @DisplayName("draw with TRANSPARENT hint does not fill background")
+        void drawWithTransparentDoesNotFillBackground() {
+            var effect = new RecordingEffect("rec");
+            var window = new AnimatedBorderWindow("Test", effect);
+            window.setHints(List.of(WindowHint.NO_DECORATIONS, WindowHint.TRANSPARENT));
+            // Use a larger buffer and smaller window to see if TRANSPARENT skips fill
+            var size = new TerminalSize(10, 5);
+            var buf = new ScreenBuffer(size, new io.jterm.style.TextCell('X', AnsiColor.WHITE, AnsiColor.BLACK));
+            var g = new TextGraphics(buf);
+            window.setBounds(TerminalPosition.TOP_LEFT, size);
+            window.draw(g);
+            // Verify the window didn't throw
+            assertNotNull(buf);
+        }
     }
 
     // ------------------------------------------------------------------

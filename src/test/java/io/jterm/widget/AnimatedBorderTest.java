@@ -6,6 +6,7 @@ import io.jterm.core.TerminalPosition;
 import io.jterm.core.TerminalSize;
 import io.jterm.graphics.TextGraphics;
 import io.jterm.screen.ScreenBuffer;
+import io.jterm.style.AnsiColor;
 import io.jterm.util.Symbols;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -323,5 +324,209 @@ class AnimatedBorderTest {
         assertNotNull(BorderContext.Corner.valueOf("TR"));
         assertNotNull(BorderContext.Corner.valueOf("BL"));
         assertNotNull(BorderContext.Corner.valueOf("BR"));
+    }
+
+    // ---- BorderContext: char and color overloads ----
+
+    @Test
+    @DisplayName("BorderContext.getStyle returns the border style")
+    void getStyleReturnsBorderStyle() {
+        var ctx = new BorderContext(new TerminalSize(10, 6), Border.BorderStyle.DOUBLE_LINE);
+        assertEquals(Border.BorderStyle.DOUBLE_LINE, ctx.getStyle());
+    }
+
+    @Test
+    @DisplayName("BorderContext setCorner with char stores the character")
+    void setCornerWithChar() {
+        var ctx = new BorderContext(new TerminalSize(10, 6), Border.BorderStyle.SINGLE_LINE);
+        ctx.setCorner(BorderContext.Corner.TL, '#');
+        assertEquals("#", ctx.getCorner(BorderContext.Corner.TL));
+    }
+
+    @Test
+    @DisplayName("BorderContext setCorner with char and color stores both")
+    void setCornerWithCharAndColor() {
+        var ctx = new BorderContext(new TerminalSize(10, 6), Border.BorderStyle.SINGLE_LINE);
+        ctx.setCorner(BorderContext.Corner.TR, '*', AnsiColor.RED);
+        assertEquals("*", ctx.getCorner(BorderContext.Corner.TR));
+        assertEquals(AnsiColor.RED, ctx.getCornerColor(BorderContext.Corner.TR));
+    }
+
+    @Test
+    @DisplayName("BorderContext setEdge with char stores the character")
+    void setEdgeWithChar() {
+        var ctx = new BorderContext(new TerminalSize(10, 6), Border.BorderStyle.SINGLE_LINE);
+        ctx.setEdge(BorderContext.Side.LEFT, 0, '<');
+        assertEquals("<", ctx.getEdge(BorderContext.Side.LEFT, 0));
+    }
+
+    @Test
+    @DisplayName("BorderContext setEdge with char and color stores both")
+    void setEdgeWithCharAndColor() {
+        var ctx = new BorderContext(new TerminalSize(10, 6), Border.BorderStyle.SINGLE_LINE);
+        ctx.setEdge(BorderContext.Side.RIGHT, 2, '>', AnsiColor.GREEN);
+        assertEquals(">", ctx.getEdge(BorderContext.Side.RIGHT, 2));
+        assertEquals(AnsiColor.GREEN, ctx.getEdgeColor(BorderContext.Side.RIGHT, 2));
+    }
+
+    // ---- AnimatedBorder with EMPTY style ----
+
+    @Test
+    @DisplayName("AnimatedBorder drawComponent with EMPTY style delegates to parent")
+    void drawComponentWithEmptyStyle() {
+        var effect = new RecordingEffect("rec");
+        var border = new AnimatedBorder(
+                new EmptySpace(new TerminalSize(4, 3)),
+                Border.BorderStyle.EMPTY,
+                effect
+        );
+        border.setBounds(TerminalPosition.TOP_LEFT, new TerminalSize(6, 5));
+
+        // drawComponent should not throw — it falls through to Border.drawComponent
+        var buffer = new ScreenBuffer(new TerminalSize(6, 5));
+        assertDoesNotThrow(() -> border.draw(new TextGraphics(buffer)));
+    }
+
+    @Test
+    @DisplayName("AnimatedBorder drawComponent with non-EMPTY style delegates to parent")
+    void drawComponentWithNonEmptyStyle() {
+        var effect = new RecordingEffect("rec");
+        var border = new AnimatedBorder(
+                new EmptySpace(new TerminalSize(4, 3)),
+                Border.BorderStyle.SINGLE_LINE,
+                effect
+        );
+        border.setBounds(TerminalPosition.TOP_LEFT, new TerminalSize(6, 5));
+
+        // drawComponent with non-EMPTY style also delegates to parent
+        var buffer = new ScreenBuffer(new TerminalSize(6, 5));
+        assertDoesNotThrow(() -> border.draw(new TextGraphics(buffer)));
+    }
+
+    // ---- AnimatedBorder with custom FPS ----
+
+    @Test
+    @DisplayName("AnimatedBorder constructor with custom FPS")
+    void constructorWithCustomFps() {
+        var effect = new RecordingEffect("rec");
+        var border = new AnimatedBorder(
+                new EmptySpace(new TerminalSize(4, 3)),
+                Border.BorderStyle.SINGLE_LINE,
+                effect,
+                20
+        );
+        // Should create without error and use the custom FPS
+        assertNotNull(border);
+        assertEquals(Border.BorderStyle.SINGLE_LINE, border.getBorderStyle());
+    }
+
+    // ---- BorderContext resetToStyle clears colors ----
+
+    @Test
+    @DisplayName("BorderContext resetToStyle clears corner colors")
+    void resetToStyleClearsCornerColors() {
+        var ctx = new BorderContext(new TerminalSize(10, 6), Border.BorderStyle.SINGLE_LINE);
+        ctx.setCorner(BorderContext.Corner.TL, 'X', AnsiColor.RED);
+        ctx.setCorner(BorderContext.Corner.BR, 'Y', AnsiColor.GREEN);
+        assertNotNull(ctx.getCornerColor(BorderContext.Corner.TL));
+        assertNotNull(ctx.getCornerColor(BorderContext.Corner.BR));
+
+        ctx.resetToStyle();
+        assertNull(ctx.getCornerColor(BorderContext.Corner.TL));
+        assertNull(ctx.getCornerColor(BorderContext.Corner.BR));
+    }
+
+    @Test
+    @DisplayName("BorderContext resetToStyle clears edge colors")
+    void resetToStyleClearsEdgeColors() {
+        var ctx = new BorderContext(new TerminalSize(10, 6), Border.BorderStyle.SINGLE_LINE);
+        ctx.setEdge(BorderContext.Side.TOP, 0, '-', AnsiColor.BLUE);
+        ctx.setEdge(BorderContext.Side.LEFT, 1, '|', AnsiColor.CYAN);
+        assertNotNull(ctx.getEdgeColor(BorderContext.Side.TOP, 0));
+        assertNotNull(ctx.getEdgeColor(BorderContext.Side.LEFT, 1));
+
+        ctx.resetToStyle();
+        assertNull(ctx.getEdgeColor(BorderContext.Side.TOP, 0));
+        assertNull(ctx.getEdgeColor(BorderContext.Side.LEFT, 1));
+    }
+
+    // ---- BorderContext setCorner with String overload ----
+
+    @Test
+    @DisplayName("BorderContext setCorner with String overload stores multi-char")
+    void setCornerWithString() {
+        var ctx = new BorderContext(new TerminalSize(10, 6), Border.BorderStyle.SINGLE_LINE);
+        ctx.setCorner(BorderContext.Corner.TL, "XX");
+        assertEquals("XX", ctx.getCorner(BorderContext.Corner.TL));
+    }
+
+    @Test
+    @DisplayName("BorderContext setCorner with String and color stores both")
+    void setCornerWithStringAndColor() {
+        var ctx = new BorderContext(new TerminalSize(10, 6), Border.BorderStyle.SINGLE_LINE);
+        ctx.setCorner(BorderContext.Corner.BR, "AB", AnsiColor.YELLOW);
+        assertEquals("AB", ctx.getCorner(BorderContext.Corner.BR));
+        assertEquals(AnsiColor.YELLOW, ctx.getCornerColor(BorderContext.Corner.BR));
+    }
+
+    // ---- BorderContext setEdge with String overload ----
+
+    @Test
+    @DisplayName("BorderContext setEdge with String overload stores multi-char")
+    void setEdgeWithString() {
+        var ctx = new BorderContext(new TerminalSize(10, 6), Border.BorderStyle.SINGLE_LINE);
+        ctx.setEdge(BorderContext.Side.BOTTOM, 2, "==");
+        assertEquals("==", ctx.getEdge(BorderContext.Side.BOTTOM, 2));
+    }
+
+    @Test
+    @DisplayName("BorderContext setEdge with String and color stores both")
+    void setEdgeWithStringAndColor() {
+        var ctx = new BorderContext(new TerminalSize(10, 6), Border.BorderStyle.SINGLE_LINE);
+        ctx.setEdge(BorderContext.Side.TOP, 0, "!!", AnsiColor.MAGENTA);
+        assertEquals("!!", ctx.getEdge(BorderContext.Side.TOP, 0));
+        assertEquals(AnsiColor.MAGENTA, ctx.getEdgeColor(BorderContext.Side.TOP, 0));
+    }
+
+    // ---- BorderContext getEdge falls back to style defaults ----
+
+    @Test
+    @DisplayName("BorderContext getEdge falls back to horizontal for TOP/BOTTOM")
+    void getEdgeFallsBackToHorizontal() {
+        var ctx = new BorderContext(new TerminalSize(10, 6), Border.BorderStyle.SINGLE_LINE);
+        assertEquals(Border.BorderStyle.SINGLE_LINE.horizontal(),
+                ctx.getEdge(BorderContext.Side.TOP, 99));
+        assertEquals(Border.BorderStyle.SINGLE_LINE.horizontal(),
+                ctx.getEdge(BorderContext.Side.BOTTOM, 99));
+    }
+
+    @Test
+    @DisplayName("BorderContext getEdge falls back to vertical for LEFT/RIGHT")
+    void getEdgeFallsBackToVertical() {
+        var ctx = new BorderContext(new TerminalSize(10, 6), Border.BorderStyle.SINGLE_LINE);
+        assertEquals(Border.BorderStyle.SINGLE_LINE.vertical(),
+                ctx.getEdge(BorderContext.Side.LEFT, 99));
+        assertEquals(Border.BorderStyle.SINGLE_LINE.vertical(),
+                ctx.getEdge(BorderContext.Side.RIGHT, 99));
+    }
+
+    // ---- BorderContext getCornerColor returns null when no color set ----
+
+    @Test
+    @DisplayName("BorderContext getCornerColor returns null when no color set")
+    void getCornerColorNullByDefault() {
+        var ctx = new BorderContext(new TerminalSize(10, 6), Border.BorderStyle.SINGLE_LINE);
+        assertNull(ctx.getCornerColor(BorderContext.Corner.TL));
+        assertNull(ctx.getCornerColor(BorderContext.Corner.TR));
+        assertNull(ctx.getCornerColor(BorderContext.Corner.BL));
+        assertNull(ctx.getCornerColor(BorderContext.Corner.BR));
+    }
+
+    @Test
+    @DisplayName("BorderContext getEdgeColor returns null when no color set")
+    void getEdgeColorNullByDefault() {
+        var ctx = new BorderContext(new TerminalSize(10, 6), Border.BorderStyle.SINGLE_LINE);
+        assertNull(ctx.getEdgeColor(BorderContext.Side.TOP, 0));
+        assertNull(ctx.getEdgeColor(BorderContext.Side.LEFT, 0));
     }
 }

@@ -311,4 +311,40 @@ class MarchingAntsEffectTest {
         assertEquals("·", ctx.getEdge(BorderContext.Side.TOP, 3));
         assertEquals("·", ctx.getEdge(BorderContext.Side.LEFT, 3));
     }
+
+    // ---- Constructor validation ----
+
+    @Test
+    @DisplayName("constructor rejects dashLength < 1")
+    void constructorRejectsInvalidDashLength() {
+        assertThrows(IllegalArgumentException.class,
+                () -> new MarchingAntsEffect(0, 2),
+                "Should reject dashLength 0");
+        assertThrows(IllegalArgumentException.class,
+                () -> new MarchingAntsEffect(-1, 2),
+                "Should reject negative dashLength");
+    }
+
+    @Test
+    @DisplayName("constructor rejects gapLength < 1")
+    void constructorRejectsInvalidGapLength() {
+        assertThrows(IllegalArgumentException.class,
+                () -> new MarchingAntsEffect(3, 0),
+                "Should reject gapLength 0");
+        assertThrows(IllegalArgumentException.class,
+                () -> new MarchingAntsEffect(3, -1),
+                "Should reject negative gapLength");
+    }
+
+    @Test
+    @DisplayName("dash length 1 produces alternating dash/gap pattern")
+    void dashLengthOne() {
+        var effect = new MarchingAntsEffect(1, 1); // dash=1, gap=1, cycle=2
+        var ctx = newContext();
+        effect.update(0, ctx);
+
+        // Position 0 = dash, position 1 = gap
+        assertEquals("-", ctx.getEdge(BorderContext.Side.TOP, 0));
+        assertEquals("·", ctx.getEdge(BorderContext.Side.TOP, 1));
+    }
 }
