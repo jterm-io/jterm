@@ -1,11 +1,14 @@
 package io.jterm.widget;
 
+import io.jterm.completion.CompletionProvider;
+import io.jterm.completion.GhostTextSupport;
 import io.jterm.core.TerminalPosition;
 import io.jterm.core.TerminalSize;
 import io.jterm.core.input.KeyStroke;
 import io.jterm.core.input.KeyType;
 import io.jterm.graphics.TextGraphics;
 import io.jterm.style.AnsiColor;
+import io.jterm.style.Color;
 import io.jterm.style.TextCell;
 import io.jterm.style.ThemeManager;
 
@@ -14,7 +17,9 @@ import java.util.List;
 
 /**
  * Multi-line text editing widget with cursor movement, scrolling, and
- * emacs-style key bindings.
+ * emacs-style key bindings. Supports optional inline ghost-text completions
+ * via a {@link CompletionProvider}, shared with {@link TextBox} through
+ * {@link GhostTextSupport}.
  *
  * <p>Supports:
  * <ul>
@@ -23,6 +28,7 @@ import java.util.List;
  *   <li>Arrow keys, Home/End, Page Up/Down</li>
  *   <li>Emacs bindings: Ctrl+A/E/K/F/B/P/N/D</li>
  *   <li>Backspace (with line join), Delete (with line join), Enter (new line)</li>
+ *   <li>Ghost text completions — Space or Tab accepts the suggestion</li>
  * </ul>
  */
 public class TextArea extends AbstractComponent {
@@ -34,6 +40,7 @@ public class TextArea extends AbstractComponent {
     private volatile int viewportCol = 0;   // horizontal scroll offset (which column is at left of viewport)
     private volatile int preferredColumns = 20;
     private volatile int preferredRows = 5;
+    private final GhostTextSupport ghostTextSupport = new GhostTextSupport();
 
     // ── Construction ───────────────────────────────────────────
 
@@ -96,6 +103,7 @@ public class TextArea extends AbstractComponent {
         cursorCol = 0;
         viewportRow = 0;
         viewportCol = 0;
+        ghostTextSupport.clear();
         invalidate();
     }
 
@@ -114,6 +122,39 @@ public class TextArea extends AbstractComponent {
         return lines.get(index);
     }
 
+    /**
+     * Returns the current completion provider, or {@code null} if none is set.
+     *
+     * @return the completion provider, or {@code null}
+     */
+    public CompletionProvider getCompletionProvider() {
+        return ghostTextSupport.getProvider();
+    }
+
+    /**
+     * Sets the completion provider for ghost text (inline completion) support.
+     * Pass {@code null} to disable completions. The provider is queried with
+     * the current line's text and the cursor's column position after each
+     * keystroke.
+     *
+     * @param provider the completion provider, or {@code null} to disable
+     */
+    public void setCompletionProvider(CompletionProvider provider) {
+        ghostTextSupport.setProvider(provider);
+        invalidate();
+    }
+
+    /**
+     * Returns the current ghost text suggestion being displayed, or {@code null}
+     * if no suggestion is active. This is the suffix that would be appended at
+     * the cursor position on the current line if the user accepts the completion.
+     *
+     * @return the current ghost text suffix, or {@code null}
+     */
+    public String getCurrentGhostText() {
+        return ghostTextSupport.getGhostText();
+    }
+
     // ── Layout ────────────────────────────────────────────────
 
     /**
@@ -129,7 +170,8 @@ public class TextArea extends AbstractComponent {
     // ── Rendering ──────────────────────────────────────────────
 
     /**
-     * Renders the visible lines and highlights the cursor position.
+     * Renders the visible lines, ghost text suggestion, and highlights the
+     * cursor position.
      *
      * @param graphics the text-graphics target
      */
@@ -138,7 +180,8 @@ public class TextArea extends AbstractComponent {
         adjustViewport(); // ensure viewport is correct before drawing
         var size = getSize();
         var theme = ThemeManager.active();
-        var blank = new TextCell(' ', theme.foreground(), theme.background());
+        Color bg = theme.background();
+        var blank = new TextCell(' ', theme.foreground(), bg);
 
         // Fill background
         graphics.fillRectangle(0, 0, size.columns(), size.rows(), blank);
@@ -155,7 +198,9 @@ public class TextArea extends AbstractComponent {
             }
         }
 
-        // Draw cursor (highlight: black text on white background)
+        // Draw cursor (highlight: swapped fg/bg) BEFORE ghost text so that
+        // when a suggestion is active, the ghost text overwrites the cursor cell
+        // and all suggestion characters are visible.
         int cursorScreenRow = cursorRow - viewportRow;
         int cursorScreenCol = cursorCol - viewportCol;
         if (cursorScreenRow >= 0 && cursorScreenRow < size.rows()
@@ -165,12 +210,31 @@ public class TextArea extends AbstractComponent {
             graphics.setCell(cursorScreenCol, cursorScreenRow,
                     new TextCell(c, theme.selectionFg(), theme.selectionBg()));
         }
+
+        // Query completion provider and render ghost text when focused.
+        // Drawn after the cursor so the full suggestion is visible (the first
+        // ghost char replaces the cursor cell).
+        if (isFocused() && ghostTextSupport.getProvider() != null) {
+            String currentLine = cursorRow < lines.size() ? lines.get(cursorRow) : "";
+            ghostTextSupport.refresh(currentLine, cursorCol);
+            if (ghostTextSupport.hasGhostText()) {
+                if (cursorScreenRow >= 0 && cursorScreenRow < size.rows()
+                        && cursorScreenCol >= 0 && cursorScreenCol < size.columns()) {
+                    ghostTextSupport.drawGhostTextMultiLine(
+                            graphics, cursorScreenCol, cursorScreenRow,
+                            size.columns(), size.rows(), bg);
+                }
+            }
+        } else if (!isFocused()) {
+            ghostTextSupport.clear();
+        }
     }
 
     // ── Key handling ──────────────────────────────────────────
 
     /**
      * Handles Emacs-style and arrow key bindings for cursor movement and editing.
+     * Space and Tab accept ghost text completions when present.
      *
      * @param keyStroke the keystroke to handle
      * @return {@code true} if the keystroke was consumed
@@ -179,6 +243,7 @@ public class TextArea extends AbstractComponent {
     public boolean handleKeyStroke(KeyStroke keyStroke) {
         // Emacs-style key bindings (Ctrl+letter)
         if (keyStroke.type() == KeyType.CHARACTER && keyStroke.ctrl()) {
+            ghostTextSupport.clear();
             switch (keyStroke.character()) {
                 case 'A', 'a' -> { cursorCol = 0; adjustViewport(); return true; }
                 case 'E', 'e' -> { cursorCol = currentLineLength(); adjustViewport(); return true; }
@@ -193,6 +258,40 @@ public class TextArea extends AbstractComponent {
             }
         }
 
+        // Space accepts ghost text if present, then inserts a space
+        if (keyStroke.type() == KeyType.CHARACTER && keyStroke.character() == ' ') {
+            String accepted = ghostTextSupport.tryAccept(' ');
+            if (accepted != null) {
+                insertTextAtCursor(accepted);
+                // Also insert the space that triggered acceptance
+                insertChar(' ');
+                invalidate();
+                return true;
+            }
+        }
+
+        // Tab accepts ghost text if present (no tab character inserted)
+        if (keyStroke.type() == KeyType.TAB) {
+            String accepted = ghostTextSupport.tryAcceptTab();
+            if (accepted != null) {
+                insertTextAtCursor(accepted);
+                invalidate();
+                return true;
+            }
+            return false; // No ghost text — Tab not consumed by TextArea
+        }
+
+        // Escape clears ghost text without accepting
+        if (keyStroke.type() == KeyType.ESCAPE) {
+            if (ghostTextSupport.hasGhostText()) {
+                ghostTextSupport.clear();
+                return true;
+            }
+            return false;
+        }
+
+        // All other keystrokes: clear ghost text and process normally
+        ghostTextSupport.clear();
         switch (keyStroke.type()) {
             case CHARACTER -> {
                 insertChar(keyStroke.character());
@@ -233,6 +332,20 @@ public class TextArea extends AbstractComponent {
         String newLine = line.substring(0, cursorCol) + c + line.substring(cursorCol);
         lines.set(cursorRow, newLine);
         cursorCol++;
+        adjustViewport();
+    }
+
+    /**
+     * Inserts a string at the cursor position on the current line and advances
+     * the cursor by the length of the string. Used for accepting ghost text.
+     *
+     * @param text the text to insert
+     */
+    private void insertTextAtCursor(String text) {
+        String line = lines.get(cursorRow);
+        String newLine = line.substring(0, cursorCol) + text + line.substring(cursorCol);
+        lines.set(cursorRow, newLine);
+        cursorCol += text.length();
         adjustViewport();
     }
 

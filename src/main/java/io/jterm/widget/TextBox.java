@@ -1,5 +1,7 @@
 package io.jterm.widget;
 
+import io.jterm.completion.CompletionProvider;
+import io.jterm.completion.GhostTextSupport;
 import io.jterm.core.TerminalSize;
 import io.jterm.core.input.KeyStroke;
 import io.jterm.core.input.KeyType;
@@ -10,7 +12,7 @@ import io.jterm.style.SGR;
 import io.jterm.style.TextCell;
 import io.jterm.style.ThemeManager;
 
-/** Single-line text input. */
+/** Single-line text input with optional ghost text (inline completion) support. */
 public class TextBox extends AbstractComponent {
     private volatile String value = "";
     private volatile int cursorPosition = 0;
@@ -20,6 +22,7 @@ public class TextBox extends AbstractComponent {
     private volatile boolean forceUppercase = false;
     private Color backgroundColorOverride = null;
     private String placeholder = null;
+    private final GhostTextSupport ghostTextSupport = new GhostTextSupport();
 
     /** Creates an empty TextBox with default width. */
     public TextBox() {}
@@ -41,6 +44,7 @@ public class TextBox extends AbstractComponent {
         this.value = forceUppercase ? value.toUpperCase() : value;
         cursorPosition = Math.min(cursorPosition, value.length());
         viewportOffset = Math.min(viewportOffset, value.length());
+        ghostTextSupport.clear();
         invalidate();
     }
 
@@ -82,6 +86,37 @@ public class TextBox extends AbstractComponent {
     public String getPlaceholder() { return placeholder; }
 
     /**
+     * Returns the current completion provider, or {@code null} if none is set.
+     *
+     * @return the completion provider, or {@code null}
+     */
+    public CompletionProvider getCompletionProvider() {
+        return ghostTextSupport.getProvider();
+    }
+
+    /**
+     * Sets the completion provider for ghost text (inline completion) support.
+     * Pass {@code null} to disable completions.
+     *
+     * @param provider the completion provider, or {@code null} to disable
+     */
+    public void setCompletionProvider(CompletionProvider provider) {
+        ghostTextSupport.setProvider(provider);
+        invalidate();
+    }
+
+    /**
+     * Returns the current ghost text suggestion being displayed, or {@code null}
+     * if no suggestion is active. This is the suffix that would be appended at
+     * the cursor position if the user accepts the completion.
+     *
+     * @return the current ghost text suffix, or {@code null}
+     */
+    public String getCurrentGhostText() {
+        return ghostTextSupport.getGhostText();
+    }
+
+    /**
      * Returns the preferred size (preferred columns × 1 row).
      *
      * @return the preferred terminal size
@@ -92,7 +127,8 @@ public class TextBox extends AbstractComponent {
     }
 
     /**
-     * Renders the value (masked if enabled), placeholder when empty, and cursor.
+     * Renders the value (masked if enabled), placeholder when empty, ghost text
+     * suggestion, and cursor.
      *
      * @param graphics the text-graphics target
      */
@@ -114,6 +150,16 @@ public class TextBox extends AbstractComponent {
             int phLen = Math.min(placeholder.length(), size.columns());
             graphics.drawString(0, 0, placeholder.substring(0, phLen), phStyle);
         }
+        // Query completion provider and render ghost text when focused and not masked
+        if (isFocused() && !masked && ghostTextSupport.getProvider() != null) {
+            ghostTextSupport.refresh(value, cursorPosition);
+            int cursorCol = cursorPosition - offset;
+            if (ghostTextSupport.hasGhostText() && cursorCol >= 0 && cursorCol < size.columns()) {
+                ghostTextSupport.drawGhostText(graphics, cursorCol, 0, size.columns(), bg);
+            }
+        } else if (!isFocused()) {
+            ghostTextSupport.clear();
+        }
         // Only draw cursor when this TextBox has focus
         if (isFocused()) {
             int cursorCol = cursorPosition - viewportOffset;
@@ -130,6 +176,7 @@ public class TextBox extends AbstractComponent {
 
     /**
      * Handles Emacs-style and arrow key bindings for editing and cursor movement.
+     * Space and Tab accept ghost text completions when present.
      *
      * @param keyStroke the keystroke to handle
      * @return {@code true} if the keystroke was consumed
@@ -138,6 +185,7 @@ public class TextBox extends AbstractComponent {
     public boolean handleKeyStroke(KeyStroke keyStroke) {
         // Emacs-style key bindings (Ctrl+letter arrives as CHARACTER with ctrl=true)
         if (keyStroke.type() == KeyType.CHARACTER && keyStroke.ctrl()) {
+            ghostTextSupport.clear();
             switch (keyStroke.character()) {
                 case 'A', 'a' -> { cursorPosition = 0; adjustViewport(); return true; }
                 case 'E', 'e' -> { cursorPosition = value.length(); adjustViewport(); return true; }
@@ -150,6 +198,42 @@ public class TextBox extends AbstractComponent {
                 default -> { return false; }  // Ignore other Ctrl+letter combos
             }
         }
+        // Space accepts ghost text if present, then inserts a space
+        if (keyStroke.type() == KeyType.CHARACTER && keyStroke.character() == ' ') {
+            String accepted = ghostTextSupport.tryAccept(' ');
+            if (accepted != null) {
+                value = value.substring(0, cursorPosition) + accepted + value.substring(cursorPosition);
+                cursorPosition += accepted.length();
+                // Also insert the space that triggered acceptance
+                value = value.substring(0, cursorPosition) + ' ' + value.substring(cursorPosition);
+                cursorPosition++;
+                invalidate();
+                adjustViewport();
+                return true;
+            }
+        }
+        // Tab accepts ghost text if present (no tab character inserted)
+        if (keyStroke.type() == KeyType.TAB) {
+            String accepted = ghostTextSupport.tryAcceptTab();
+            if (accepted != null) {
+                value = value.substring(0, cursorPosition) + accepted + value.substring(cursorPosition);
+                cursorPosition += accepted.length();
+                invalidate();
+                adjustViewport();
+                return true;
+            }
+            return false; // No ghost text — Tab not consumed by TextBox
+        }
+        // Escape clears ghost text without accepting
+        if (keyStroke.type() == KeyType.ESCAPE) {
+            if (ghostTextSupport.hasGhostText()) {
+                ghostTextSupport.clear();
+                return true;
+            }
+            return false;
+        }
+        // All other keystrokes: clear ghost text and process normally
+        ghostTextSupport.clear();
         switch (keyStroke.type()) {
             case CHARACTER -> {
                 char ch = keyStroke.character();
