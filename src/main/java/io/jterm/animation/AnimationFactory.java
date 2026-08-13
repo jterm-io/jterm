@@ -33,6 +33,11 @@ public final class AnimationFactory {
         return new SparkleCornersEffect();
     }
 
+    /** Returns a new {@link MarchingAntsEffect} with default dash=3, gap=2. */
+    public static MarchingAntsEffect marchingAnts() {
+        return new MarchingAntsEffect();
+    }
+
     /** Returns a randomly chosen animation using a fresh {@link Random}. */
     public static AnimatedBackground random() {
         return random(new Random());
