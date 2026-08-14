@@ -9,11 +9,6 @@ import static org.junit.jupiter.api.Assertions.*;
 /**
  * Tests for {@link EnglishWordCompletionProvider}, which provides ghost text
  * completions from a built-in English word list loaded via a trie.
- *
- * <p>The built-in word list contains 466k+ words. Test prefixes are chosen so
- * that the shortest completion is unique at its length — the trie's BFS uses
- * {@code HashMap} iteration order, so ties between same-length words would be
- * non-deterministic across JVM runs.
  */
 class EnglishWordCompletionProviderTest {
 
@@ -22,39 +17,39 @@ class EnglishWordCompletionProviderTest {
     @Test
     void suggestsSuffixForMatchingWord() {
         var provider = EnglishWordCompletionProvider.create();
-        // "qad" is not a word itself. "qadi" (4 chars) is the unique shortest
-        // word starting with "qad". Suffix should be "i".
-        String suffix = provider.suggest("qad", 3);
+        // "he" is in the word list and is a complete word.
+        // "her" is the shortest word starting with "he" that's longer than "he".
+        // Suffix should be "r" (for "her").
+        String suffix = provider.suggest("he", 2);
         assertNotNull(suffix);
-        assertEquals("i", suffix);
+        assertEquals("r", suffix);
     }
 
     @Test
     void suggestsShortestMatchingWord() {
         var provider = EnglishWordCompletionProvider.create();
-        // "progr" — "program" (7 chars) is the unique shortest word starting
-        // with "progr". Suffix should be "am".
-        String suffix = provider.suggest("progr", 5);
+        // "hel" should match "help" (4 chars) — shortest among "help", "hello"(not in list)
+        String suffix = provider.suggest("hel", 3);
         assertNotNull(suffix);
-        assertEquals("am", suffix);
+        assertEquals("p", suffix);
     }
 
     @Test
     void matchingIsCaseInsensitive() {
         var provider = EnglishWordCompletionProvider.create();
-        // "QAD" should match "qadi" → suffix "i"
-        String suffix = provider.suggest("QAD", 3);
+        // "HE" should match "her" → suffix "r"
+        String suffix = provider.suggest("HE", 2);
         assertNotNull(suffix);
-        assertEquals("i", suffix);
+        assertEquals("r", suffix);
     }
 
     @Test
     void matchingIsCaseInsensitiveMixedCase() {
         var provider = EnglishWordCompletionProvider.create();
-        // "PrOgR" should match "program" → suffix "am"
-        String suffix = provider.suggest("PrOgR", 5);
+        // "HeL" should match "help" → suffix "p"
+        String suffix = provider.suggest("HeL", 3);
         assertNotNull(suffix);
-        assertEquals("am", suffix);
+        assertEquals("p", suffix);
     }
 
     // ── No match cases ──────────────────────────────────────────
@@ -76,22 +71,24 @@ class EnglishWordCompletionProviderTest {
     @Test
     void returnsNullWhenPrefixIsExactWord() {
         var provider = EnglishWordCompletionProvider.create();
-        // "hello" is a complete word — it has longer completions.
-        // The provider should skip the exact match and suggest the next shortest.
-        // "hello" → shortest longer word is "hellos" (unique at length 6) → suffix "s"
-        String suffix = provider.suggest("hello", 5);
-        // "hello" is a word itself, but there are longer completions.
+        // "he" is a complete word — no suffix needed since it IS a word
+        // But "he" also has longer completions ("her", "help", etc.)
+        // The provider should skip exact matches and suggest the next shortest.
+        // "he" → shortest longer word is "her" → suffix "r"
+        String suffix = provider.suggest("he", 2);
+        // "he" is a word itself, but there are longer completions.
         // Should return the suffix for the next shortest word.
         assertNotNull(suffix);
-        assertEquals("s", suffix);
+        assertEquals("r", suffix);
     }
 
     @Test
     void returnsNullWhenPrefixIsExactWordWithNoLongerCompletions() {
         var provider = EnglishWordCompletionProvider.create();
-        // "quica" is a complete word in the list and has no longer words
-        // starting with it — the provider should return null.
-        String suffix = provider.suggest("quica", 5);
+        // Find a word in the list that has no longer words starting with it
+        // "word" → check if there are longer words starting with "word"
+        // From the list: "word", "work", "world" — none start with "word" except "word" itself
+        String suffix = provider.suggest("word", 4);
         assertNull(suffix, "exact word with no longer completions should return null");
     }
 
@@ -100,19 +97,19 @@ class EnglishWordCompletionProviderTest {
     @Test
     void extractsLastWordBeforeCursor() {
         var provider = EnglishWordCompletionProvider.create();
-        // "the progr" — cursor at 9, last word is "progr" → matches "program" → suffix "am"
-        String suffix = provider.suggest("the progr", 9);
+        // "the wor" — cursor at 7, last word is "wor" → matches "word" → suffix "d"
+        String suffix = provider.suggest("the wor", 7);
         assertNotNull(suffix);
-        assertEquals("am", suffix);
+        assertEquals("d", suffix);
     }
 
     @Test
     void extractsLastWordWithMultipleSpaces() {
         var provider = EnglishWordCompletionProvider.create();
-        // "the   progr" — cursor at 11, last word is "progr" → "program" → "am"
-        String suffix = provider.suggest("the   progr", 11);
+        // "the   wor" — cursor at 9, last word is "wor" → "word" → "d"
+        String suffix = provider.suggest("the   wor", 9);
         assertNotNull(suffix);
-        assertEquals("am", suffix);
+        assertEquals("d", suffix);
     }
 
     @Test
@@ -126,10 +123,10 @@ class EnglishWordCompletionProviderTest {
     @Test
     void cursorInMiddleOfWordSuggestsFromPrefix() {
         var provider = EnglishWordCompletionProvider.create();
-        // "qadi" with cursor at 3 → prefix "qad" → "qadi" → suffix "i"
-        String suffix = provider.suggest("qadi", 3);
+        // "help" with cursor at 2 → prefix "he" → "her" → suffix "r"
+        String suffix = provider.suggest("help", 2);
         assertNotNull(suffix);
-        assertEquals("i", suffix);
+        assertEquals("r", suffix);
     }
 
     // ── Suffix correctness ──────────────────────────────────────
@@ -137,9 +134,9 @@ class EnglishWordCompletionProviderTest {
     @Test
     void suffixIsLowercaseFromTrie() {
         var provider = EnglishWordCompletionProvider.create();
-        // "QAD" matches "qadi" — suffix should be lowercase "i"
-        String suffix = provider.suggest("QAD", 3);
-        assertEquals("i", suffix);
+        // "HE" matches "her" — suffix should be lowercase "r"
+        String suffix = provider.suggest("HE", 2);
+        assertEquals("r", suffix);
     }
 
     // ── With custom word list ───────────────────────────────────
@@ -190,10 +187,11 @@ class EnglishWordCompletionProviderTest {
     void usesTrieForEfficientLookup() {
         var provider = EnglishWordCompletionProvider.create();
         // Verify the provider works correctly (trie is used internally)
-        // "progr" has a unique shortest completion "program" → suffix "am"
-        String suffix = provider.suggest("progr", 5);
+        // Test a common word prefix
+        String suffix = provider.suggest("th", 2);
         assertNotNull(suffix);
-        assertEquals("am", suffix);
+        // "the" is the shortest word starting with "th"
+        assertEquals("e", suffix);
     }
 
     @Test
