@@ -85,19 +85,22 @@ public class BoxExpandTransition implements TransitionEffect {
         int centerCol = size.columns() / 2;
         int centerRow = size.rows() / 2;
 
-        // The box expands from 1x1 at p=0 to full screen at p=1.
-        // Use the max dimension to drive the expansion so the box reaches
-        // all edges at p=1.0 regardless of aspect ratio.
+        // The box expands from 1x1 at p=0 to full screen at p=1,
+        // maintaining the screen's aspect ratio throughout.
         int maxHalfWidth = Math.max(centerCol, size.columns() - 1 - centerCol);
         int maxHalfHeight = Math.max(centerRow, size.rows() - 1 - centerRow);
-        double maxHalf = Math.max(maxHalfWidth, maxHalfHeight);
-        if (maxHalf < 1) maxHalf = 1;
 
-        int currentHalf = (int) Math.ceil(p * maxHalf);
-        int boxLeft = centerCol - currentHalf;
-        int boxRight = centerCol + currentHalf;
-        int boxTop = centerRow - currentHalf;
-        int boxBottom = centerRow + currentHalf;
+        // Scale both dimensions by the same progress factor so the box
+        // keeps the same width:height ratio as the terminal.
+        int halfWidth = (int) Math.ceil(p * maxHalfWidth);
+        int halfHeight = (int) Math.ceil(p * maxHalfHeight);
+        if (halfWidth < 1) halfWidth = 1;
+        if (halfHeight < 1) halfHeight = 1;
+
+        int boxLeft = centerCol - halfWidth;
+        int boxRight = centerCol + halfWidth;
+        int boxTop = centerRow - halfHeight;
+        int boxBottom = centerRow + halfHeight;
 
         // Border cell: full block in border color
         var borderCell = new TextCell("\u2588", borderColor, AnsiColor.BLACK,
