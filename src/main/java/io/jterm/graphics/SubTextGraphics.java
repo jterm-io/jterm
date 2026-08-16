@@ -4,7 +4,11 @@ import io.jterm.core.TerminalPosition;
 import io.jterm.core.TerminalSize;
 import io.jterm.style.Color;
 import io.jterm.style.SGR;
+import io.jterm.style.StyledSegment;
 import io.jterm.style.TextCell;
+import io.jterm.style.TextStyleResolver;
+
+import java.util.List;
 
 /** A TextGraphics that translates coordinates to a sub-region of a parent graphics. */
 public class SubTextGraphics extends TextGraphics {
@@ -160,6 +164,36 @@ public class SubTextGraphics extends TextGraphics {
     @Override
     public void drawString(int x, int y, String text, Color fg, Color bg, SGR... mods) {
         parent.drawString(this.x + x, this.y + y, text, fg, bg, mods);
+    }
+
+    /**
+     * Draw a styled string at the given position, delegating to the parent
+     * with the offset applied.
+     *
+     * @param x            the x coordinate within this sub-region
+     * @param y            the y coordinate within this sub-region
+     * @param text         the text to draw
+     * @param defaultStyle the default cell style
+     * @param resolver     the per-character style resolver
+     */
+    @Override
+    public void drawStyledString(int x, int y, String text, TextCell defaultStyle, TextStyleResolver resolver) {
+        parent.drawStyledString(this.x + x, this.y + y, text, defaultStyle, resolver);
+    }
+
+    /**
+     * Draw a styled string with segments at the given position, delegating to
+     * the parent with the offset applied.
+     *
+     * @param x            the x coordinate within this sub-region
+     * @param y            the y coordinate within this sub-region
+     * @param text         the text to draw
+     * @param defaultStyle the default cell style
+     * @param segments     the styled segments
+     */
+    @Override
+    public void drawStyledString(int x, int y, String text, TextCell defaultStyle, List<StyledSegment> segments) {
+        parent.drawStyledString(this.x + x, this.y + y, text, defaultStyle, segments);
     }
 
     /**

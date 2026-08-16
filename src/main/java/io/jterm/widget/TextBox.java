@@ -2,6 +2,8 @@ package io.jterm.widget;
 
 import io.jterm.completion.CompletionProvider;
 import io.jterm.completion.GhostTextSupport;
+import io.jterm.completion.SpellcheckDictionary;
+import io.jterm.completion.SpellcheckResolver;
 import io.jterm.core.TerminalSize;
 import io.jterm.core.input.KeyStroke;
 import io.jterm.core.input.KeyType;
@@ -10,6 +12,7 @@ import io.jterm.style.AnsiColor;
 import io.jterm.style.Color;
 import io.jterm.style.SGR;
 import io.jterm.style.TextCell;
+import io.jterm.style.TextStyleResolver;
 import io.jterm.style.ThemeManager;
 
 /** Single-line text input with optional ghost text (inline completion) support. */
@@ -22,6 +25,7 @@ public class TextBox extends AbstractComponent {
     private volatile boolean forceUppercase = false;
     private Color backgroundColorOverride = null;
     private String placeholder = null;
+    private volatile TextStyleResolver styleResolver = null;
     private final GhostTextSupport ghostTextSupport = new GhostTextSupport();
 
     /** Creates an empty TextBox with default width. */
@@ -86,6 +90,43 @@ public class TextBox extends AbstractComponent {
     public String getPlaceholder() { return placeholder; }
 
     /**
+     * Returns the per-character style resolver, or {@code null} if none is set.
+     *
+     * @return the style resolver, or {@code null}
+     */
+    public TextStyleResolver getStyleResolver() {
+        return styleResolver;
+    }
+
+    /**
+     * Sets a per-character style resolver for custom coloring of the text.
+     * When non-null, {@code drawComponent} uses
+     * {@link io.jterm.graphics.TextGraphics#drawStyledString} instead of
+     * {@code drawString} for the visible text. Cursor and ghost text
+     * rendering are unaffected.
+     *
+     * @param resolver the style resolver, or {@code null} to revert to
+     *                 default behavior
+     */
+    public void setStyleResolver(TextStyleResolver resolver) {
+        this.styleResolver = resolver;
+        invalidate();
+    }
+
+    /**
+     * Enables spellchecking with the given dictionary. When non-null, a
+     * {@link SpellcheckResolver} is created and set as the style resolver.
+     * Misspelled words will be highlighted in yellow during rendering.
+     * Pass {@code null} to disable spellchecking.
+     *
+     * @param dictionary the spellcheck dictionary, or {@code null} to disable
+     */
+    public void setSpellcheckDictionary(SpellcheckDictionary dictionary) {
+        var resolver = dictionary != null ? new SpellcheckResolver(dictionary) : null;
+        setStyleResolver(resolver);
+    }
+
+    /**
      * Returns the current completion provider, or {@code null} if none is set.
      *
      * @return the completion provider, or {@code null}
@@ -143,7 +184,14 @@ public class TextBox extends AbstractComponent {
         int offset = Math.min(viewportOffset, value.length());
         var visible = value.substring(offset, Math.min(value.length(), offset + size.columns()));
         var display = masked ? "*".repeat(visible.length()) : visible;
-        graphics.drawString(0, 0, display, style);
+        if (styleResolver != null) {
+            if (styleResolver instanceof SpellcheckResolver sr) {
+                sr.setText(display);
+            }
+            graphics.drawStyledString(0, 0, display, style, styleResolver);
+        } else {
+            graphics.drawString(0, 0, display, style);
+        }
         // Show placeholder text in dim color when empty and not focused
         if (value.isEmpty() && placeholder != null && !placeholder.isEmpty()) {
             var phStyle = new TextCell(' ', AnsiColor.BRIGHT_BLACK, bg);

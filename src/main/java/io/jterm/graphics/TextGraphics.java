@@ -5,7 +5,11 @@ import io.jterm.core.TerminalSize;
 import io.jterm.screen.ScreenBuffer;
 import io.jterm.style.Color;
 import io.jterm.style.SGR;
+import io.jterm.style.StyledSegment;
 import io.jterm.style.TextCell;
+import io.jterm.style.TextStyleResolver;
+
+import java.util.List;
 
 /** Drawing primitives targeting a backing ScreenBuffer. */
 public class TextGraphics {
@@ -253,6 +257,56 @@ public class TextGraphics {
     public void drawString(int x, int y, String text, Color fg, Color bg, SGR... mods) {
         var modsSet = mods.length == 0 ? java.util.EnumSet.noneOf(SGR.class) : java.util.EnumSet.of(mods[0], mods);
         drawString(x, y, text, new TextCell(' ', fg, bg, modsSet.toArray(new SGR[0])));
+    }
+
+    /**
+     * Draws a string with per-character style overrides via a
+     * {@link TextStyleResolver}. For each character, the resolver is called;
+     * if it returns a non-null {@link TextCell}, that cell (with the character
+     * replaced) is used. If it returns {@code null}, the default style is used
+     * with the character substituted. Double-width characters are handled the
+     * same as in {@link #drawString}.
+     *
+     * @param x            the column
+     * @param y            the row
+     * @param text         the text to draw
+     * @param defaultStyle the default cell style
+     * @param resolver     the per-character style resolver
+     */
+    public void drawStyledString(int x, int y, String text, TextCell defaultStyle, TextStyleResolver resolver) {
+        int col = x;
+        for (int i = 0; i < text.length(); i++) {
+            char c = text.charAt(i);
+            TextCell override = resolver.resolveStyle(i, c, defaultStyle);
+            TextCell cell = override != null ? override.withCharacter(c) : defaultStyle.withCharacter(c);
+            buffer.setCell(col, y, cell);
+            col += isCharDoubleWidth(c) ? 2 : 1;
+        }
+    }
+
+    /**
+     * Draws a string with per-character styling defined by a list of
+     * {@link StyledSegment} ranges. For each character index, the last
+     * segment in the list that contains the index wins (allowing later,
+     * more specific segments to override earlier, broader ones). If no
+     * segment covers the index, the default style is used.
+     *
+     * @param x            the column
+     * @param y            the row
+     * @param text         the text to draw
+     * @param defaultStyle the default cell style
+     * @param segments     the styled segments (last matching wins)
+     */
+    public void drawStyledString(int x, int y, String text, TextCell defaultStyle, List<StyledSegment> segments) {
+        drawStyledString(x, y, text, defaultStyle, (charIndex, c, defStyle) -> {
+            StyledSegment matched = null;
+            for (StyledSegment seg : segments) {
+                if (seg.contains(charIndex)) {
+                    matched = seg;
+                }
+            }
+            return matched != null ? matched.applyTo(c, defStyle.bg()) : null;
+        });
     }
 
     /** Sets a single cell (alias for {@link #setCell}). @param x the column @param y the row @param cell the cell to set */

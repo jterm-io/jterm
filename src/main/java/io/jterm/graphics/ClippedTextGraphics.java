@@ -3,7 +3,11 @@ package io.jterm.graphics;
 import io.jterm.core.TerminalPosition;
 import io.jterm.core.TerminalSize;
 import io.jterm.screen.ScreenBuffer;
+import io.jterm.style.StyledSegment;
 import io.jterm.style.TextCell;
+import io.jterm.style.TextStyleResolver;
+
+import java.util.List;
 
 /** Graphics view that writes through to a parent buffer at an offset. */
 public class ClippedTextGraphics extends TextGraphics {
@@ -160,6 +164,54 @@ public class ClippedTextGraphics extends TextGraphics {
             }
             col += isCharDoubleWidth(c) ? 2 : 1;
         }
+    }
+
+    /**
+     * Draw a styled string at the given position with per-character clipping.
+     * Each character is written via {@link #setCell} so it respects the
+     * clipped region boundaries.
+     *
+     * @param x            the x coordinate
+     * @param y            the y coordinate
+     * @param text         the text to draw
+     * @param defaultStyle the default cell style
+     * @param resolver     the per-character style resolver
+     */
+    @Override
+    public void drawStyledString(int x, int y, String text, TextCell defaultStyle, TextStyleResolver resolver) {
+        int col = x;
+        for (int i = 0; i < text.length(); i++) {
+            char c = text.charAt(i);
+            if (col >= 0 && col < getSize().columns() && y >= 0 && y < getSize().rows()) {
+                TextCell override = resolver.resolveStyle(i, c, defaultStyle);
+                TextCell cell = override != null ? override.withCharacter(c) : defaultStyle.withCharacter(c);
+                setCell(col, y, cell);
+            }
+            col += isCharDoubleWidth(c) ? 2 : 1;
+        }
+    }
+
+    /**
+     * Draw a styled string with segments at the given position with
+     * per-character clipping.
+     *
+     * @param x            the x coordinate
+     * @param y            the y coordinate
+     * @param text         the text to draw
+     * @param defaultStyle the default cell style
+     * @param segments     the styled segments
+     */
+    @Override
+    public void drawStyledString(int x, int y, String text, TextCell defaultStyle, List<StyledSegment> segments) {
+        drawStyledString(x, y, text, defaultStyle, (charIndex, c, defStyle) -> {
+            StyledSegment matched = null;
+            for (StyledSegment seg : segments) {
+                if (seg.contains(charIndex)) {
+                    matched = seg;
+                }
+            }
+            return matched != null ? matched.applyTo(c, defStyle.bg()) : null;
+        });
     }
 
     private static boolean isCharDoubleWidth(char c) {

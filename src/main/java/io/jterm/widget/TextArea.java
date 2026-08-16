@@ -2,6 +2,8 @@ package io.jterm.widget;
 
 import io.jterm.completion.CompletionProvider;
 import io.jterm.completion.GhostTextSupport;
+import io.jterm.completion.SpellcheckDictionary;
+import io.jterm.completion.SpellcheckResolver;
 import io.jterm.core.TerminalPosition;
 import io.jterm.core.TerminalSize;
 import io.jterm.core.input.KeyStroke;
@@ -10,6 +12,7 @@ import io.jterm.graphics.TextGraphics;
 import io.jterm.style.AnsiColor;
 import io.jterm.style.Color;
 import io.jterm.style.TextCell;
+import io.jterm.style.TextStyleResolver;
 import io.jterm.style.ThemeManager;
 
 import java.util.ArrayList;
@@ -41,6 +44,7 @@ public class TextArea extends AbstractComponent {
     private volatile int preferredColumns = 20;
     private volatile int preferredRows = 5;
     private final GhostTextSupport ghostTextSupport = new GhostTextSupport();
+    private volatile TextStyleResolver styleResolver = null;
 
     // ── Construction ───────────────────────────────────────────
 
@@ -155,6 +159,43 @@ public class TextArea extends AbstractComponent {
         return ghostTextSupport.getGhostText();
     }
 
+    /**
+     * Returns the per-character style resolver, or {@code null} if none is set.
+     *
+     * @return the style resolver, or {@code null}
+     */
+    public TextStyleResolver getStyleResolver() {
+        return styleResolver;
+    }
+
+    /**
+     * Sets a per-character style resolver for custom coloring of the text.
+     * When non-null, {@code drawComponent} uses
+     * {@link io.jterm.graphics.TextGraphics#drawStyledString} instead of
+     * {@code drawString} for each visible line. Cursor and ghost text
+     * rendering are unaffected.
+     *
+     * @param resolver the style resolver, or {@code null} to revert to
+     *                 default behavior
+     */
+    public void setStyleResolver(TextStyleResolver resolver) {
+        this.styleResolver = resolver;
+        invalidate();
+    }
+
+    /**
+     * Enables spellchecking with the given dictionary. When non-null, a
+     * {@link SpellcheckResolver} is created and set as the style resolver.
+     * Misspelled words will be highlighted in yellow during rendering.
+     * Pass {@code null} to disable spellchecking.
+     *
+     * @param dictionary the spellcheck dictionary, or {@code null} to disable
+     */
+    public void setSpellcheckDictionary(SpellcheckDictionary dictionary) {
+        var resolver = dictionary != null ? new SpellcheckResolver(dictionary) : null;
+        setStyleResolver(resolver);
+    }
+
     // ── Layout ────────────────────────────────────────────────
 
     /**
@@ -194,7 +235,14 @@ public class TextArea extends AbstractComponent {
             int visibleEnd = Math.min(line.length(), viewportCol + size.columns());
             if (visibleStart < visibleEnd) {
                 String visible = line.substring(visibleStart, visibleEnd);
-                graphics.drawString(0, r, visible, blank);
+                if (styleResolver != null) {
+                    if (styleResolver instanceof SpellcheckResolver sr) {
+                        sr.setText(visible);
+                    }
+                    graphics.drawStyledString(0, r, visible, blank, styleResolver);
+                } else {
+                    graphics.drawString(0, r, visible, blank);
+                }
             }
         }
 

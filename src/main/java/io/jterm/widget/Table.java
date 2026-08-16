@@ -27,6 +27,26 @@ public class Table extends AbstractComponent implements TableModelListener {
     private volatile int scrollOffset = 0;
     private volatile int[] columnWidths;
 
+    /** Per-column alignment array; defaults to {@code LEFT} for all columns. */
+    private Alignment[] columnAlignments;
+
+    /** Character drawn between columns. Defaults to {@code "│"}. Use {@code " "} for no visible separator. */
+    private String columnSeparatorChar = "│";
+
+    /**
+     * Per-column text alignment for table cells.
+     * <ul>
+     *   <li>{@link #LEFT} — text starts at the left edge of the column (default)</li>
+     *   <li>{@link #RIGHT} — text ends at the right edge of the column, padded on the left</li>
+     * </ul>
+     */
+    public enum Alignment {
+        /** Left-aligned: text at the left edge, padding on the right. */
+        LEFT,
+        /** Right-aligned: text at the right edge, padding on the left. */
+        RIGHT
+    }
+
     /**
      * Creates a table backed by the provided model.
      *
@@ -222,15 +242,25 @@ public class Table extends AbstractComponent implements TableModelListener {
         for (int i = 0; i < columnCount; i++) {
             String text = i < cells.size() ? cells.get(i) : "";
             String truncated = TerminalTextUtils.truncate(text, columnWidths[i]);
-            graphics.drawString(x, y, truncated, style);
-            int pad = columnWidths[i] - TerminalTextUtils.getTrueWidth(truncated);
-            if (pad > 0) {
-                graphics.fillRectangle(x + TerminalTextUtils.getTrueWidth(truncated), y, pad, 1, style);
+            int textWidth = TerminalTextUtils.getTrueWidth(truncated);
+            Alignment alignment = getColumnAlignment(i);
+            if (alignment == Alignment.RIGHT) {
+                int pad = columnWidths[i] - textWidth;
+                if (pad > 0) {
+                    graphics.fillRectangle(x, y, pad, 1, style);
+                }
+                graphics.drawString(x + pad, y, truncated, style);
+            } else {
+                graphics.drawString(x, y, truncated, style);
+                int pad = columnWidths[i] - textWidth;
+                if (pad > 0) {
+                    graphics.fillRectangle(x + textWidth, y, pad, 1, style);
+                }
             }
             x += columnWidths[i];
             if (i < columnCount - 1) {
-                graphics.drawString(x, y, "│", style);
-                x++;
+                graphics.drawString(x, y, columnSeparatorChar, style);
+                x += TerminalTextUtils.getTrueWidth(columnSeparatorChar);
             }
         }
     }
@@ -295,6 +325,77 @@ public class Table extends AbstractComponent implements TableModelListener {
     public void setBounds(TerminalPosition position, TerminalSize size) {
         super.setBounds(position, size);
         ensureVisible();
+    }
+
+    /**
+     * Sets the alignment for a specific column. Out-of-bounds column indices
+     * are silently ignored (no exception thrown).
+     *
+     * @param col       the column index (0-based)
+     * @param alignment the alignment to set; if {@code null}, defaults to {@link Alignment#LEFT}
+     */
+    public void setColumnAlignment(int col, Alignment alignment) {
+        int columnCount = model == null ? 0 : model.getColumnCount();
+        if (col < 0 || col >= columnCount) {
+            return; // silently ignore out-of-bounds
+        }
+        if (columnAlignments == null || columnAlignments.length != columnCount) {
+            columnAlignments = new Alignment[columnCount];
+            Arrays.fill(columnAlignments, Alignment.LEFT);
+        }
+        columnAlignments[col] = (alignment == null) ? Alignment.LEFT : alignment;
+        invalidate();
+    }
+
+    /**
+     * Returns the alignment for the given column. Returns {@link Alignment#LEFT}
+     * for out-of-bounds indices or unset columns.
+     *
+     * @param col the column index (0-based)
+     * @return the alignment, or {@code LEFT} if not set or out of bounds
+     */
+    public Alignment getColumnAlignment(int col) {
+        if (columnAlignments == null || col < 0 || col >= columnAlignments.length) {
+            return Alignment.LEFT;
+        }
+        Alignment a = columnAlignments[col];
+        return a == null ? Alignment.LEFT : a;
+    }
+
+    /**
+     * Returns the computed width of the given column (in terminal columns).
+     * This is the actual width used during rendering, which may differ from
+     * the preferred width depending on available space.
+     *
+     * @param col the column index (0-based)
+     * @return the column width in terminal columns, or 0 if not yet computed or out of bounds
+     */
+    public int getColumnWidth(int col) {
+        if (columnWidths == null || col < 0 || col >= columnWidths.length) {
+            return 0;
+        }
+        return columnWidths[col];
+    }
+
+    /**
+     * Sets the character drawn between columns. Defaults to {@code "│"}.
+     * Use {@code ":"} for label-value config screens, or {@code " "} for
+     * no visible separator.
+     *
+     * @param separator the separator character to draw between columns
+     */
+    public void setColumnSeparatorChar(String separator) {
+        this.columnSeparatorChar = separator != null ? separator : "│";
+        invalidate();
+    }
+
+    /**
+     * Returns the current column separator character.
+     *
+     * @return the separator character drawn between columns
+     */
+    public String getColumnSeparatorChar() {
+        return columnSeparatorChar;
     }
 
     /**
