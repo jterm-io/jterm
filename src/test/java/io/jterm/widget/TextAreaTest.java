@@ -422,6 +422,7 @@ class TextAreaTest {
         var g = new TextGraphics(buf);
         ta.setBounds(new io.jterm.core.TerminalPosition(0, 0),
                       new io.jterm.core.TerminalSize(10, 3));
+        ta.setFocused(true);
         ta.draw(g);
         // Cell at (1, 0) should have WHITE bg (cursor highlight)
         var cursorCell = buf.getCell(1, 0);
@@ -840,6 +841,7 @@ class TextAreaTest {
         var g = new TextGraphics(buf);
         ta.setBounds(new io.jterm.core.TerminalPosition(0, 0),
                       new io.jterm.core.TerminalSize(10, 3));
+        ta.setFocused(true);
         ta.draw(g);
         // Cursor at col 5 should be a space with white bg
         var cell = buf.getCell(5, 0);
@@ -854,6 +856,7 @@ class TextAreaTest {
         var g = new TextGraphics(buf);
         ta.setBounds(new io.jterm.core.TerminalPosition(0, 0),
                       new io.jterm.core.TerminalSize(10, 3));
+        ta.setFocused(true);
         ta.draw(g);
         // Cursor at (0,0) should be space with white bg
         var cell = buf.getCell(0, 0);

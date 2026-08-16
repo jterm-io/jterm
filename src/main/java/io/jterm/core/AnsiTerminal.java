@@ -54,8 +54,11 @@ public class AnsiTerminal implements Terminal {
         this.decoder = new InputDecoder(System.in);
         this.fixedSize = null;
         this.lastSize = queryTerminalSize();
-        this.originalStty = captureStty();
-        this.ownStty = true;
+        // Skip stty capture/restore when there's no real console (e.g. Maven Surefire).
+        // In that environment, stty calls block and eventually timeout, wasting ~1.5s.
+        boolean hasConsole = System.console() != null;
+        this.originalStty = hasConsole ? captureStty() : null;
+        this.ownStty = hasConsole;
         startReaderThread();
     }
 
@@ -87,9 +90,21 @@ public class AnsiTerminal implements Terminal {
         try {
             var pb = new ProcessBuilder("sh", "-c", "stty -g </dev/tty").redirectErrorStream(true);
             var p = pb.start();
-            var bytes = p.getInputStream().readAllBytes();
-            p.waitFor();
-            return new String(bytes, StandardCharsets.UTF_8).trim();
+            // Read output in a separate thread so readAllBytes() doesn't
+            // block forever if the process hangs (e.g. no /dev/tty in CI).
+            var ref = new java.util.concurrent.atomic.AtomicReference<byte[]>();
+            Thread reader = Thread.ofVirtual().start(() -> {
+                try {
+                    ref.set(p.getInputStream().readAllBytes());
+                } catch (IOException ignored) {
+                }
+            });
+            if (!p.waitFor(500, TimeUnit.MILLISECONDS)) {
+                p.destroyForcibly();
+            }
+            reader.join(200);
+            var bytes = ref.get();
+            return bytes != null ? new String(bytes, StandardCharsets.UTF_8).trim() : "";
         } catch (InterruptedException | IOException e) {
             return null;
         }
@@ -97,7 +112,10 @@ public class AnsiTerminal implements Terminal {
 
     private static void setRawMode() {
         try {
-            new ProcessBuilder("sh", "-c", "stty raw -echo -icanon </dev/tty").inheritIO().start().waitFor();
+            var p = new ProcessBuilder("sh", "-c", "stty raw -echo -icanon </dev/tty").inheritIO().start();
+            if (!p.waitFor(500, TimeUnit.MILLISECONDS)) {
+                p.destroyForcibly();
+            }
         } catch (InterruptedException | IOException e) {
             // ignore
         }
@@ -106,26 +124,45 @@ public class AnsiTerminal implements Terminal {
     private static void restoreStty(String settings) {
         if (settings == null || settings.isEmpty()) return;
         try {
-            new ProcessBuilder("sh", "-c", "stty " + settings + " </dev/tty").inheritIO().start().waitFor();
+            var p = new ProcessBuilder("sh", "-c", "stty " + settings + " </dev/tty").inheritIO().start();
+            if (!p.waitFor(500, TimeUnit.MILLISECONDS)) {
+                p.destroyForcibly();
+            }
         } catch (InterruptedException | IOException e) {
             // ignore
         }
     }
 
     private static TerminalSize queryTerminalSize() {
+        // 0. No real console (e.g. Maven Surefire) — skip both ESC[18t and stty.
+        if (System.console() == null) return new TerminalSize(80, 24);
         // 1. Try ANSI ESC[18t query over System.in/System.out
         var size = TerminalSizeQuery.query(System.in, System.out, 500);
         if (size != null) return size;
 
-        // 2. Last resort: stty size (local only)
+        // 2. Last resort: stty size (local only, requires a real console)
         try {
             var pb = new ProcessBuilder("sh", "-c", "stty size </dev/tty").redirectErrorStream(true);
             var p = pb.start();
-            var bytes = p.getInputStream().readAllBytes();
-            p.waitFor();
-            var parts = new String(bytes, StandardCharsets.UTF_8).trim().split("\\s+");
-            if (parts.length == 2) {
-                return new TerminalSize(Integer.parseInt(parts[1]), Integer.parseInt(parts[0]));
+            // Read output in a separate thread so readAllBytes() doesn't
+            // block forever if the process hangs (e.g. no /dev/tty in CI).
+            var ref = new java.util.concurrent.atomic.AtomicReference<byte[]>();
+            Thread reader = Thread.ofVirtual().start(() -> {
+                try {
+                    ref.set(p.getInputStream().readAllBytes());
+                } catch (IOException ignored) {
+                }
+            });
+            if (!p.waitFor(500, TimeUnit.MILLISECONDS)) {
+                p.destroyForcibly();
+            }
+            reader.join(200);
+            var bytes = ref.get();
+            if (bytes != null) {
+                var parts = new String(bytes, StandardCharsets.UTF_8).trim().split("\\s+");
+                if (parts.length == 2) {
+                    return new TerminalSize(Integer.parseInt(parts[1]), Integer.parseInt(parts[0]));
+                }
             }
         } catch (Exception e) {
             // fall through
