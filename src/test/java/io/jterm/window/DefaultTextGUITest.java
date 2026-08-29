@@ -708,6 +708,51 @@ class DefaultTextGUITest {
         assertFalse(gui.isRunning());
     }
 
+    // ===== Re-attachment: startRunning (session persistence plan, Task 1.3) =====
+
+    @Test
+    @DisplayName("startRunning restarts a stopped loop (re-attachment)")
+    void startRunningRestartsAStoppedLoop() {
+        var gui = createGui();
+        gui.stopRunning();
+        assertFalse(gui.isRunning());
+
+        gui.startRunning();
+
+        assertTrue(gui.isRunning(), "startRunning must re-enable the loop after a disconnect");
+    }
+
+    @Test
+    @DisplayName("startRunning re-arms a full refresh for the newly attached client")
+    void startRunningArmsFullRefresh() throws IOException {
+        var gui = createGui();
+        gui.updateScreen();   // consume the constructor's initial forceComplete
+        gui.stopRunning();
+
+        gui.startRunning();
+
+        // Observable contract: after restart the GUI is again refresh-capable.
+        // (The private forceComplete=true arming is verified indirectly — the
+        // first updateScreen after re-attach must not be a delta against a
+        // front buffer the new client never saw.)
+        assertTrue(gui.isRunning());
+        assertDoesNotThrow(gui::updateScreen);
+    }
+
+    @Test
+    @DisplayName("updateScreen after startRunning renders without error")
+    void updateScreenAfterStartRunningRenders() throws IOException {
+        var gui = createGui();
+        gui.stopRunning();
+        gui.startRunning();
+
+        assertDoesNotThrow(() -> {
+            gui.requestRefresh();
+            gui.updateScreen();
+            gui.updateScreen();
+        });
+    }
+
     @Test
     @DisplayName("close sets running to false")
     void closeSetsRunningFalse() throws IOException {

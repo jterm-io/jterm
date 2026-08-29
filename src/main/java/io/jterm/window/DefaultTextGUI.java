@@ -171,6 +171,19 @@ public class DefaultTextGUI implements TextGUI, WindowManager {
     }
 
     /**
+     * Restart the event loop after a {@link #stopRunning()}. Used on session
+     * re-attachment: the loop was stopped when the old socket disconnected,
+     * and a re-attached client resumes input processing and screen refresh on
+     * the newly attached terminal. The first refresh after restart is a
+     * COMPLETE render so the new client receives the full current screen.
+     */
+    public synchronized void startRunning() {
+        running = true;
+        needsRefresh = true;
+        forceComplete = true;
+    }
+
+    /**
      * Process one input event from the terminal.
      *
      * @return true if input was processed, false if none available

@@ -24,9 +24,9 @@ import java.util.concurrent.TimeUnit;
  */
 public class SocketTerminal implements Terminal {
 
-    private final InputStream in;
-    private final OutputStream out;
-    private final InputDecoder decoder;
+    private volatile InputStream in;
+    private volatile OutputStream out;
+    private volatile InputDecoder decoder;
     private final TerminalSize fixedSize;
     private volatile TerminalSize currentSize;
     private final List<TerminalResizeListener> resizeListeners = new CopyOnWriteArrayList<>();
@@ -38,7 +38,7 @@ public class SocketTerminal implements Terminal {
     // use BlockingQueue.poll() for true blocking — sub-millisecond input latency
     // instead of the old 16ms sleep loop.
     private final LinkedBlockingQueue<KeyStroke> inputQueue = new LinkedBlockingQueue<>(256);
-    private Thread readerThread;
+    private volatile Thread readerThread;
     private volatile boolean inputClosed = false;
     private volatile boolean inPrivateMode = false;
 
@@ -328,31 +328,64 @@ public class SocketTerminal implements Terminal {
      * BlockingQueue.poll(timeout) for near-instant input delivery.
      */
     private void startReaderThread() {
-        readerThread = Thread.ofVirtual().name("socket-input-reader").start(() -> {
-            try {
-                while (!inputClosed && !Thread.currentThread().isInterrupted()) {
-                    var ks = decoder.poll();
-                    if (ks.isPresent()) {
-                        inputQueue.put(ks.get());
-                    } else {
-                        // No data available — check if the stream is still open
-                        // by probing available(). If the stream is exhausted, exit.
-                        if (in.available() == 0) {
-                            // Brief sleep to avoid busy-spin when no data.
-                            // The decoder.poll() already checks available(),
-                            // so this is only hit when the stream is idle.
-                            Thread.sleep(1);
-                        }
+        readerThread = Thread.ofVirtual().name("socket-input-reader").start(this::readLoop);
+    }
+
+    private void readLoop() {
+        try {
+            while (!inputClosed && !Thread.currentThread().isInterrupted()) {
+                var currentDecoder = decoder;
+                var currentIn = in;
+                var ks = currentDecoder != null ? currentDecoder.poll() : java.util.Optional.<KeyStroke>empty();
+                if (ks.isPresent()) {
+                    inputQueue.put(ks.get());
+                } else {
+                    // No data available — check if the stream is still open
+                    // by probing available(). If the stream is exhausted, exit.
+                    if (currentIn == null || currentIn.available() == 0) {
+                        if (inputClosed) return;   // attach/close replaced the stream
+                        // Brief sleep to avoid busy-spin when no data.
+                        // The decoder.poll() already checks available(),
+                        // so this is only hit when the stream is idle.
+                        Thread.sleep(1);
                     }
                 }
-            } catch (InterruptedException e) {
-                // Normal shutdown
-            } catch (IOException e) {
-                // Stream closed or error — push EOF so readers can detect it
+            }
+        } catch (InterruptedException e) {
+            // Normal shutdown
+        } catch (IOException e) {
+            // Stream closed or error — push EOF so readers can detect it
+            if (!inputClosed) {
                 inputQueue.offer(new KeyStroke(io.jterm.core.input.KeyType.EOF));
             }
-            inputClosed = true;
-        });
+        }
+    }
+
+    /**
+     * Attaches new socket streams to this terminal, replacing the streams of a
+     * disconnected connection. Used for session re-attachment: the user's
+     * screen state survives the disconnect, and the terminal's output is
+     * re-bound to the new socket so the next refresh paints on it. The input
+     * reader thread is restarted against the new stream.
+     *
+     * @param newIn  the new connection's input stream (not null)
+     * @param newOut the new connection's output stream (not null)
+     */
+    public synchronized void attach(InputStream newIn, OutputStream newOut) {
+        if (newIn == null) throw new NullPointerException("newIn");
+        if (newOut == null) throw new NullPointerException("newOut");
+        // Stop the previous reader thread so it stops polling the old stream
+        inputClosed = true;
+        var previousReader = readerThread;
+        if (previousReader != null) {
+            previousReader.interrupt();
+        }
+        this.in = newIn;
+        this.out = new BufferedOutputStream(newOut, 65536);
+        this.decoder = new InputDecoder(newIn);
+        inputQueue.clear();
+        inputClosed = false;
+        readerThread = Thread.ofVirtual().name("socket-input-reader").start(this::readLoop);
     }
 
     /**
