@@ -362,16 +362,54 @@ public class SocketTerminal implements Terminal {
     }
 
     /**
+     * Message written down the DISPLACED socket when an attach steals the
+     * terminal from a live connection (session persistence plan, Phase 1
+     * Task 1.7). Terminated with CRLF so raw terminal clients render it as
+     * a standalone line.
+     */
+    public static final String STEAL_NOTICE =
+            "-- Session attached from another connection. This terminal has been disconnected. --\r\n";
+
+    /**
      * Attaches new socket streams to this terminal, replacing the streams of a
      * disconnected connection. Used for session re-attachment: the user's
      * screen state survives the disconnect, and the terminal's output is
      * re-bound to the new socket so the next refresh paints on it. The input
      * reader thread is restarted against the new stream.
      *
+     * <p>This convenience overload delegates to {@link #attach(InputStream,
+     * OutputStream, String)} with the default {@link #STEAL_NOTICE}. Writing
+     * the notice is harmless on the plain detach→re-attach path: the old
+     * socket is already disconnected, so the write silently fails and is
+     * swallowed.</p>
+     *
      * @param newIn  the new connection's input stream (not null)
      * @param newOut the new connection's output stream (not null)
      */
-    public synchronized void attach(InputStream newIn, OutputStream newOut) {
+    public void attach(InputStream newIn, OutputStream newOut) {
+        attach(newIn, newOut, STEAL_NOTICE);
+    }
+
+    /**
+     * Attaches new socket streams to this terminal, optionally notifying the
+     * DISPLACED connection first (session steal, session persistence plan,
+     * Phase 1 Task 1.7). Before the streams are swapped — while the old
+     * {@code OutputStream} reference is still reachable — {@code stealNotice}
+     * is written down the OLD stream and flushed. Once swapped, the old
+     * stream is unreachable, so this is the only place the displaced client
+     * can be told. The stream is then closed cleanly so the displaced
+     * connection sees an EOF instead of hanging.
+     *
+     * <p>Failure semantics: an I/O error while writing the notice (old
+     * socket already broken) is swallowed — notification failure must never
+     * block or fail the steal. Pass {@code null} to skip the notice.</p>
+     *
+     * @param newIn       the new connection's input stream (not null)
+     * @param newOut      the new connection's output stream (not null)
+     * @param stealNotice message written down the old stream before it is
+     *                    dropped, or null for none
+     */
+    public synchronized void attach(InputStream newIn, OutputStream newOut, String stealNotice) {
         if (newIn == null) throw new NullPointerException("newIn");
         if (newOut == null) throw new NullPointerException("newOut");
         // Stop the previous reader thread so it stops polling the old stream
@@ -379,6 +417,20 @@ public class SocketTerminal implements Terminal {
         var previousReader = readerThread;
         if (previousReader != null) {
             previousReader.interrupt();
+        }
+        // Notify the displaced client BEFORE the swap: after `this.out` is
+        // rebound below, the old OutputStream reference is unreachable and
+        // the notice could never be delivered. A broken old socket throws
+        // here — swallowed so the steal always proceeds (Task 1.7 edge case).
+        if (stealNotice != null) {
+            var abandonedOut = this.out;
+            try {
+                abandonedOut.write(stealNotice.getBytes(StandardCharsets.UTF_8));
+                abandonedOut.flush();
+                abandonedOut.close();
+            } catch (IOException ignored) {
+                // Old socket already dead: the steal must proceed regardless.
+            }
         }
         this.in = newIn;
         this.out = new BufferedOutputStream(newOut, 65536);

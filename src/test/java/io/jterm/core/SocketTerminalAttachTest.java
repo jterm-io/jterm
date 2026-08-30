@@ -33,8 +33,10 @@ class SocketTerminalAttachTest {
 
         // Output after attach MUST go to the new stream...
         assertEquals("HELLO", secondOut.toString(StandardCharsets.UTF_8));
-        // ...and not to the old (disconnected) one.
-        assertEquals(0, firstOut.size());
+        // ...the old (displaced) stream gets exactly the steal notice
+        // (session persistence 1.7) and nothing else.
+        assertEquals(SocketTerminal.STEAL_NOTICE,
+                firstOut.toString(StandardCharsets.UTF_8));
     }
 
     @Test
@@ -77,8 +79,11 @@ class SocketTerminalAttachTest {
         terminal.close();
 
         // close() after attach must release the reader thread (no hang) —
-        // implicitly verified by the test completing. Old stream stays untouched.
-        assertEquals(0, firstOut.size());
+        // implicitly verified by the test completing. The old stream holds
+        // only the steal notice from attach (session persistence 1.7) and
+        // is otherwise untouched.
+        assertEquals(SocketTerminal.STEAL_NOTICE,
+                firstOut.toString(StandardCharsets.UTF_8));
         assertDoesNotThrow(terminal::flush);
     }
 
