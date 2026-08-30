@@ -451,6 +451,35 @@ public class SocketTerminal implements Terminal {
     }
 
     /**
+     * Returns the terminal's current input stream.
+     *
+     * <p>Session-persistence support (jterm layer): after
+     * {@link #attach(InputStream, OutputStream)} the returned stream is the
+     * newly attached one, so callers can hand the live streams to another
+     * terminal or session without touching private state.</p>
+     *
+     * @return the current input stream (never null)
+     */
+    public InputStream getInputStream() {
+        return in;
+    }
+
+    /**
+     * Returns the terminal's current output stream. This is the buffered
+     * stream the terminal itself writes ANSI output through — data written
+     * here interleaves with the terminal's own writes in order.
+     *
+     * <p>Session-persistence support (jterm layer): after
+     * {@link #attach(InputStream, OutputStream)} writes through the returned
+     * stream land on the newly attached connection.</p>
+     *
+     * @return the current buffered output stream (never null)
+     */
+    public OutputStream getOutputStream() {
+        return out;
+    }
+
+    /**
      * Remove a previously registered resize listener.
      *
      * @param listener the listener to register

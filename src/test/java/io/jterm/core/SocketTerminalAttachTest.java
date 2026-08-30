@@ -95,4 +95,30 @@ class SocketTerminalAttachTest {
         assertThrows(NullPointerException.class, () -> terminal.attach(null, new ByteArrayOutputStream()));
         assertThrows(NullPointerException.class, () -> terminal.attach(new java.io.ByteArrayInputStream(new byte[0]), null));
     }
+
+    @Test
+    void streamAccessorsExposeCurrentStreams() throws Exception {
+        var firstIn = new java.io.ByteArrayInputStream(new byte[0]);
+        var firstOut = new ByteArrayOutputStream();
+        var terminal = new SocketTerminal(firstIn, firstOut, new TerminalSize(80, 24));
+
+        // Before attach: input accessor returns the constructor stream.
+        assertSame(firstIn, terminal.getInputStream());
+        // Writes through the output accessor land in the constructor sink.
+        terminal.getOutputStream().write("A".getBytes(StandardCharsets.UTF_8));
+        terminal.getOutputStream().flush();
+        assertEquals("A", firstOut.toString(StandardCharsets.UTF_8));
+
+        var secondIn = new java.io.ByteArrayInputStream(new byte[0]);
+        var secondOut = new ByteArrayOutputStream();
+        terminal.attach(secondIn, secondOut);
+
+        // After attach: accessors return the NEW streams, not the displaced ones.
+        assertSame(secondIn, terminal.getInputStream());
+        terminal.getOutputStream().write("B".getBytes(StandardCharsets.UTF_8));
+        terminal.getOutputStream().flush();
+        assertEquals("B", secondOut.toString(StandardCharsets.UTF_8));
+        // The displaced sink holds the pre-attach write plus the steal notice.
+        assertEquals("A" + SocketTerminal.STEAL_NOTICE, firstOut.toString(StandardCharsets.UTF_8));
+    }
 }
