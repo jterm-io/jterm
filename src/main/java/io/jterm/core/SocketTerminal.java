@@ -490,6 +490,24 @@ public class SocketTerminal implements Terminal {
     }
 
     /**
+     * Stops the background reader thread without closing the underlying I/O
+     * streams. Used during session-persistence reattach: the anonymous
+     * session's reader must stop so the persistent session's reader (started
+     * by {@link #attach}) can take over the same input stream exclusively.
+     *
+     * <p>After this call, the terminal will no longer deliver key events.
+     * The input and output streams remain open for a subsequent
+     * {@link #attach} call on a different terminal instance.</p>
+     */
+    public void stopReader() {
+        inputClosed = true;
+        var previousReader = readerThread;
+        if (previousReader != null) {
+            previousReader.interrupt();
+        }
+    }
+
+    /**
      * Close the terminal and release resources.
      *
      * @throws IOException if an I/O error or other failure occurs
