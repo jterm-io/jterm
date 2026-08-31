@@ -208,12 +208,10 @@ public class DefaultTextGUI implements TextGUI, WindowManager {
         synchronized (screenLock) {
             var ks = injected != null ? injected : getInput();
             if (ks == null) return false; // no input available
-            if (ks.type() == KeyType.CHARACTER) {
-                char ch = ks.character();
-                if (ks.ctrl() && (ch == 'C' || ch == 'c')) {
-                    running = false;
-                    return false;
-                }
+            if (ks.type() == KeyType.CHARACTER && ks.ctrl() && (ks.character() == 'C' || ks.character() == 'c')) {
+                // Ctrl+C: forward to the active window for BBS-level handling
+                // (detach/logout), rather than killing the event loop. The window
+                // hierarchy (MenuWindow, ContentScreen) decides what to do.
             }
             if (ks.type() == KeyType.ESCAPE) {
                 // Don't quit on Escape in BBS mode — let screens handle it

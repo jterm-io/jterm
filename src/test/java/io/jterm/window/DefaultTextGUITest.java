@@ -276,24 +276,25 @@ class DefaultTextGUITest {
     // ===== Event loop: handleInput() with various keys =====
 
     @Test
-    @DisplayName("Ctrl+C stops the event loop")
-    void ctrlCStopsEventLoop() throws IOException {
+    @DisplayName("Ctrl+C is forwarded as a normal keystroke, not a quit signal")
+    void ctrlCIsForwardedNotQuit() throws IOException {
         var screen = new DefaultScreen(new MockTerminal(new TerminalSize(80, 24)));
         var gui = new DefaultTextGUI(screen);
         gui.addWindow(new WindowImpl("Test"));
         boolean hadInput = gui.processInput(new KeyStroke(KeyType.CHARACTER, 'C', true, false, false));
-        assertFalse(hadInput, "Ctrl+C should return false");
-        assertFalse(gui.isRunning(), "Ctrl+C should stop the GUI");
+        assertTrue(hadInput, "Ctrl+C should be forwarded as normal input");
+        assertTrue(gui.isRunning(), "Ctrl+C should NOT stop the GUI");
     }
 
     @Test
-    @DisplayName("Ctrl+c (lowercase) also stops the event loop")
-    void ctrlCLowercaseStopsEventLoop() throws IOException {
+    @DisplayName("Ctrl+c (lowercase) is also forwarded, not a quit signal")
+    void ctrlCLowercaseIsForwardedNotQuit() throws IOException {
         var screen = new DefaultScreen(new MockTerminal(new TerminalSize(80, 24)));
         var gui = new DefaultTextGUI(screen);
         gui.addWindow(new WindowImpl("Test"));
-        gui.processInput(new KeyStroke(KeyType.CHARACTER, 'c', true, false, false));
-        assertFalse(gui.isRunning());
+        boolean hadInput = gui.processInput(new KeyStroke(KeyType.CHARACTER, 'c', true, false, false));
+        assertTrue(hadInput, "Ctrl+c should be forwarded as normal input");
+        assertTrue(gui.isRunning(), "Ctrl+c should NOT stop the GUI");
     }
 
     @Test
