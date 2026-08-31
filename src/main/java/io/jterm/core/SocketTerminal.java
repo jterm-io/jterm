@@ -521,6 +521,21 @@ public class SocketTerminal implements Terminal {
         out.close();
     }
 
+    /**
+     * Replace this terminal's output stream with a sink that discards all
+     * writes. Used during session re-attachment: after the persistent session
+     * takes over the connection's I/O, the dying anonymous event loop thread
+     * must not write stale frames (e.g. a login-screen refresh) to the shared
+     * channel on top of the restored session's screen.
+     */
+    public synchronized void silenceOutput() {
+        this.out = new BufferedOutputStream(new OutputStream() {
+            @Override public void write(int b) { /* discard */ }
+            @Override public void write(byte[] b, int off, int len) { /* discard */ }
+            @Override public void flush() { /* discard */ }
+        }, 65536);
+    }
+
     /** Write raw bytes directly to the terminal output. Thread-safe with respect to output. */
     public synchronized void writeRaw(byte[] data) throws IOException {
         out.write(data);
