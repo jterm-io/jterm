@@ -41,6 +41,14 @@ public class DefaultTextGUI implements TextGUI, WindowManager {
     private final Object screenLock = new Object();
 
     /**
+     * Nanotime of the most recent auto-refresh tick, for the event loop's
+     * interval check (window auto-refresh, see
+     * {@link Window#autoRefreshIntervalMillis()}). Guarded by the event loop
+     * thread only.
+     */
+    private long lastAutoRefreshNanos = System.nanoTime();
+
+    /**
      * Create a GUI backed by the given screen.
      *
      * @param screen the screen to render to
@@ -326,6 +334,7 @@ public class DefaultTextGUI implements TextGUI, WindowManager {
         needsRefresh = true;
         while (running) {
             boolean hadInput = processInput();
+            checkAutoRefresh();
             updateScreen();
             // No more Thread.sleep(16) — getInput() now uses pollInput(1ms)
             // which blocks efficiently and returns as soon as input arrives.
@@ -336,6 +345,32 @@ public class DefaultTextGUI implements TextGUI, WindowManager {
                 Thread.yield();
             }
         }
+    }
+
+    /**
+     * Repaint when any window's auto-refresh interval has elapsed (see
+     * {@link Window#autoRefreshIntervalMillis()}). Called once per idle spin
+     * of the event loop; a single nanotime compare in the common case, so
+     * zero-input spins stay effectively free. Windows displaying time-derived
+     * data (idle timers, clocks) rely on this to stay current between
+     * keystrokes.
+     */
+    private void checkAutoRefresh() {
+        long now = System.nanoTime();
+        long earliest = Long.MAX_VALUE;
+        for (var w : windows) {
+            if (windowsToRemove.contains(w)) continue;
+            long interval = w.autoRefreshIntervalMillis();
+            if (interval <= 0) continue;
+            long elapsedMillis = (now - lastAutoRefreshNanos) / 1_000_000L;
+            if (elapsedMillis >= interval) {
+                needsRefresh = true;
+                lastAutoRefreshNanos = now;
+                return;
+            }
+            earliest = Math.min(earliest, interval - elapsedMillis);
+        }
+        // No tick due; nothing else to do — the loop keeps spinning.
     }
 
     /**

@@ -30,6 +30,22 @@ public interface Window {
     default TerminalSize getPreferredSize() { return getSize(); }
 
     /**
+     * Returns the interval in milliseconds after which the GUI should repaint
+     * this window even when no input arrives, or {@code 0} (the default) to
+     * disable auto-refresh.
+     *
+     * <p>Use for windows that display time-derived state (idle timers, clocks,
+     * live counters) so the visible values stay fresh between keystrokes. The
+     * repaint goes through the normal diff-based refresh, so an unchanged
+     * frame costs only the changed cells. The callback timing is best-effort:
+     * the event loop checks the interval on every idle spin, so the actual
+     * period is the declared interval plus scheduling slop.</p>
+     *
+     * @return the auto-refresh interval in milliseconds, or 0 to disable
+     */
+    default long autoRefreshIntervalMillis() { return 0L; }
+
+    /**
      * Called when a key is pressed and no focused child component consumed it,
      * or when the window has no focusable children. Default implementation does nothing.
      *
