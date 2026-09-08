@@ -946,7 +946,15 @@ public class CircuitBoard extends AbstractComponent implements AnimatedBackgroun
         return targetFps;
     }
 
-    /** A single copper trace between two grid pads. */
+    /**
+     * A single copper trace between two grid pads.
+     *
+     * @param gx0             starting pad column on the grid
+     * @param gy0             starting pad row on the grid
+     * @param gx1             ending pad column on the grid
+     * @param gy1             ending pad row on the grid
+     * @param horizontalFirst true to run the horizontal segment first, then the vertical
+     */
     public record Trace(int gx0, int gy0, int gx1, int gy1, boolean horizontalFirst) {
         int length() {
             return Math.abs(gx1 - gx0) * PAD_SPACING + Math.abs(gy1 - gy0) * PAD_SPACING;
@@ -969,7 +977,13 @@ public class CircuitBoard extends AbstractComponent implements AnimatedBackgroun
         }
     }
 
-    /** A PCB component placed on the grid. */
+    /**
+     * A PCB component placed on the grid.
+     *
+     * @param type component type (determines the footprint size)
+     * @param gx   leftmost grid column of the component's footprint
+     * @param gy   topmost grid row of the component's footprint
+     */
     public record PcbComponent(Type type, int gx, int gy) {
 
         /** Component types with their grid-cell dimensions. */
@@ -991,7 +1005,9 @@ public class CircuitBoard extends AbstractComponent implements AnimatedBackgroun
                 /** Inductor: coiled line. 5×1 grid. */
                 INDUCTOR(5, 1);
 
+                /** The grid width (columns). */
                 public final int width;
+                /** The grid height (rows). */
                 public final int height;
 
                 Type(int width, int height) {

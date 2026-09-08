@@ -36,6 +36,9 @@ import java.util.List;
  */
 public class MenuBar extends AbstractComponent {
 
+    /** Creates the menu bar with no menus. */
+    public MenuBar() {}
+
     private final List<Menu> menus = new ArrayList<>();
     private int activeMenuIndex = -1;  // which menu is currently open
 
@@ -77,10 +80,18 @@ public class MenuBar extends AbstractComponent {
         invalidate();
     }
 
-    /** Returns a defensive copy of the menus in this bar. */
+    /**
+     * Returns a defensive copy of the menus in this bar.
+     *
+     * @return the menus in this bar
+     */
     public List<Menu> getMenus() { return new ArrayList<>(menus); }
 
-    /** Returns the index of the currently open menu, or {@code -1} if none. */
+    /**
+     * Returns the index of the currently open menu, or {@code -1} if none.
+     *
+     * @return the open menu index, or {@code -1} if none
+     */
     public int getActiveMenuIndex() { return activeMenuIndex; }
 
     /**
@@ -205,7 +216,11 @@ public class MenuBar extends AbstractComponent {
         invalidate();
     }
 
-    /** Returns whether any menu in this bar is currently open. */
+    /**
+     * Returns whether any menu in this bar is currently open.
+     *
+     * @return {@code true} if a menu is open
+     */
     public boolean hasOpenMenu() {
         return activeMenuIndex >= 0;
     }

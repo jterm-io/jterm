@@ -40,9 +40,21 @@ public class StarfieldBackground extends AbstractComponent implements AnimatedBa
 
     private Renderer renderer;
 
-    /** Functional interface for custom animation renderers. */
+    /**
+     * Functional interface for custom animation renderers.
+     *
+     * <p>The single abstract method {@link #render} receives the graphics
+     * target and the elapsed time in milliseconds.
+     */
     @FunctionalInterface
     public interface Renderer {
+
+        /**
+         * Renders one frame of the starfield animation.
+         *
+         * @param graphics the graphics target
+         * @param elapsedMs elapsed time in milliseconds
+         */
         void render(TextGraphics graphics, long elapsedMs);
     }
 

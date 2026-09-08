@@ -28,6 +28,9 @@ import java.util.stream.Stream;
  */
 public class DictionaryLoader {
 
+    /** Prevents instantiation; all members are static. */
+    private DictionaryLoader() {}
+
     /** Path to the system dictionary (macOS/Linux). */
     private static final String SYSTEM_DICT_PATH = "/usr/share/dict/words";
 

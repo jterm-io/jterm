@@ -14,7 +14,17 @@ public class Label extends AbstractComponent {
     private TextCell style;
     private HorizontalAlignment horizontalAlignment = HorizontalAlignment.CENTER;
 
-    public enum HorizontalAlignment { LEFT, CENTER, RIGHT }
+    /**
+     * Horizontal alignment of text within the label.
+     */
+    public enum HorizontalAlignment {
+        /** Align text to the left edge. */
+        LEFT,
+        /** Center text horizontally. */
+        CENTER,
+        /** Align text to the right edge. */
+        RIGHT
+    }
 
     /**
      * Creates a label with the given text using default colors.
@@ -95,7 +105,11 @@ public class Label extends AbstractComponent {
         invalidate();
     }
 
-    /** Set horizontal alignment of text within the label's bounds. */
+    /**
+     * Sets horizontal alignment of text within the label's bounds.
+     *
+     * @param alignment the new horizontal alignment
+     */
     public void setHorizontalAlignment(HorizontalAlignment alignment) {
         this.horizontalAlignment = alignment;
         invalidate();

@@ -22,6 +22,15 @@ import java.util.List;
  * Press q or Escape to quit.
  */
 public class BordersDemo {
+    /** Prevents instantiation; run the demo via {@link #main(String[])} instead. */
+    private BordersDemo() {}
+
+    /**
+     * Runs the borders demo in fullscreen mode.
+     *
+     * @param args command-line arguments (ignored)
+     * @throws IOException if the terminal screen cannot be initialized
+     */
     public static void main(String[] args) throws IOException {
         var terminal = new AnsiTerminal();
         var screen = new DefaultScreen(terminal);

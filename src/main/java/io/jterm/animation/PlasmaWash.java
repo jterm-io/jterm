@@ -49,9 +49,21 @@ public class PlasmaWash extends AbstractComponent implements AnimatedBackground 
 
     private Renderer renderer;
 
-    /** Functional interface for custom animation renderers. */
+    /**
+     * Functional interface for custom animation renderers.
+     *
+     * <p>The single abstract method {@link #render} receives the graphics
+     * target and the animation time in seconds.
+     */
     @FunctionalInterface
     public interface Renderer {
+
+        /**
+         * Renders one frame of the plasma animation.
+         *
+         * @param graphics the graphics target
+         * @param time the animation time in seconds
+         */
         void render(TextGraphics graphics, double time);
     }
 

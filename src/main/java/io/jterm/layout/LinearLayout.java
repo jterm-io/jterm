@@ -16,12 +16,38 @@ import java.util.List;
  * between adjacent visible children only.
  */
 public class LinearLayout implements LayoutManager {
-    public enum Direction { HORIZONTAL, VERTICAL }
-    public enum Alignment { BEGINNING, CENTER, END, FILL }
-    public enum GrowPolicy { NONE, CAN_GROW }
+    /** Stacking direction of the layout's primary axis. */
+    public enum Direction {
+        /** Children are arranged left to right in columns. */
+        HORIZONTAL,
+        /** Children are arranged top to bottom in rows. */
+        VERTICAL
+    }
 
-    /** Layout data for components in a linear layout.
-     * Specifies alignment and grow flags. */
+    /** Cross-axis alignment of children that are smaller than the container. */
+    public enum Alignment {
+        /** Align at the start of the cross axis. */
+        BEGINNING,
+        /** Center on the cross axis. */
+        CENTER,
+        /** Align at the end of the cross axis. */
+        END,
+        /** Stretch the child to fill the cross axis. */
+        FILL
+    }
+
+    /** Whether a child may absorb extra primary-axis space. */
+    public enum GrowPolicy {
+        /** The child keeps its preferred size. */
+        NONE,
+        /** The child may grow to absorb extra primary-axis space. */
+        CAN_GROW
+    }
+
+    /**
+     * Layout data for components in a linear layout.
+     * Specifies alignment and grow flags.
+     */
     public static class LinearLayoutData implements LayoutData {
         private final Alignment alignment;
         private final GrowPolicy growPolicy;

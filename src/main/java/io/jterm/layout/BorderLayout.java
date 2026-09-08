@@ -8,9 +8,25 @@ import java.util.List;
 
 /** Five-region layout: NORTH, SOUTH, EAST, WEST, CENTER. */
 public class BorderLayout implements LayoutManager {
-    public enum Region { NORTH, SOUTH, EAST, WEST, CENTER }
+    /**
+     * The five border regions a child can be placed in.
+     */
+    public enum Region {
+        /** Top strip: full width, docked to the top edge. */
+        NORTH,
+        /** Bottom strip: full width, docked to the bottom edge. */
+        SOUTH,
+        /** Right column between the corners, docked to the right edge. */
+        EAST,
+        /** Left column between the corners, docked to the left edge. */
+        WEST,
+        /** Middle area remaining after the outer regions are measured. */
+        CENTER
+    }
 
+    /** Per-child layout data assigning a component to a border region. */
     public static class BorderLayoutData implements LayoutData {
+        /** The border region the component is placed in. */
         public final Region region;
         /**
          * Associate a child component with a border-layout region.
@@ -18,6 +34,12 @@ public class BorderLayout implements LayoutManager {
          * @param region the region to place the component in
          */
         public BorderLayoutData(Region region) { this.region = region; }
+    }
+
+    /**
+     * Creates a border layout with default (zero) outer-region sizes.
+     */
+    public BorderLayout() {
     }
 
     /**

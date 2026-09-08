@@ -49,6 +49,10 @@ public class AnimatedBackgroundWindow extends WindowImpl {
      * Creates a background animation window. When {@code fullscreen} is false,
      * the caller must set bounds via {@link #setBounds(TerminalPosition, TerminalSize)}
      * (e.g. a thin strip at the bottom of the screen).
+     *
+     * @param background the animation to render
+     * @param gui        the GUI this window belongs to
+     * @param fullscreen true for a fullscreen background window, false to set bounds manually
      */
     public AnimatedBackgroundWindow(AnimatedBackground background, TextGUI gui, boolean fullscreen) {
         super("animation-bg");

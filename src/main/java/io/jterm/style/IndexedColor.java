@@ -1,7 +1,17 @@
 package io.jterm.style;
 
-/** 256-color xterm palette. Index 0-15 = system, 16-231 = 6×6×6 RGB cube, 232-255 = grayscale ramp. */
+/**
+ * 256-color xterm palette. Index 0-15 = system, 16-231 = 6×6×6 RGB cube, 232-255 = grayscale ramp.
+ *
+ * @param index palette index, 0-255
+ */
 public record IndexedColor(int index) implements Color {
+
+    /**
+     * Validates the palette index.
+     *
+     * @throws IllegalArgumentException if the index is outside 0-255
+     */
     public IndexedColor {
         if (index < 0 || index > 255)
             throw new IllegalArgumentException("Index must be 0-255, got: " + index);

@@ -12,6 +12,10 @@ package io.jterm.style;
  *   <li>{@link #RED} — bright red foreground</li>
  *   <li>{@link #BOLD} — bold SGR modifier, default colors</li>
  * </ul>
+ *
+ * @param fg        foreground color, or {@code null} to use the theme default
+ * @param bg        background color, or {@code null} to use the theme default
+ * @param modifiers SGR modifiers to apply (never {@code null} after construction)
  */
 public record CellStyle(Color fg, Color bg, SGR... modifiers) {
 
@@ -35,6 +39,8 @@ public record CellStyle(Color fg, Color bg, SGR... modifiers) {
     /**
      * Returns a defensive copy of the modifiers array so callers cannot mutate
      * the record's internal state via the returned array.
+     *
+     * @return a defensive copy of the modifiers array
      */
     @Override
     public SGR[] modifiers() {

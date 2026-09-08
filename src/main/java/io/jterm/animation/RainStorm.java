@@ -53,7 +53,13 @@ public class RainStorm implements AnimatedBackground {
         time += 0.1;
     }
 
-    /** Visible for tests to avoid wall-clock time. */
+    /**
+     * Renders one frame of the animation at the given time.
+     *
+     * @param graphics the graphics to render into
+     * @param size     the terminal size to render at
+     * @param t        the animation time
+     */
     public void renderAtTime(TextGraphics graphics, TerminalSize size, double t) {
         renderAtTime(graphics, size, t, true);
     }
@@ -181,17 +187,29 @@ public class RainStorm implements AnimatedBackground {
         return lastSize;
     }
 
-    /** Visible for tests. */
+    /**
+     * Returns the current animation time.
+     *
+     * @return the animation time
+     */
     public double getTime() {
         return time;
     }
 
-    /** Visible for tests. */
+    /**
+     * Returns the currently active rain drops.
+     *
+     * @return the drops array
+     */
     public Drop[] getDrops() {
         return drops;
     }
 
-    /** Visible for tests. */
+    /**
+     * Returns the number of active rain drops.
+     *
+     * @return the drop count
+     */
     public int getDropCount() {
         return drops == null ? 0 : drops.length;
     }

@@ -16,7 +16,8 @@ import io.jterm.graphics.TextGraphics;
  * to blend between old and new content based on the progress value.
  */
 public interface TransitionEffect {
-    /** Total duration in milliseconds. */
+    /** Total duration in milliseconds.
+     * @return the total duration in milliseconds */
     long durationMs();
 
     /**
@@ -28,6 +29,7 @@ public interface TransitionEffect {
      */
     void renderFrame(TextGraphics graphics, TerminalSize size, double progress);
 
-    /** Default FPS for transitions — 30 (fast, under 1 second). */
+    /** Default FPS for transitions — 30 (fast, under 1 second).
+     * @return the target frame rate */
     default int targetFps() { return 30; }
 }

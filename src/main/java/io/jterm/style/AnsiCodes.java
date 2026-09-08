@@ -4,9 +4,13 @@ import java.nio.charset.StandardCharsets;
 
 /** Low-level ANSI escape sequence utilities. */
 public final class AnsiCodes {
-    public static final String CSI = "\033[";   // Control Sequence Introducer
-    public static final String OSC = "\033]";     // Operating System Command
+    /** Control Sequence Introducer — begins every CSI escape sequence. */
+    public static final String CSI = "\033[";
+    /** Operating System Command — begins OSC escape sequences. */
+    public static final String OSC = "\033]";
+    /** ANSI sequence to reset all attributes. */
     public static final String RESET = CSI + "0m";
+    /** ANSI sequence to clear the entire screen. */
     public static final String CLEAR_SCREEN = CSI + "2J";
     /** ANSI sequence to clear the entire current line. */
     public static final String CLEAR_LINE = CSI + "2K";

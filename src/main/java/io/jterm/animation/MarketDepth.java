@@ -258,17 +258,29 @@ public class MarketDepth implements AnimatedBackground {
         return lastSize;
     }
 
-    /** Visible for tests: current mid price. */
+    /**
+     * Returns the current mid price, visible for tests.
+     *
+     * @return the mid price
+     */
     public double getMidPrice() {
         return midPrice;
     }
 
-    /** Visible for tests: set the mid price directly. */
+    /**
+     * Sets the mid price directly, visible for tests.
+     *
+     * @param midPrice the mid price, clamped to 1.0-199.0
+     */
     public void setMidPrice(double midPrice) {
         this.midPrice = clamp(midPrice, 1.0, 199.0);
     }
 
-    /** Visible for tests: current bid/ask size arrays (may be empty). */
+    /**
+     * Returns the bid size array, visible for tests.
+     *
+     * @return a copy of the bid sizes (may be empty)
+     */
     public double[] getBidSizes() {
         return bidSizes.clone();
     }

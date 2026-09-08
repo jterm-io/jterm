@@ -194,17 +194,29 @@ public class MoirePatterns implements AnimatedBackground {
         return lastSize;
     }
 
-    /** Visible for tests: current frame counter. */
+    /**
+     * Returns the current frame counter, visible for tests.
+     *
+     * @return the frame counter
+     */
     public int getFrame() {
         return frame;
     }
 
-    /** Visible for tests: current angle of the first grid. */
+    /**
+     * Returns the current angle of the first grid, visible for tests.
+     *
+     * @return the first grid angle
+     */
     public double getAngleA() {
         return angleA;
     }
 
-    /** Visible for tests: current angle of the second grid. */
+    /**
+     * Returns the current angle of the second grid, visible for tests.
+     *
+     * @return the second grid angle
+     */
     public double getAngleB() {
         return angleB;
     }

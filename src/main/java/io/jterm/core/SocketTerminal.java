@@ -46,6 +46,10 @@ public class SocketTerminal implements Terminal {
      * Construct a terminal from the socket's input and output streams, with an explicit size.
      * This is the constructor used for testing and for protocols where the terminal size is
      * negotiated externally (e.g. Telnet NAWS or SSH pty-req).
+     *
+     * @param in   the socket input stream (raw bytes from the remote client)
+     * @param out  the socket output stream (raw bytes to the remote client)
+     * @param size the fixed terminal size
      */
     public SocketTerminal(InputStream in, OutputStream out, TerminalSize size) {
         this.in = in;
@@ -59,6 +63,10 @@ public class SocketTerminal implements Terminal {
     /**
      * Construct a terminal from the socket's streams and query the remote terminal for its size.
      * Falls back to 80×24 if discovery is unavailable.
+     *
+     * @param in  the socket input stream (raw bytes from the remote client)
+     * @param out the socket output stream (raw bytes to the remote client)
+     * @throws IOException if the size query fails or an I/O error occurs
      */
     public SocketTerminal(InputStream in, OutputStream out) throws IOException {
         this(in, out, queryTerminalSize(in, out));
@@ -239,7 +247,11 @@ public class SocketTerminal implements Terminal {
         return currentSize;
     }
 
-    /** Updates the terminal size (e.g. from Telnet NAWS). Notifies resize listeners. */
+    /**
+     * Updates the terminal size (e.g. from Telnet NAWS). Notifies resize listeners.
+     *
+     * @param size the new terminal size
+     */
     public void setTerminalSize(TerminalSize size) {
         var old = this.currentSize;
         this.currentSize = size;

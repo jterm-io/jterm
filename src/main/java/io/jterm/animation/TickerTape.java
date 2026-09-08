@@ -50,12 +50,21 @@ public class TickerTape implements AnimatedBackground {
     private volatile List<TickerItem> items;
     private volatile long lastRefreshMs;
 
-    /** Creates a ticker tape with data loaded from the default screener source. */
+    /**
+     * Creates a ticker tape with data loaded from the default screener source.
+     *
+     * @param preferredSize preferred terminal size
+     */
     public TickerTape(TerminalSize preferredSize) {
         this(preferredSize, defaultSupplier());
     }
 
-    /** Creates a ticker tape with a custom data supplier. */
+    /**
+     * Creates a ticker tape with a custom data supplier.
+     *
+     * @param preferredSize preferred terminal size
+     * @param dataSupplier  supplies ticker items; falls back to sample data on error
+     */
     public TickerTape(TerminalSize preferredSize, Supplier<List<TickerItem>> dataSupplier) {
         this.dataSupplier = Objects.requireNonNull(dataSupplier, "dataSupplier");
         onResize(preferredSize);
@@ -189,17 +198,29 @@ public class TickerTape implements AnimatedBackground {
         return lastSize;
     }
 
-    /** Visible for tests: set the scroll offset directly. */
+    /**
+     * Sets the scroll offset directly. Visible for tests.
+     *
+     * @param offset scroll offset in columns; values {@code <} 0 are clamped to 0
+     */
     public void setScrollOffset(int offset) {
         this.scrollOffset = Math.max(0, offset);
     }
 
-    /** Visible for tests: current scroll offset. */
+    /**
+     * Returns the current scroll offset. Visible for tests.
+     *
+     * @return scroll offset in columns
+     */
     public int getScrollOffset() {
         return scrollOffset;
     }
 
-    /** Visible for tests: current rendered items. */
+    /**
+     * Returns the currently rendered items. Visible for tests.
+     *
+     * @return an unmodifiable copy of the current items; empty if none
+     */
     public List<TickerItem> getItems() {
         return items == null ? List.of() : List.copyOf(items);
     }
@@ -276,11 +297,25 @@ public class TickerTape implements AnimatedBackground {
             this.previousClose = previousClose;
         }
 
-        /** Returns the ticker symbol.
- * @return the symbol */
-
+        /**
+         * Returns the ticker symbol.
+         *
+         * @return the symbol
+         */
         public String symbol() { return symbol; }
+
+        /**
+         * Returns the latest closing price.
+         *
+         * @return the close price
+         */
         public double close() { return close; }
+
+        /**
+         * Returns the previous closing price.
+         *
+         * @return the previous close price
+         */
         public double previousClose() { return previousClose; }
 
         /**

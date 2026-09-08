@@ -95,7 +95,13 @@ public class Aurora implements AnimatedBackground {
         time += 0.08;
     }
 
-    /** Visible for tests to avoid wall-clock time. */
+    /**
+     * Visible for tests to avoid wall-clock time.
+     *
+     * @param graphics    graphics context to render into
+     * @param size        terminal size to render at
+     * @param timeSeconds animation time in seconds
+     */
     public void renderAtTime(TextGraphics graphics, TerminalSize size, double timeSeconds) {
         if (size.columns() <= 0 || size.rows() <= 0) return;
 
@@ -231,19 +237,35 @@ public class Aurora implements AnimatedBackground {
         return lastSize;
     }
 
-    /** Visible for tests. */
+    /**
+     * Visible for tests.
+     *
+     * @return a snapshot of the current band parameters
+     */
     public List<Band> getBands() {
         synchronized (bandLock) {
             return List.copyOf(bands);
         }
     }
 
-    /** Visible for tests. */
+    /**
+     * Visible for tests.
+     *
+     * @return the accumulated animation time in seconds
+     */
     public double getTime() {
         return time;
     }
 
-    /** Package-visible band parameters. */
+    /**
+     * Package-visible band parameters.
+     *
+     * @param baseY     mean row of the band's centerline, in rows from the top
+     * @param amplitude wave height in rows (peak deviation from {@code baseY})
+     * @param frequency horizontal wave frequency in radians per column
+     * @param speed     phase advance in radians per second of animation time
+     * @param color     band color (bright variant; cells above the crest are dimmed)
+     */
     public record Band(
             int baseY,
             double amplitude,

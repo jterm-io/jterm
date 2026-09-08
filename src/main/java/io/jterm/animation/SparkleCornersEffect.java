@@ -10,6 +10,9 @@ package io.jterm.animation;
  */
 public class SparkleCornersEffect implements AnimatedBorderEffect {
 
+    /** Creates the effect with default sparkle speed. */
+    public SparkleCornersEffect() {}
+
     /** The 16-step sparkle character cycle. */
     private static final char[] CYCLE = {
             '\u2598', '\u259D', '\u2596', '\u2597',

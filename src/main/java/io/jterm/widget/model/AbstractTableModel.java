@@ -5,8 +5,15 @@ import java.util.concurrent.CopyOnWriteArrayList;
 
 /**
  * Convenience base class for {@link TableModel} implementations.
+ *
+ * <p>Constructs with an empty listener list.
  */
 public abstract class AbstractTableModel implements TableModel {
+
+    /**
+     * Creates a model with an empty listener list.
+     */
+    protected AbstractTableModel() {}
 
     private final List<TableModelListener> listeners = new CopyOnWriteArrayList<>();
 

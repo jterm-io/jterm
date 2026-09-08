@@ -33,18 +33,15 @@ class WindowCoverageGapsTest {
     }
 
     @Test
-    void defaultTextGUIRunEventLoopStopsOnCtrlC() throws Exception {
+    void defaultTextGUIRunEventLoopStopsWhenStopped() throws Exception {
         var term = new MockTerminal(new TerminalSize(40, 20));
         var screen = new DefaultScreen(term);
-        var gui = new DefaultTextGUI(screen);
 
         var window = new WindowImpl("test");
         window.setHints(java.util.List.of(WindowHint.CENTERED));
         window.getContents().addComponent(new Button("OK"));
-        gui.addWindow(window);
 
-        // Inject Ctrl+C into the screen's terminal input queue via a custom terminal wrapper
-        var injectingTerm = new MockTerminal(new TerminalSize(40, 20)) {
+        var injectingScreen = new DefaultScreen(new MockTerminal(new TerminalSize(40, 20)) {
             boolean injected = false;
             @Override
             public java.util.Optional<io.jterm.core.input.KeyStroke> pollInput() {
@@ -52,15 +49,21 @@ class WindowCoverageGapsTest {
                     injected = true;
                     return java.util.Optional.of(KeyStroke.character('C', true, false, false));
                 }
-                gui.stopRunning();
                 return java.util.Optional.empty();
             }
-        };
-        var injectingScreen = new DefaultScreen(injectingTerm);
+        });
         var injectingGui = new DefaultTextGUI(injectingScreen);
         injectingGui.addWindow(window);
 
-        assertDoesNotThrow(() -> injectingGui.runEventLoop());
+        // Ctrl+C no longer terminates the loop (it is forwarded to the active
+        // window as a normal keystroke); the loop exits via stopRunning().
+        assertDoesNotThrow(() -> {
+            new Thread(() -> {
+                try { Thread.sleep(200); } catch (InterruptedException e) { }
+                injectingGui.stopRunning();
+            }).start();
+            injectingGui.runEventLoop();
+        });
         assertFalse(injectingGui.isRunning());
     }
 }

@@ -208,22 +208,38 @@ public class Spirograph implements AnimatedBackground {
         return lastSize;
     }
 
-    /** Visible for tests: current frame counter. */
+    /**
+     * Returns the current frame counter, visible for tests.
+     *
+     * @return the frame counter
+     */
     public int getFrame() {
         return frame;
     }
 
-    /** Visible for tests: current X phase. */
+    /**
+     * Returns the current X phase, visible for tests.
+     *
+     * @return the X phase
+     */
     public double getPhaseX() {
         return phaseX;
     }
 
-    /** Visible for tests: current Y phase. */
+    /**
+     * Returns the current Y phase, visible for tests.
+     *
+     * @return the Y phase
+     */
     public double getPhaseY() {
         return phaseY;
     }
 
-    /** Visible for tests: read the current trail points. */
+    /**
+     * Returns a snapshot of the current trail points, visible for tests.
+     *
+     * @return an unmodifiable copy of the trail points
+     */
     public List<TrailPoint> getTrail() {
         return List.copyOf(trail);
     }

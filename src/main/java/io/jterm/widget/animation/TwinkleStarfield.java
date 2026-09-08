@@ -46,7 +46,11 @@ public class TwinkleStarfield implements AnimatedBackground {
         this(new Random(), false);
     }
 
-    /** Creates a starfield using the supplied {@link Random} and Unicode glyphs. */
+    /**
+     * Creates a starfield using the supplied {@link Random} and Unicode glyphs.
+     *
+     * @param random random source
+     */
     public TwinkleStarfield(Random random) {
         this(random, false);
     }
@@ -63,7 +67,11 @@ public class TwinkleStarfield implements AnimatedBackground {
         generateStars(120);
     }
 
-    /** Visible for tests: returns an unmodifiable view of the generated stars. */
+    /**
+     * Visible for tests: returns an unmodifiable view of the generated stars.
+     *
+     * @return an unmodifiable snapshot of the generated stars
+     */
     public List<Star> getStars() {
         return List.copyOf(stars);
     }
@@ -113,7 +121,13 @@ public class TwinkleStarfield implements AnimatedBackground {
         renderAtTime(graphics, size, System.currentTimeMillis() / 1000.0);
     }
 
-    /** Visible for tests to avoid wall-clock time. */
+    /**
+     * Renders one frame of the twinkle starfield at an explicit time, for tests.
+     *
+     * @param graphics the graphics target
+     * @param size the terminal size to render at
+     * @param timeSeconds the animation time in seconds
+     */
     public void renderAtTime(TextGraphics graphics, TerminalSize size, double timeSeconds) {
         if (size.columns() <= 0 || size.rows() <= 0) return;
 
@@ -132,7 +146,13 @@ public class TwinkleStarfield implements AnimatedBackground {
         }
     }
 
-    /** Visible for tests. */
+    /**
+     * Visible for tests.
+     *
+     * @param star        the star to compute brightness for
+     * @param timeSeconds animation time in seconds
+     * @return brightness level, 0 (invisible) to 3 (brightest)
+     */
     public int computeBrightness(Star star, double timeSeconds) {
         double raw = star.baseBrightness() + star.amplitude() * Math.sin(timeSeconds * star.speed() + star.phase());
         return Math.max(MIN_BRIGHTNESS, Math.min(MAX_BRIGHTNESS, (int) Math.round(raw)));
@@ -194,7 +214,18 @@ public class TwinkleStarfield implements AnimatedBackground {
         return lastSize;
     }
 
-    /** Package-visible for tests. */
+    /**
+     * Package-visible for tests.
+     *
+     * @param xPercent       horizontal position as a fraction of screen width (0.0–1.0)
+     * @param yPercent       vertical position as a fraction of screen height (0.0–1.0)
+     * @param character      glyph drawn for the star
+     * @param baseBrightness baseline brightness level (0–3) before the twinkle wave is applied
+     * @param amplitude      twinkle amplitude in brightness levels
+     * @param speed          twinkle angular speed in radians per second
+     * @param phase          twinkle phase offset in radians (desynchronizes stars)
+     * @param color          base color (usually white; ~10% of stars get a tint)
+     */
     public record Star(
             double xPercent,
             double yPercent,

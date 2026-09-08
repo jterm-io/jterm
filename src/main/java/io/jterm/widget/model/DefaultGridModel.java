@@ -15,6 +15,9 @@ import java.util.concurrent.CopyOnWriteArrayList;
  */
 public class DefaultGridModel<T> implements GridModel<T> {
 
+    /** Creates an empty grid model with no rows and no listeners. */
+    public DefaultGridModel() {}
+
     private final List<T> rows = new CopyOnWriteArrayList<>();
     private final List<GridListener> listeners = new CopyOnWriteArrayList<>();
 

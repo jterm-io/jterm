@@ -23,12 +23,22 @@ public class RadioButton extends AbstractComponent {
         this.label = label;
     }
 
-    /** Returns the label text. */
+    /** Returns the label text.
+     *
+     * @return the label text
+     */
     public String getLabel() { return label; }
-    /** Sets the label text and invalidates the component. */
+
+    /** Sets the label text and invalidates the component.
+     *
+     * @param label the new label text
+     */
     public void setLabel(String label) { this.label = label; invalidate(); }
 
-    /** Returns whether this radio button is the selected one in its group. */
+    /** Returns whether this radio button is the selected one in its group.
+     *
+     * @return {@code true} if this button is selected
+     */
     public boolean isSelected() { return selected; }
 
     void setSelected(boolean selected) {
@@ -38,7 +48,11 @@ public class RadioButton extends AbstractComponent {
 
     void setGroup(RadioGroup group) { this.group = group; }
 
-    /** Returns the radio group this button belongs to, or {@code null}. */
+    /**
+     * Returns the radio group this button belongs to, or {@code null}.
+     *
+     * @return the owning group, or {@code null} if not attached
+     */
     public RadioGroup getGroup() { return group; }
 
     /** Selects this button, delegating to the group when attached. */

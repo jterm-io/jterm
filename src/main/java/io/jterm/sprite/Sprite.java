@@ -218,6 +218,8 @@ public class Sprite {
     }
 
     /**
+     * Returns the index of the frame currently displayed.
+     *
      * @return current frame index
      */
     public int getCurrentFrameIndex() {
@@ -225,6 +227,8 @@ public class Sprite {
     }
 
     /**
+     * Returns the raw ANSI text of the frame currently displayed.
+     *
      * @return raw ANSI string for the current frame
      */
     public String getCurrentFrame() {
@@ -233,6 +237,8 @@ public class Sprite {
     }
 
     /**
+     * Returns the total number of frames in this sprite.
+     *
      * @return number of frames
      */
     public int getFrameCount() {
@@ -240,6 +246,8 @@ public class Sprite {
     }
 
     /**
+     * Returns the configured per-frame duration.
+     *
      * @return configured per-frame duration in ms
      */
     public int getFrameMs() {
@@ -256,6 +264,8 @@ public class Sprite {
     }
 
     /**
+     * Returns the current loop behavior.
+     *
      * @return the current loop mode
      */
     public LoopMode getLoopMode() {
@@ -265,6 +275,9 @@ public class Sprite {
     /**
      * Set the loop mode. Resetting to a new mode does not reset the frame index;
      * call {@link #reset()} to restart from the first frame.
+     *
+     * @param loopMode loop mode to use; in {@link LoopMode#ONCE} mode the sprite
+     *                 stops advancing after the final frame
      */
     public void setLoopMode(LoopMode loopMode) {
         this.loopMode = loopMode;
@@ -275,6 +288,8 @@ public class Sprite {
     }
 
     /**
+     * Returns the sprite width in terminal cells.
+     *
      * @return sprite width in terminal cells (max across all frames)
      */
     public int getWidth() {
@@ -282,6 +297,8 @@ public class Sprite {
     }
 
     /**
+     * Returns the sprite height in terminal cells.
+     *
      * @return sprite height in terminal cells (max across all frames)
      */
     public int getHeight() {
@@ -289,6 +306,8 @@ public class Sprite {
     }
 
     /**
+     * Returns whether a {@link LoopMode#ONCE} sprite has played through.
+     *
      * @return true when {@link LoopMode#ONCE} has reached the final frame
      */
     public boolean isFinished() {

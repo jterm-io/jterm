@@ -137,10 +137,12 @@ public class CandlestickField implements AnimatedBackground {
     @Override
     public TerminalSize lastSize() { return lastSize; }
 
-    /** Visible for tests: returns the current band array. */
+    /** Visible for tests: returns the current band array.
+ * @return the current band array */
     public ChartBand[] getBands() { return bands; }
 
-    /** Visible for tests: returns the number of bands. */
+    /** Visible for tests: returns the number of bands.
+ * @return the number of bands */
     public int getBandCount() { return bands == null ? 0 : bands.length; }
 
     /**
@@ -245,7 +247,11 @@ public class CandlestickField implements AnimatedBackground {
  * @return the candle array */
 
         public Candle[] getCandles() { return candles; }
+        /** Returns the row where this band starts.
+ * @return the starting row */
         public int getStartRow() { return startRow; }
+        /** Returns the band height in rows.
+ * @return the height in rows */
         public int getHeight() { return height; }
     }
 
@@ -267,11 +273,17 @@ public class CandlestickField implements AnimatedBackground {
  * @return true if bullish */
 
         public boolean isBullish() { return close >= open; }
+        /** Returns the opening price.
+ * @return the opening price */
         public double getOpen() { return open; }
+        /** Returns the closing price.
+ * @return the closing price */
         public double getClose() { return close; }
         /** Returns the high price.
  * @return the high price */
         public double getHigh() { return high; }
+        /** Returns the low price.
+ * @return the low price */
         public double getLow() { return low; }
     }
 

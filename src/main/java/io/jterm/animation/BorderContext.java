@@ -24,10 +24,28 @@ import static java.util.Map.entry;
 public class BorderContext {
 
     /** The four corners of a rectangular border. */
-    public enum Corner { TL, TR, BL, BR }
+    public enum Corner {
+        /** Top-left corner. */
+        TL,
+        /** Top-right corner. */
+        TR,
+        /** Bottom-left corner. */
+        BL,
+        /** Bottom-right corner. */
+        BR
+    }
 
     /** The four sides of a rectangular border. */
-    public enum Side { TOP, BOTTOM, LEFT, RIGHT }
+    public enum Side {
+        /** Top edge. */
+        TOP,
+        /** Bottom edge. */
+        BOTTOM,
+        /** Left edge. */
+        LEFT,
+        /** Right edge. */
+        RIGHT
+    }
 
     private final TerminalSize size;
     private final Border.BorderStyle style;
@@ -56,76 +74,148 @@ public class BorderContext {
         resetToStyle();
     }
 
-    /** Returns the border dimensions. */
+    /**
+     * Returns the border dimensions.
+     *
+     * @return the border dimensions
+     */
     public TerminalSize getSize() {
         return size;
     }
 
-    /** Returns the base border style. */
+    /**
+     * Returns the base border style.
+     *
+     * @return the base border style
+     */
     public Border.BorderStyle getStyle() {
         return style;
     }
 
     // ---- Corners ----
 
-    /** Sets a corner character. */
+    /**
+     * Sets a corner character.
+     *
+     * @param corner the corner to set
+     * @param ch     the replacement character
+     */
     public void setCorner(Corner corner, char ch) {
         corners.put(corner, String.valueOf(ch));
     }
 
-    /** Sets a corner character (multi-codepoint safe). */
+    /**
+     * Sets a corner character (multi-codepoint safe).
+     *
+     * @param corner the corner to set
+     * @param ch     the replacement character (may be multi-codepoint)
+     */
     public void setCorner(Corner corner, String ch) {
         corners.put(corner, ch);
     }
 
-    /** Sets a corner character with a per-cell foreground color override. */
+    /**
+     * Sets a corner character with a per-cell foreground color override.
+     *
+     * @param corner the corner to set
+     * @param ch     the replacement character
+     * @param color  foreground color for this corner
+     */
     public void setCorner(Corner corner, char ch, AnsiColor color) {
         corners.put(corner, String.valueOf(ch));
         cornerColors.put(corner, color);
     }
 
-    /** Sets a corner character with a per-cell foreground color override (multi-codepoint safe). */
+    /**
+     * Sets a corner character with a per-cell foreground color override (multi-codepoint safe).
+     *
+     * @param corner the corner to set
+     * @param ch     the replacement character (may be multi-codepoint)
+     * @param color  foreground color for this corner
+     */
     public void setCorner(Corner corner, String ch, AnsiColor color) {
         corners.put(corner, ch);
         cornerColors.put(corner, color);
     }
 
-    /** Returns the current character for the given corner. */
+    /**
+     * Returns the current character for the given corner.
+     *
+     * @param corner the corner to read
+     * @return the current corner character
+     */
     public String getCorner(Corner corner) {
         return corners.get(corner);
     }
 
-    /** Returns the per-cell foreground color override for the given corner, or null if none. */
+    /**
+     * Returns the per-cell foreground color override for the given corner, or null if none.
+     *
+     * @param corner the corner to read
+     * @return the color override, or {@code null} if none
+     */
     public AnsiColor getCornerColor(Corner corner) {
         return cornerColors.get(corner);
     }
 
     // ---- Edges ----
 
-    /** Sets an edge character at the given position (0-based from left/top). */
+    /**
+     * Sets an edge character at the given position (0-based from left/top).
+     *
+     * @param side     the edge the cell sits on
+     * @param position 0-based offset along the edge from left/top
+     * @param ch       the replacement character
+     */
     public void setEdge(Side side, int position, char ch) {
         edges.put(edgeKey(side, position), String.valueOf(ch));
     }
 
-    /** Sets an edge character at the given position (multi-codepoint safe). */
+    /**
+     * Sets an edge character at the given position (multi-codepoint safe).
+     *
+     * @param side     the edge the cell sits on
+     * @param position 0-based offset along the edge from left/top
+     * @param ch       the replacement character (may be multi-codepoint)
+     */
     public void setEdge(Side side, int position, String ch) {
         edges.put(edgeKey(side, position), ch);
     }
 
-    /** Sets an edge character at the given position with a per-cell foreground color override. */
+    /**
+     * Sets an edge character at the given position with a per-cell foreground color override.
+     *
+     * @param side     the edge the cell sits on
+     * @param position 0-based offset along the edge from left/top
+     * @param ch       the replacement character
+     * @param color    foreground color for this cell
+     */
     public void setEdge(Side side, int position, char ch, AnsiColor color) {
         edges.put(edgeKey(side, position), String.valueOf(ch));
         edgeColors.put(edgeKey(side, position), color);
     }
 
-    /** Sets an edge character at the given position with a per-cell foreground color override (multi-codepoint safe). */
+    /**
+     * Sets an edge character at the given position with a per-cell foreground color override (multi-codepoint safe).
+     *
+     * @param side     the edge the cell sits on
+     * @param position 0-based offset along the edge from left/top
+     * @param ch       the replacement character (may be multi-codepoint)
+     * @param color    foreground color for this cell
+     */
     public void setEdge(Side side, int position, String ch, AnsiColor color) {
         edges.put(edgeKey(side, position), ch);
         edgeColors.put(edgeKey(side, position), color);
     }
 
-    /** Returns the current character for the given edge position,
-     *  falling back to the style default if not overridden. */
+    /**
+     * Returns the current character for the given edge position,
+     * falling back to the style default if not overridden.
+     *
+     * @param side     the edge the cell sits on
+     * @param position 0-based offset along the edge from left/top
+     * @return the current edge character
+     */
     public String getEdge(Side side, int position) {
         String override = edges.get(edgeKey(side, position));
         if (override != null) return override;
@@ -135,22 +225,36 @@ public class BorderContext {
         };
     }
 
-    /** Returns the per-cell foreground color override for the given edge position, or null if none. */
+    /**
+     * Returns the per-cell foreground color override for the given edge position, or null if none.
+     *
+     * @param side     the edge the cell sits on
+     * @param position 0-based offset along the edge from left/top
+     * @return the color override, or {@code null} if none
+     */
     public AnsiColor getEdgeColor(Side side, int position) {
         return edgeColors.get(edgeKey(side, position));
     }
 
     // ---- Border color ----
 
-    /** Sets the foreground color for all border cells (corners + edges).
-     *  When set, the border renderer will use this color instead of
-     *  the theme's border color for all perimeter cells. */
+    /**
+     * Sets the foreground color for all border cells (corners + edges).
+     * When set, the border renderer will use this color instead of
+     * the theme's border color for all perimeter cells.
+     *
+     * @param color foreground color for all border cells, or {@code null} to use the theme default
+     */
     public void setBorderColor(AnsiColor color) {
         this.borderColor = color;
     }
 
-    /** Returns the current border foreground color override, or null if
-     *  the theme default should be used. */
+    /**
+     * Returns the current border foreground color override, or null if
+     * the theme default should be used.
+     *
+     * @return the border color override, or {@code null} if none
+     */
     public AnsiColor getBorderColor() {
         return borderColor;
     }

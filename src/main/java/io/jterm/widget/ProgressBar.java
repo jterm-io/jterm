@@ -34,9 +34,18 @@ public class ProgressBar extends AbstractComponent {
         invalidate();
     }
 
-    /** Returns the current value. */
+    /**
+     * Returns the current value.
+     *
+     * @return the current value
+     */
     public int getValue() { return value; }
-    /** Returns the maximum value. */
+
+    /**
+     * Returns the maximum value.
+     *
+     * @return the maximum value
+     */
     public int getMax() { return max; }
 
     /**

@@ -134,7 +134,11 @@ public record Theme(
             Theme.YELLOW_ON_RED
     };
 
-    /** Human-readable name for display. */
+    /**
+     * Human-readable name for display.
+     *
+     * @return the display name of this theme
+     */
     public String name() {
         if (this == DARK) return "Dark (white on black)";
         if (this == YELLOW_ON_BLUE) return "Yellow on Blue";

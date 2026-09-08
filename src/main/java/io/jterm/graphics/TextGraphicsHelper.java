@@ -3,8 +3,16 @@ package io.jterm.graphics;
 import io.jterm.core.TerminalSize;
 import io.jterm.screen.ScreenBuffer;
 
-/** Helper to create sub-graphics. */
+/**
+ * Helper to create sub-graphics.
+ */
 public class TextGraphicsHelper {
+    /**
+     * Creates a new utility holder; not instantiable by callers.
+     */
+    public TextGraphicsHelper() {
+    }
+
     /**
      * Create a TextGraphics backed by the given screen buffer.
      *

@@ -10,7 +10,14 @@ import io.jterm.style.ThemeManager;
 public class Separator extends AbstractComponent {
     private final boolean vertical;
 
+    /** Creates a horizontal separator. */
     public Separator() { this(false); }
+
+    /**
+     * Creates a separator with the given orientation.
+     *
+     * @param vertical {@code true} for a vertical divider, {@code false} for horizontal
+     */
     public Separator(boolean vertical) { this.vertical = vertical; }
 
     /** Returns a size of 1×1 — a separator is a thin divider.

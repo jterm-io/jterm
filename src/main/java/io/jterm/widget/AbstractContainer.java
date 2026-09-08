@@ -22,7 +22,11 @@ public abstract class AbstractContainer extends AbstractComponent implements Con
     /** Creates a container with no layout manager. */
     public AbstractContainer() {}
 
-    /** Creates a container with the specified layout manager. */
+    /**
+     * Creates a container with the specified layout manager.
+     *
+     * @param layoutManager layout manager to arrange children with, or {@code null} for none
+     */
     public AbstractContainer(LayoutManager layoutManager) {
         this.layoutManager = layoutManager;
     }

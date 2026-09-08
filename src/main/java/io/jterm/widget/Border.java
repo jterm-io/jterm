@@ -107,11 +107,20 @@ public class Border extends AbstractContainer {
         return n <= 0 ? "" : s.repeat(n);
     }
 
+    /**
+     * Border character styles, each defining corner and edge glyphs
+     * (typically CP437 box-drawing characters).
+     */
     public enum BorderStyle {
+        /** Single-line box-drawing border: ├──┤ │ ─. */
         SINGLE_LINE(Symbols.TL_CORNER, Symbols.TR_CORNER, Symbols.BL_CORNER, Symbols.BR_CORNER, Symbols.H_LINE, Symbols.V_LINE),
+        /** Double-line box-drawing border: ╔══╗ ║. */
         DOUBLE_LINE(Symbols.TL_DOUBLE, Symbols.TR_DOUBLE, Symbols.BL_DOUBLE, Symbols.BR_DOUBLE, Symbols.H_DOUBLE, Symbols.V_DOUBLE),
+        /** Rounded corner border: ╭─╮ ╵. */
         ROUNDED(Symbols.TL_ROUNDED, Symbols.TR_ROUNDED, Symbols.BL_ROUNDED, Symbols.BR_ROUNDED, Symbols.H_LINE, Symbols.V_LINE),
+        /** Bevel border: double top, single bottom. */
         BEVEL(Symbols.TL_DOUBLE, Symbols.TR_CORNER, Symbols.BL_CORNER, Symbols.BR_DOUBLE, Symbols.H_DOUBLE, Symbols.V_DOUBLE),
+        /** Invisible border: no glyphs drawn. */
         EMPTY("", "", "", "", "", "");
 
         final String tl, tr, bl, br, h, v;
@@ -121,17 +130,41 @@ public class Border extends AbstractContainer {
 
         boolean isEmpty() { return this == EMPTY; }
 
-        /** Top-left corner character. */
+        /**
+         * Top-left corner character.
+         *
+         * @return the top-left corner glyph
+         */
         public String topLeft() { return tl; }
-        /** Top-right corner character. */
+        /**
+         * Top-right corner character.
+         *
+         * @return the top-right corner glyph
+         */
         public String topRight() { return tr; }
-        /** Bottom-left corner character. */
+        /**
+         * Bottom-left corner character.
+         *
+         * @return the bottom-left corner glyph
+         */
         public String bottomLeft() { return bl; }
-        /** Bottom-right corner character. */
+        /**
+         * Bottom-right corner character.
+         *
+         * @return the bottom-right corner glyph
+         */
         public String bottomRight() { return br; }
-        /** Horizontal edge character. */
+        /**
+         * Horizontal edge character.
+         *
+         * @return the horizontal edge glyph
+         */
         public String horizontal() { return h; }
-        /** Vertical edge character. */
+        /**
+         * Vertical edge character.
+         *
+         * @return the vertical edge glyph
+         */
         public String vertical() { return v; }
     }
 }

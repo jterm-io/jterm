@@ -58,7 +58,13 @@ public class LightningStorm implements AnimatedBackground {
         time += 0.12;
     }
 
-    /** Visible for tests to avoid wall-clock time. */
+    /**
+     * Renders one frame of the animation at the given time.
+     *
+     * @param graphics the graphics to render into
+     * @param size     the terminal size to render at
+     * @param t        the animation time
+     */
     public void renderAtTime(TextGraphics graphics, TerminalSize size, double t) {
         renderAtTime(graphics, size, t, true);
     }
@@ -263,22 +269,38 @@ public class LightningStorm implements AnimatedBackground {
         return lastSize;
     }
 
-    /** Visible for tests. */
+    /**
+     * Returns the current animation time.
+     *
+     * @return the animation time
+     */
     public double getTime() {
         return time;
     }
 
-    /** Visible for tests. */
+    /**
+     * Returns the number of remaining flash frames.
+     *
+     * @return the remaining flash frame count
+     */
     public int getFlashFrames() {
         return flashFrames;
     }
 
-    /** Visible for tests. */
+    /**
+     * Returns the number of frames until the next lightning strike.
+     *
+     * @return the frame count until the next strike
+     */
     public int getFramesUntilNextStrike() {
         return framesUntilNextStrike;
     }
 
-    /** Visible for tests. */
+    /**
+     * Returns the currently displayed lightning bolt.
+     *
+     * @return the bolt as a list of {x, y} points, or {@code null} if none
+     */
     public List<int[]> getCurrentBolt() {
         return currentBolt;
     }

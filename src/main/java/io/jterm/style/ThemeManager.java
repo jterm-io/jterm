@@ -23,12 +23,20 @@ public final class ThemeManager {
 
     private ThemeManager() {} // utility class
 
-    /** Returns the currently active theme. */
+    /**
+     * Returns the currently active theme.
+     *
+     * @return the active theme
+     */
     public static Theme active() {
         return active;
     }
 
-    /** Sets the active theme and notifies all listeners. */
+    /**
+     * Sets the active theme and notifies all listeners.
+     *
+     * @param theme the theme to activate
+     */
     public static void setActive(Theme theme) {
         active = theme;
         for (var listener : listeners) {
@@ -36,7 +44,11 @@ public final class ThemeManager {
         }
     }
 
-    /** Cycles to the next built-in theme. Returns the new active theme. */
+    /**
+     * Cycles to the next built-in theme.
+     *
+     * @return the new active theme
+     */
     public static Theme cycle() {
         Theme[] built = Theme.BUILT_IN;
         for (int i = 0; i < built.length; i++) {
@@ -51,12 +63,20 @@ public final class ThemeManager {
         return built[0];
     }
 
-    /** Register a callback to be notified when the theme changes. */
+    /**
+     * Registers a callback to be notified when the theme changes.
+     *
+     * @param listener the listener to register
+     */
     public static void addListener(Consumer<Theme> listener) {
         listeners.add(listener);
     }
 
-    /** Remove a previously registered listener. */
+    /**
+     * Removes a previously registered listener.
+     *
+     * @param listener the listener to remove
+     */
     public static void removeListener(Consumer<Theme> listener) {
         listeners.remove(listener);
     }

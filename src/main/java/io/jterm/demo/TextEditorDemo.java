@@ -40,6 +40,15 @@ import java.util.List;
  */
 public class TextEditorDemo {
 
+    /** Creates the text editor demo (no state; run via {@link #main}). */
+    public TextEditorDemo() {}
+
+    /**
+     * Runs the text editor demo.
+     *
+     * @param args ignored command-line arguments
+     * @throws IOException if the terminal cannot be initialized
+     */
     public static void main(String[] args) throws IOException {
         var terminal = new AnsiTerminal();
         var screen = new DefaultScreen(terminal);

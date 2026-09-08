@@ -26,7 +26,13 @@ public class MarchingAntsEffect implements AnimatedBorderEffect {
         this(3, 2);
     }
 
-    /** Creates a MarchingAntsEffect with the given dash and gap lengths. */
+    /**
+     * Creates a MarchingAntsEffect with the given dash and gap lengths.
+     *
+     * @param dashLength the number of consecutive dash cells (at least 1)
+     * @param gapLength the number of consecutive gap cells (at least 1)
+     * @throws IllegalArgumentException if either length is less than 1
+     */
     public MarchingAntsEffect(int dashLength, int gapLength) {
         if (dashLength < 1) throw new IllegalArgumentException("dashLength must be >= 1");
         if (gapLength < 1) throw new IllegalArgumentException("gapLength must be >= 1");

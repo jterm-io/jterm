@@ -90,7 +90,11 @@ public class Chart extends AbstractComponent {
         return this;
     }
 
-    /** Returns the current chart title. */
+    /**
+     * Returns the current chart title.
+     *
+     * @return the current chart title
+     */
     public String getTitle() { return title; }
 
     /**
@@ -117,10 +121,18 @@ public class Chart extends AbstractComponent {
         return this;
     }
 
-    /** Returns a defensive copy of the series list. */
+    /**
+     * Returns a defensive copy of the series list.
+     *
+     * @return a defensive copy of the series list
+     */
     public List<ChartSeries> getSeries() { return new ArrayList<>(seriesList); }
 
-    /** Returns the number of series currently attached to the chart. */
+    /**
+     * Returns the number of series currently attached to the chart.
+     *
+     * @return the number of series currently attached to the chart
+     */
     public int getSeriesCount() { return seriesList.size(); }
 
     /**
@@ -135,13 +147,21 @@ public class Chart extends AbstractComponent {
         return this;
     }
 
-    /** Returns the current Y-axis configuration. */
+    /**
+     * Returns the current Y-axis configuration.
+     *
+     * @return the current Y-axis configuration
+     */
     public ChartAxisConfig getYAxisConfig() { return yAxisConfig; }
 
     /**
      * Convenience method: switches the Y-axis between linear and logarithmic
      * scale while preserving the current range and label format. If
      * currently auto-scale, stays auto-scale; if fixed, stays fixed.
+     *
+     * @param logarithmic {@code true} for a logarithmic Y-axis,
+     *                    {@code false} for linear
+     * @return this chart, for method chaining
      */
     public Chart setYAxisLogarithmic(boolean logarithmic) {
         if (yAxisConfig.logarithmic() == logarithmic) return this;
@@ -165,7 +185,11 @@ public class Chart extends AbstractComponent {
         return this;
     }
 
-    /** Returns whether the Y-axis uses logarithmic scale. */
+    /**
+     * Returns whether the Y-axis uses logarithmic scale.
+     *
+     * @return {@code true} if the Y-axis uses a logarithmic scale
+     */
     public boolean isYAxisLogarithmic() { return yAxisConfig.logarithmic(); }
 
     /**
@@ -182,7 +206,11 @@ public class Chart extends AbstractComponent {
         return this;
     }
 
-    /** Returns a defensive copy of the current X-axis labels. */
+    /**
+     * Returns a defensive copy of the current X-axis labels.
+     *
+     * @return a defensive copy of the X-axis labels
+     */
     public List<String> getXAxisLabels() { return new ArrayList<>(xAxisLabels); }
 
     /**
@@ -197,7 +225,11 @@ public class Chart extends AbstractComponent {
         return this;
     }
 
-    /** Returns whether horizontal grid lines are drawn. */
+    /**
+     * Returns whether horizontal grid lines are drawn.
+     *
+     * @return {@code true} if horizontal grid lines are drawn
+     */
     public boolean isShowGrid() { return showGrid; }
 
     /**
@@ -212,7 +244,11 @@ public class Chart extends AbstractComponent {
         return this;
     }
 
-    /** Returns whether the legend is shown. */
+    /**
+     * Returns whether the legend is shown.
+     *
+     * @return {@code true} if the legend is shown
+     */
     public boolean isShowLegend() { return showLegend; }
 
     /**
@@ -227,7 +263,11 @@ public class Chart extends AbstractComponent {
         return this;
     }
 
-    /** Returns whether the border is drawn around the plot area. */
+    /**
+     * Returns whether the border is drawn around the plot area.
+     *
+     * @return {@code true} if the border is drawn around the plot area
+     */
     public boolean isShowBorder() { return showBorder; }
 
     /**

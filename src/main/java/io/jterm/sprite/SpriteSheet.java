@@ -236,6 +236,8 @@ public class SpriteSheet {
     }
 
     /**
+     * Returns the number of frames in the sheet (cols × rows).
+     *
      * @return number of frames in the sheet (cols × rows)
      */
     public int frameCount() {
@@ -280,12 +282,31 @@ public class SpriteSheet {
         return sprite;
     }
 
-    /** @return cell width in terminal cells */
+    /**
+     * Returns the cell width in terminal cells.
+     *
+     * @return cell width in terminal cells
+     */
     public int getCellWidth() { return cellWidth; }
-    /** @return cell height in terminal cells */
+
+    /**
+     * Returns the cell height in terminal cells.
+     *
+     * @return cell height in terminal cells
+     */
     public int getCellHeight() { return cellHeight; }
-    /** @return number of columns */
+
+    /**
+     * Returns the number of columns of cells.
+     *
+     * @return number of columns
+     */
     public int getCols() { return cols; }
-    /** @return number of rows */
+
+    /**
+     * Returns the number of rows of cells.
+     *
+     * @return number of rows
+     */
     public int getRows() { return rows; }
 }

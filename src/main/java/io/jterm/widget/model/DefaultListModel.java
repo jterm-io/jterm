@@ -10,19 +10,28 @@ import java.util.concurrent.CopyOnWriteArrayList;
  */
 public class DefaultListModel<T> extends AbstractListModel<T> {
 
+    /** Creates an empty list model. */
+    public DefaultListModel() {}
+
     private final List<T> items = new CopyOnWriteArrayList<>();
 
+    /**
+     * Returns the number of elements in this list model.
+     *
+     * @return the list size
+     */
     @Override
-    /** Returns the number of elements in this list model.
-     * @return the list size */
     public int getSize() {
         return items.size();
     }
 
-    @Override
-    /** Returns the element at the specified index.
+    /**
+     * Returns the element at the specified index.
+     *
      * @param index the zero-based index
-     * @return the element at that index */
+     * @return the element at that index
+     */
+    @Override
     public T getElementAt(int index) {
         return items.get(index);
     }

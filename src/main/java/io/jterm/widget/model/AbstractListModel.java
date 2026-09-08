@@ -7,8 +7,15 @@ import java.util.concurrent.CopyOnWriteArrayList;
  * Convenience base class for {@link ListModel} implementations.
  *
  * @param <T> the type of element held in this model
+ *
+ * <p>Constructs with an empty listener list.
  */
 public abstract class AbstractListModel<T> implements ListModel<T> {
+
+    /**
+     * Creates a model with an empty listener list.
+     */
+    protected AbstractListModel() {}
 
     private final List<ListDataListener> listeners = new CopyOnWriteArrayList<>();
 

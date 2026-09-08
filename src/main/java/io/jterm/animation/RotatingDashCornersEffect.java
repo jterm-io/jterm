@@ -11,6 +11,9 @@ package io.jterm.animation;
  */
 public class RotatingDashCornersEffect implements AnimatedBorderEffect {
 
+    /** Creates the effect with default corner rotation speed. */
+    public RotatingDashCornersEffect() {}
+
     /** The 8-step rotating dash character cycle. */
     private static final char[] CYCLE = {
             '\u250C', '\u2571', '\u2510', '\u2572',

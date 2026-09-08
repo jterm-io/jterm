@@ -28,7 +28,12 @@ import java.util.List;
  */
 public class MenuPanel extends AbstractComponent {
 
-    /** Immutable menu entry. */
+    /**
+     * Immutable menu entry.
+     *
+     * @param key         shortcut key shown in brackets (e.g. {@code "M"} for {@code [M]}); may be empty
+     * @param description menu item text shown right of the key column
+     */
     public record MenuEntry(String key, String description) {}
 
     private static final int GAP = 5;
@@ -45,6 +50,8 @@ public class MenuPanel extends AbstractComponent {
     /**
      * Returns the number of columns used to lay out items.
      * Default is 1 (single column). Values {@code <} 1 are clamped to 1.
+     *
+     * @return the number of layout columns
      */
     public int getColumns() { return columns; }
 
@@ -52,13 +59,20 @@ public class MenuPanel extends AbstractComponent {
      * Sets the number of columns used to lay out items. When {@code > 1},
      * items flow column-major: the first ceil(N/columns) items fill column 0,
      * the next batch fills column 1, etc.
+     *
+     * @param columns number of layout columns; values {@code <} 1 are clamped to 1
      */
     public void setColumns(int columns) {
         this.columns = Math.max(1, columns);
         invalidate();
     }
 
-    /** Adds an item with a shortcut key and description. */
+    /**
+     * Adds an item with a shortcut key and description.
+     *
+     * @param key         shortcut key shown in brackets; null treated as empty
+     * @param description menu item text; null treated as empty
+     */
     public void addItem(String key, String description) {
         if (key == null) key = "";
         if (description == null) description = "";
@@ -73,23 +87,40 @@ public class MenuPanel extends AbstractComponent {
         invalidate();
     }
 
-    /** Returns a copy of the current items. */
+    /**
+     * Returns a copy of the current items.
+     *
+     * @return a copy of the item list, in insertion order
+     */
     public List<MenuEntry> getItems() {
         return new ArrayList<>(items);
     }
 
-    /** Returns the index of the highlighted item, or -1 if none. */
+    /**
+     * Returns the index of the highlighted item.
+     *
+     * @return the highlighted index, or -1 if none
+     */
     public int getHighlightedIndex() {
         return highlightedIndex;
     }
 
-    /** Highlights the item at the given index (rendered in reverse video). Pass -1 to clear. */
+    /**
+     * Highlights the item at the given index (rendered in reverse video).
+     *
+     * @param index item index to highlight; pass -1 to clear
+     */
     public void setHighlightedIndex(int index) {
         this.highlightedIndex = Math.max(-1, Math.min(index, items.size() - 1));
         invalidate();
     }
 
-    /** Finds the index of the menu item whose key matches (case-insensitive), or -1 if not found. */
+    /**
+     * Finds the index of the menu item whose key matches (case-insensitive).
+     *
+     * @param key key to search for; null returns -1
+     * @return the matching index, or -1 if not found
+     */
     public int indexOfKey(String key) {
         if (key == null) return -1;
         String upper = key.toUpperCase();

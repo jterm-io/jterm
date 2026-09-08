@@ -10,22 +10,91 @@ import java.util.List;
 
 /** Window interface. */
 public interface Window {
+    /**
+     * Returns the window's title, as displayed by the window manager's decoration.
+     *
+     * @return the current title
+     */
     String getTitle();
+
+    /**
+     * Sets the window's title, as displayed by the window manager's decoration.
+     *
+     * @param title the new title
+     */
     void setTitle(String title);
+
+    /**
+     * Returns the panel holding this window's content.
+     *
+     * @return the root content panel
+     */
     Panel getContents();
+
+    /**
+     * Returns the window's current top-left position on screen.
+     *
+     * @return the current position
+     */
     TerminalPosition getPosition();
+
+    /**
+     * Returns the window's current size.
+     *
+     * @return the current size in columns × rows
+     */
     TerminalSize getSize();
+
+    /**
+     * Replaces the window's hints, which adjust how the window manager
+     * positions and decorates it.
+     *
+     * @param hints the hints to apply
+     */
     void setHints(List<WindowHint> hints);
+
+    /**
+     * Returns the window's current hints.
+     *
+     * @return the current hints
+     */
     List<WindowHint> getHints();
+
+    /**
+     * Sets the window's position and size.
+     *
+     * @param position new top-left position on screen
+     * @param size     new size in columns × rows
+     */
     void setBounds(TerminalPosition position, TerminalSize size);
+
+    /**
+     * Renders the window (content panel plus decoration) into the graphics context.
+     *
+     * @param graphics graphics context covering the window's bounds
+     */
     void draw(TextGraphics graphics);
+
+    /**
+     * Returns the child component that currently holds keyboard focus.
+     *
+     * @return the focused component, or {@code null} if none
+     */
     Component getFocusedComponent();
+
+    /**
+     * Gives keyboard focus to a child component.
+     *
+     * @param component the component to focus
+     */
     void setFocusedComponent(Component component);
 
     /**
      * Returns the window's preferred content size. The default implementation
      * returns the current size; windows that want to be centered or auto-sized
      * should override this to report their natural dimensions.
+     *
+     * @return the preferred content size
      */
     default TerminalSize getPreferredSize() { return getSize(); }
 
@@ -58,6 +127,8 @@ public interface Window {
      * Called when the window is added to a GUI (e.g. via ScreenManager.push).
      * Override to set focus, register listeners, or perform initialization.
      * Default implementation does nothing.
+     *
+     * @param gui the GUI this window was added to
      */
     default void open(DefaultTextGUI gui) {}
 

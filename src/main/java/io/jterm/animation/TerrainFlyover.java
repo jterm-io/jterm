@@ -67,7 +67,14 @@ public class TerrainFlyover implements AnimatedBackground {
         time += 0.05;
     }
 
-    /** Visible for tests to avoid wall-clock time. */
+    /**
+     * Renders one frame of the animation at an explicit time. Visible for
+     * tests to avoid wall-clock time.
+     *
+     * @param graphics    the text-graphics target
+     * @param size        terminal size to render at
+     * @param timeSeconds animation time in seconds
+     */
     public void renderAtTime(TextGraphics graphics, TerminalSize size, double timeSeconds) {
         if (size.columns() <= 0 || size.rows() <= 0) return;
 
@@ -218,17 +225,29 @@ public class TerrainFlyover implements AnimatedBackground {
         return lastSize;
     }
 
-    /** Visible for tests. */
+    /**
+     * Returns the current animation time. Visible for tests.
+     *
+     * @return animation time in seconds
+     */
     public double getTime() {
         return time;
     }
 
-    /** Visible for tests. */
+    /**
+     * Returns the terrain layers. Visible for tests.
+     *
+     * @return the back, mid, and front layers, back-to-front
+     */
     public Layer[] getLayers() {
         return new Layer[]{back, mid, front};
     }
 
-    /** Visible for tests. */
+    /**
+     * Returns the current stars. Visible for tests.
+     *
+     * @return the star array, or null before the first render
+     */
     public Star[] getStars() {
         return stars;
     }
@@ -258,15 +277,39 @@ public class TerrainFlyover implements AnimatedBackground {
             this.glyph = glyph;
         }
 
-        /** Returns the base height fraction.
- * @return the base fraction */
-
+        /**
+         * Returns the base height fraction.
+         *
+         * @return the base fraction
+         */
         public double baseFraction() { return baseFraction; }
+
+        /**
+         * Returns the amplitude fraction of the terrain wave.
+         *
+         * @return the amplitude fraction
+         */
         public double amplitudeFraction() { return amplitudeFraction; }
-        /** Returns the wave speed.
- * @return the speed */
+
+        /**
+         * Returns the wave speed.
+         *
+         * @return the speed
+         */
         public double speed() { return speed; }
+
+        /**
+         * Returns the terrain fill color.
+         *
+         * @return the color
+         */
         public AnsiColor color() { return color; }
+
+        /**
+         * Returns the terrain fill glyph.
+         *
+         * @return the glyph
+         */
         public char glyph() { return glyph; }
     }
 

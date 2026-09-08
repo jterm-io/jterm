@@ -54,12 +54,21 @@ public class PortfolioHeatmap implements AnimatedBackground {
     private volatile TerminalSize lastSize;
     private volatile List<Position> positions;
 
-    /** Creates a portfolio heatmap with data loaded from the default source. */
+    /**
+     * Creates a portfolio heatmap with data loaded from the default source.
+     *
+     * @param preferredSize the preferred terminal size
+     */
     public PortfolioHeatmap(TerminalSize preferredSize) {
         this(preferredSize, defaultSupplier());
     }
 
-    /** Creates a portfolio heatmap with a custom data supplier. */
+    /**
+     * Creates a portfolio heatmap with a custom data supplier.
+     *
+     * @param preferredSize the preferred terminal size
+     * @param dataSupplier  supplier of portfolio positions used each refresh
+     */
     public PortfolioHeatmap(TerminalSize preferredSize, Supplier<List<Position>> dataSupplier) {
         this.dataSupplier = Objects.requireNonNull(dataSupplier, "dataSupplier");
         onResize(preferredSize);
@@ -350,12 +359,18 @@ public class PortfolioHeatmap implements AnimatedBackground {
         return lastSize;
     }
 
-    /** Visible for tests: current rendered positions. */
+    /**
+     * Returns the currently rendered positions.
+     *
+     * @return a copy of the current positions
+     */
     public List<Position> getPositions() {
         return positions == null ? List.of() : List.copyOf(positions);
     }
 
-    /** Visible for tests: force a data reload. */
+    /**
+     * Forces a data reload from the supplier.
+     */
     public void refreshData() {
         try {
             this.positions = dataSupplier.get();
@@ -449,14 +464,32 @@ public class PortfolioHeatmap implements AnimatedBackground {
             this.latestClose = latestClose;
         }
 
-        /** Returns the stock symbol.
- * @return the symbol */
-
+        /**
+         * Returns the stock symbol.
+         *
+         * @return the symbol
+         */
         public String symbol() { return symbol; }
+
+        /**
+         * Returns the number of shares held.
+         *
+         * @return the quantity
+         */
         public int quantity() { return quantity; }
+
+        /**
+         * Returns the average cost basis per share.
+         *
+         * @return the cost basis
+         */
         public double costBasis() { return costBasis; }
-        /** Returns the latest closing price.
- * @return the latest close */
+
+        /**
+         * Returns the latest closing price.
+         *
+         * @return the latest close
+         */
         public double latestClose() { return latestClose; }
 
         /**

@@ -53,7 +53,12 @@ public class Fireworks implements AnimatedBackground {
         time += 0.1;
     }
 
-    /** Visible for tests. */
+    /**
+     * Visible for tests.
+     *
+     * @param graphics the text-graphics target
+     * @param size     the terminal size to render at
+     */
     public void renderAtTime(TextGraphics graphics, TerminalSize size) {
         if (size.columns() <= 0 || size.rows() <= 0) return;
 
@@ -190,22 +195,38 @@ public class Fireworks implements AnimatedBackground {
         return lastSize;
     }
 
-    /** Visible for tests. */
+    /**
+     * Visible for tests.
+     *
+     * @return the accumulated animation time
+     */
     public double getTime() {
         return time;
     }
 
-    /** Visible for tests. */
+    /**
+     * Visible for tests.
+     *
+     * @return the active rockets
+     */
     public List<Rocket> getRockets() {
         return rockets;
     }
 
-    /** Visible for tests. */
+    /**
+     * Visible for tests.
+     *
+     * @return the active particles
+     */
     public List<Particle> getParticles() {
         return particles;
     }
 
-    /** Visible for tests: forces a launch immediately. */
+    /**
+     * Visible for tests: forces a launch immediately.
+     *
+     * @param size the terminal size to launch within
+     */
     public void launchRocket(TerminalSize size) {
         if (rockets == null) rockets = new ArrayList<>();
         rockets.add(new Rocket(size, random));
@@ -231,12 +252,32 @@ public class Fireworks implements AnimatedBackground {
             vy += 0.15; // gravity — peaks within 7-13 frames
         }
 
-        /** Returns the X coordinate.
- * @return the X coordinate */
-
+        /**
+         * Returns the X coordinate.
+         *
+         * @return the X coordinate
+         */
         public double getX() { return x; }
+
+        /**
+         * Returns the Y coordinate.
+         *
+         * @return the Y coordinate
+         */
         public double getY() { return y; }
+
+        /**
+         * Returns the horizontal velocity.
+         *
+         * @return the X velocity
+         */
         public double getVx() { return vx; }
+
+        /**
+         * Returns the vertical velocity.
+         *
+         * @return the Y velocity
+         */
         public double getVy() { return vy; }
     }
 
@@ -272,15 +313,33 @@ public class Fireworks implements AnimatedBackground {
         }
 
         /** Returns the X coordinate.
-         * @return the X coordinate */
+         *
+         * @return the X coordinate
+         */
         public double getX() { return x; }
-        /** Returns the Y coordinate.
-         * @return the Y coordinate */
+        /**
+         * Returns the Y coordinate.
+         *
+         * @return the Y coordinate
+         */
         public double getY() { return y; }
-        /** Returns the particle color.
- * @return the color */
+        /**
+         * Returns the particle color.
+         *
+         * @return the color
+         */
         public AnsiColor getColor() { return color; }
+        /**
+         * Returns the remaining life in frames.
+         *
+         * @return the remaining life
+         */
         public int getLife() { return life; }
+        /**
+         * Returns the maximum life in frames.
+         *
+         * @return the maximum life
+         */
         public int getMaxLife() { return maxLife; }
     }
 }

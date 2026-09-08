@@ -107,7 +107,13 @@ public class OceanWaves implements AnimatedBackground {
         time += 0.08;
     }
 
-    /** Visible for tests to avoid wall-clock time. */
+    /**
+     * Visible for tests to avoid wall-clock time.
+     *
+     * @param graphics    graphics context to render into
+     * @param size        terminal size to render at
+     * @param timeSeconds animation time in seconds
+     */
     public void renderAtTime(TextGraphics graphics, TerminalSize size, double timeSeconds) {
         if (size.columns() <= 0 || size.rows() <= 0) return;
 
@@ -212,19 +218,36 @@ public class OceanWaves implements AnimatedBackground {
         return lastSize;
     }
 
-    /** Visible for tests. */
+    /**
+     * Visible for tests.
+     *
+     * @return a snapshot of the current wave parameters
+     */
     public List<Wave> getWaves() {
         synchronized (waveLock) {
             return List.copyOf(waves);
         }
     }
 
-    /** Visible for tests. */
+    /**
+     * Visible for tests.
+     *
+     * @return the accumulated animation time in seconds
+     */
     public double getTime() {
         return time;
     }
 
-    /** Package-visible wave parameters. */
+    /**
+     * Package-visible wave parameters.
+     *
+     * @param baseY     mean row of the wave's surface line, in rows from the top
+     * @param amplitude wave height in rows (peak deviation from {@code baseY})
+     * @param frequency horizontal wave frequency in radians per column
+     * @param speed     phase advance in radians per second of animation time
+     * @param color     surface color (bright variant at the crest)
+     * @param dimColor  color of the water body below the surface
+     */
     public record Wave(
             int baseY,
             double amplitude,

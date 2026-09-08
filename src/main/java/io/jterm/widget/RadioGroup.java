@@ -12,6 +12,10 @@ import java.util.List;
 
 /** Mutually-exclusive group of radio buttons. */
 public class RadioGroup {
+
+    /** Creates an empty radio group with no buttons and no selection. */
+    public RadioGroup() {}
+
     private final List<RadioButton> buttons = new ArrayList<>();
     private RadioButton selected;
     private final List<Runnable> selectionListeners = new ArrayList<>();
@@ -57,13 +61,25 @@ public class RadioGroup {
         notifySelectionListeners();
     }
 
-    /** Returns the currently selected radio button, or {@code null} if none. */
+    /**
+     * Returns the currently selected radio button, or {@code null} if none.
+     *
+     * @return the selected button, or {@code null} if none
+     */
     public RadioButton getSelected() { return selected; }
 
-    /** Adds a listener that fires whenever the selection changes. */
+    /**
+     * Adds a listener that fires whenever the selection changes.
+     *
+     * @param listener the listener to add
+     */
     public void addSelectionListener(Runnable listener) { selectionListeners.add(listener); }
 
-    /** Returns a defensive copy of the buttons in this group. */
+    /**
+     * Returns a defensive copy of the buttons in this group.
+     *
+     * @return the buttons in this group
+     */
     public List<RadioButton> getButtons() { return new ArrayList<>(buttons); }
 
     void notifySelectionListeners() {

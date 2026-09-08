@@ -10,7 +10,10 @@ package io.jterm.widget.chart;
  * </ul>
  */
 public enum ChartType {
+    /** Connected line segments drawn using box-drawing characters. */
     LINE,
+    /** Vertical bars drawn using block characters. */
     BAR,
+    /** Individual point markers with no connecting lines. */
     SCATTER
 }

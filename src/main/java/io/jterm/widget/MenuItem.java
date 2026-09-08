@@ -13,6 +13,9 @@ public class MenuItem {
     /**
      * Creates a menu item with the given label and action. The mnemonic is
      * auto-detected from the label: the first character is used.
+     *
+     * @param label  display label shown in the dropdown
+     * @param action action to run when this item is activated; may be null
      */
     public MenuItem(String label, Runnable action) {
         this(label, label.isEmpty() ? '\0' : Character.toLowerCase(label.charAt(0)), action);
@@ -20,6 +23,10 @@ public class MenuItem {
 
     /**
      * Creates a menu item with an explicit mnemonic character.
+     *
+     * @param label     display label shown in the dropdown
+     * @param mnemonic  mnemonic character for keyboard activation (Alt+mnemonic)
+     * @param action    action to run when this item is activated; may be null
      */
     public MenuItem(String label, char mnemonic, Runnable action) {
         this.label = label;
@@ -27,16 +34,26 @@ public class MenuItem {
         this.action = action;
     }
 
-    /** Display label shown in the dropdown. */
+    /**
+     * Returns the display label shown in the dropdown.
+     *
+     * @return the display label
+     */
     public String getLabel() { return label; }
 
     /**
-     * Mnemonic character for keyboard activation. Case-insensitive —
+     * Returns the mnemonic character for keyboard activation. Case-insensitive —
      * the user presses Alt+mnemonic to activate this item.
+     *
+     * @return the mnemonic character
      */
     public char getMnemonic() { return mnemonic; }
 
-    /** The action to run when this item is activated. May be null. */
+    /**
+     * Returns the action to run when this item is activated.
+     *
+     * @return the action; may be null
+     */
     public Runnable getAction() { return action; }
 
     /** Fires the action if one is set. */

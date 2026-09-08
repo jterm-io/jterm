@@ -6,11 +6,24 @@ import java.util.EnumSet;
  * Immutable representation of a single terminal cell.
  * Contains the character (as String for multi-codepoint support), foreground color,
  * background color, and SGR modifiers. Safe to share between buffers.
+ *
+ * @param character the cell's character content (never null or empty)
+ * @param fg        foreground color
+ * @param bg        background color
+ * @param modifiers SGR modifiers applied to this cell (defensively copied)
  */
 public record TextCell(String character, Color fg, Color bg, EnumSet<SGR> modifiers) {
 
+    /**
+     * Shared empty cell containing a single space with default colors.
+     */
     public static final TextCell EMPTY = new TextCell(" ", AnsiColor.DEFAULT, AnsiColor.DEFAULT, EnumSet.noneOf(SGR.class));
 
+    /**
+     * Validates the character and defensively copies the modifiers.
+     *
+     * @throws IllegalArgumentException if the character is null or empty
+     */
     public TextCell {
         if (character == null || character.isEmpty())
             throw new IllegalArgumentException("Character cannot be null or empty");

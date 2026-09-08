@@ -35,7 +35,13 @@ public class AnsiTerminal implements Terminal {
     private volatile boolean inputClosed = false;
     private volatile boolean inPrivateMode = false;
 
-    /** Construct terminal using provided streams and size (useful for tests). */
+    /**
+     * Construct terminal using provided streams and size (useful for tests).
+     *
+     * @param out  output stream the terminal writes escape sequences to
+     * @param in   input stream the terminal reads keystrokes from
+     * @param size fixed terminal size to report (never queried from the OS)
+     */
     public AnsiTerminal(OutputStream out, InputStream in, TerminalSize size) {
         this.out = new BufferedOutputStream(out, 4096);
         this.in = in;
@@ -47,7 +53,11 @@ public class AnsiTerminal implements Terminal {
         startReaderThread();
     }
 
-    /** Construct terminal using System.in/out and querying real terminal size. */
+    /**
+     * Construct terminal using System.in/out and querying real terminal size.
+     *
+     * @throws IOException if the terminal size cannot be queried or stty state cannot be captured
+     */
     public AnsiTerminal() throws IOException {
         this.out = new BufferedOutputStream(System.out, 4096);
         this.in = System.in;
@@ -441,7 +451,11 @@ public class AnsiTerminal implements Terminal {
         out.write(data);
     }
 
-    /** For testing: capture output written so far. */
+    /**
+     * For testing: capture output written so far.
+     *
+     * @return all bytes written to the terminal so far, decoded as a string
+     */
     public String getCapturedOutput() {
         return "";
     }

@@ -77,7 +77,11 @@ public class TextArea extends AbstractComponent {
 
     // ── Public API ─────────────────────────────────────────────
 
-    /** Returns the full text content, with lines joined by {@code \n}. */
+    /**
+     * Returns the full text content, with lines joined by {@code \n}.
+     *
+     * @return the full text content
+     */
     public String getText() {
         if (lines.isEmpty()) return "";
         return String.join("\n", lines);
@@ -111,7 +115,11 @@ public class TextArea extends AbstractComponent {
         invalidate();
     }
 
-    /** Returns the number of lines in the text. */
+    /**
+     * Returns the number of lines in the text.
+     *
+     * @return the line count
+     */
     public int getLineCount() {
         return lines.size();
     }

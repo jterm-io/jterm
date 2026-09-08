@@ -34,9 +34,18 @@ import java.util.List;
 /** Basic widgets demo: CheckBox, RadioButton, Separator, ProgressBar, ListBox, Table, DataGrid. */
 public class BasicWidgetsDemo {
 
+    /** Prevents instantiation; run the demo via {@link #main(String[])} instead. */
+    private BasicWidgetsDemo() {}
+
     /** Sample row type for the DataGrid demo. */
     record StockRow(String ticker, String name, double price, double change, int volume) {}
 
+    /**
+     * Runs the basic widgets demo.
+     *
+     * @param args ignored
+     * @throws IOException if the terminal cannot be initialized
+     */
     public static void main(String[] args) throws IOException {
         var terminal = new AnsiTerminal();
         var screen = new DefaultScreen(terminal);

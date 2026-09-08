@@ -236,7 +236,9 @@ public class SpriteRenderer {
         }
 
         /**
-         * @return true if the animation is still running
+         * Reports whether the animation is still running.
+         *
+         * @return {@code true} if the animation is still running
          */
         public boolean isRunning() {
             return running.get();

@@ -78,13 +78,25 @@ public class Menu extends AbstractComponent {
 
     // ── Configuration ──────────────────────────────────────────────
 
-    /** Returns the menu title. */
+    /**
+     * Returns the menu title.
+     *
+     * @return the menu title
+     */
     public String getTitle() { return title; }
 
-    /** Returns the mnemonic character. */
+    /**
+     * Returns the mnemonic character.
+     *
+     * @return the mnemonic character
+     */
     public char getMnemonic() { return mnemonic; }
 
-    /** Adds a {@link MenuItem} to the dropdown. */
+    /**
+     * Adds a {@link MenuItem} to the dropdown.
+     *
+     * @param item the item to add
+     */
     public void addMenuItem(MenuItem item) {
         entries.add(item);
         invalidate();
@@ -107,13 +119,25 @@ public class Menu extends AbstractComponent {
         invalidate();
     }
 
-    /** Returns a defensive copy of the entries (items and separators). */
+    /**
+     * Returns a defensive copy of the entries (items and separators).
+     *
+     * @return a copy of the entries
+     */
     public List<Object> getEntries() { return new ArrayList<>(entries); }
 
-    /** Returns whether the dropdown is currently open. */
+    /**
+     * Returns whether the dropdown is currently open.
+     *
+     * @return true if open
+     */
     public boolean isOpen() { return open; }
 
-    /** Returns the index of the currently selected dropdown entry. */
+    /**
+     * Returns the index of the currently selected dropdown entry.
+     *
+     * @return the selected index
+     */
     public int getSelectedIndex() { return selectedIndex; }
 
     /**

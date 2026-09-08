@@ -26,7 +26,14 @@ public class AnimatedText {
 
     /** Animation mode. */
     public enum Mode {
-        TYPEWRITER, SCROLL_LEFT, SCROLL_RIGHT, BLINK
+        /** Reveal the text one character at a time. */
+        TYPEWRITER,
+        /** Scroll the text right-to-left across the viewport. */
+        SCROLL_LEFT,
+        /** Scroll the text left-to-right across the viewport. */
+        SCROLL_RIGHT,
+        /** Cycle the text's foreground color through the configured color list. */
+        BLINK
     }
 
     private final Mode mode;
@@ -69,6 +76,8 @@ public class AnimatedText {
      *
      * @param text   the text to reveal
      * @param stepMs ms per character reveal
+     *
+     * @return a new typewriter animation
      */
     public static AnimatedText typewriter(String text, int stepMs) {
         return new AnimatedText(Mode.TYPEWRITER, text, Math.max(1, text == null ? 1 : text.length()),
@@ -81,6 +90,7 @@ public class AnimatedText {
      * @param text         text to scroll
      * @param viewportWidth width of the visible window in terminal cells
      * @param stepMs       ms per step (column shift)
+     * @return a new left-scrolling animation
      */
     public static AnimatedText scrollLeft(String text, int viewportWidth, int stepMs) {
         return new AnimatedText(Mode.SCROLL_LEFT, text, viewportWidth, null, stepMs);
@@ -92,6 +102,7 @@ public class AnimatedText {
      * @param text         text to scroll
      * @param viewportWidth width of the visible window in terminal cells
      * @param stepMs       ms per step (column shift)
+     * @return a new right-scrolling animation
      */
     public static AnimatedText scrollRight(String text, int viewportWidth, int stepMs) {
         return new AnimatedText(Mode.SCROLL_RIGHT, text, viewportWidth, null, stepMs);
@@ -103,6 +114,7 @@ public class AnimatedText {
      * @param text    text to display
      * @param colors  list of colors to cycle through
      * @param stepMs  ms per color change
+     * @return a new blinking animation
      */
     public static AnimatedText blink(String text, List<Color> colors, int stepMs) {
         return new AnimatedText(Mode.BLINK, text, Math.max(1, text == null ? 1 : text.length()),
@@ -111,6 +123,8 @@ public class AnimatedText {
 
     /**
      * Advance the animation by {@code elapsedMs} milliseconds.
+     *
+     * @param elapsedMs milliseconds of animation time to advance
      */
     public void tick(long elapsedMs) {
         if (complete) return;
@@ -153,6 +167,8 @@ public class AnimatedText {
     }
 
     /**
+     * Returns whether the animation has finished.
+     *
      * @return true when the animation has finished (only {@link Mode#TYPEWRITER} completes)
      */
     public boolean isComplete() {
@@ -219,6 +235,8 @@ public class AnimatedText {
     }
 
     /**
+     * Returns the active animation mode.
+     *
      * @return the active animation mode
      */
     public Mode getMode() {

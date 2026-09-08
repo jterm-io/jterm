@@ -46,7 +46,12 @@ public final class TerminalTextUtils {
             || block == Character.UnicodeBlock.HIRAGANA;
     }
 
-    /** Returns the display width of a string (accounts for double-width chars). */
+    /**
+     * Returns the display width of a string (accounts for double-width chars).
+     *
+     * @param s the string to measure
+     * @return the display width in terminal columns
+     */
     public static int getTrueWidth(String s) {
         int width = 0;
         for (char c : s.toCharArray()) {
@@ -55,7 +60,13 @@ public final class TerminalTextUtils {
         return width;
     }
 
-    /** Truncates a string to fit within maxColumns display columns. */
+    /**
+     * Truncates a string to fit within maxColumns display columns.
+     *
+     * @param s          the string to truncate
+     * @param maxColumns the maximum display width in columns
+     * @return the truncated string
+     */
     public static String truncate(String s, int maxColumns) {
         if (getTrueWidth(s) <= maxColumns) return s;
         var sb = new StringBuilder();

@@ -209,28 +209,50 @@ public class DvdLogo implements AnimatedBackground {
         return lastSize;
     }
 
-    /** Visible for tests: current logo position. */
+    /**
+     * Returns the current logo position.
+     *
+     * @return a two-element array {x, y}
+     */
     public int[] getPosition() {
         return new int[]{x, y};
     }
 
-    /** Visible for tests: current velocity direction. */
+    /**
+     * Returns the current velocity direction.
+     *
+     * @return a two-element array {dx, dy}
+     */
     public int[] getDirection() {
         return new int[]{dx, dy};
     }
 
-    /** Visible for tests: current logo color. */
+    /**
+     * Returns the current logo color.
+     *
+     * @return the current color
+     */
     public AnsiColor getColor() {
         return PALETTE[colorIndex];
     }
 
-    /** Visible for tests: set the logo position directly. */
+    /**
+     * Sets the logo position directly.
+     *
+     * @param x the new x column
+     * @param y the new y row
+     */
     public void setPosition(int x, int y) {
         this.x = x;
         this.y = y;
     }
 
-    /** Visible for tests: set the velocity direction directly. */
+    /**
+     * Sets the velocity direction directly.
+     *
+     * @param dx the x direction step
+     * @param dy the y direction step
+     */
     public void setDirection(int dx, int dy) {
         this.dx = dx;
         this.dy = dy;

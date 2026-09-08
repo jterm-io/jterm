@@ -192,12 +192,20 @@ public class MandelbrotZoom implements AnimatedBackground {
         return lastSize;
     }
 
-    /** Visible for tests: set viewport range directly. */
+    /**
+     * Sets the viewport range directly, visible for tests.
+     *
+     * @param range the viewport width in the complex plane
+     */
     public void setRange(double range) {
         this.range = range;
     }
 
-    /** Visible for tests: current viewport range in the complex plane. */
+    /**
+     * Returns the current viewport range, visible for tests.
+     *
+     * @return the viewport width in the complex plane
+     */
     public double getRange() {
         return range;
     }

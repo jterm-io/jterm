@@ -71,10 +71,17 @@ public class ParticleEffect {
         }
     }
 
-    /** Create an empty particle effect. */
+    /**
+     * Create an empty particle effect.
+     */
     public ParticleEffect() {}
 
-    /** Create an empty particle effect with gravity and friction defaults. */
+    /**
+     * Create an empty particle effect with explicit physics defaults.
+     *
+     * @param gravity  gravity acceleration (positive pulls particles downward)
+     * @param friction friction multiplier (1.0 = none, &lt; 1.0 slows particles)
+     */
     public ParticleEffect(double gravity, double friction) {
         this.gravity = gravity;
         this.friction = friction;
@@ -282,6 +289,8 @@ public class ParticleEffect {
     }
 
     /**
+     * Returns the number of currently live particles.
+     *
      * @return number of currently live particles
      */
     public int particleCount() {
@@ -289,6 +298,8 @@ public class ParticleEffect {
     }
 
     /**
+     * Returns whether the effect still has particles.
+     *
      * @return true when at least one particle is still alive
      */
     public boolean isAlive() {
@@ -309,7 +320,12 @@ public class ParticleEffect {
         return arr;
     }
 
-    /** Lightweight position record for snapshots. */
+    /**
+     * Lightweight position record for snapshots.
+     *
+     * @param x horizontal position in cell columns (fractional during motion)
+     * @param y vertical position in cell rows (fractional during motion)
+     */
     public record Pos(double x, double y) {}
 
     /** Clear all particles. */
@@ -318,6 +334,8 @@ public class ParticleEffect {
     }
 
     /**
+     * Returns a snapshot of the current particles.
+     *
      * @return an unmodifiable view of the current particles (for testing)
      */
     public List<Particle> getParticles() {
@@ -335,6 +353,8 @@ public class ParticleEffect {
     }
 
     /**
+     * Returns whether color fading is enabled.
+     *
      * @return whether color fading is enabled
      */
     public boolean isFade() {
@@ -382,6 +402,8 @@ public class ParticleEffect {
     }
 
     /**
+     * Returns the current gravity value.
+     *
      * @return current gravity value
      */
     public double getGravity() {
@@ -398,6 +420,8 @@ public class ParticleEffect {
     }
 
     /**
+     * Returns the current friction multiplier.
+     *
      * @return current friction multiplier (1.0 = no friction)
      */
     public double getFriction() {

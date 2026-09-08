@@ -31,6 +31,7 @@ public class ResultSetGridModel implements GridModel<ResultSetRow> {
      *
      * @param resultSet the ResultSet (positioned before first row)
      * @param statement the Statement that produced the ResultSet (for closing); may be null
+     * @throws java.sql.SQLException if reading the ResultSet metadata fails
      */
     public ResultSetGridModel(ResultSet resultSet, Statement statement) throws SQLException {
         this.resultSet = resultSet;
@@ -43,12 +44,20 @@ public class ResultSetGridModel implements GridModel<ResultSetRow> {
         }
     }
 
-    /** Returns the column names from the ResultSet metadata. */
+    /**
+     * Returns the column names from the ResultSet metadata.
+     *
+     * @return an unmodifiable list of column names
+     */
     public List<String> getColumnNames() {
         return Collections.unmodifiableList(columnNames);
     }
 
-    /** Returns the number of columns. */
+    /**
+     * Returns the number of columns.
+     *
+     * @return the column count
+     */
     public int getColumnCount() {
         return columnCount;
     }

@@ -156,7 +156,11 @@ public class Table extends AbstractComponent implements TableModelListener {
         invalidate();
     }
 
-    /** Returns the index of the currently selected row. */
+    /**
+     * Returns the index of the currently selected row.
+     *
+     * @return the selected row index
+     */
     public int getSelectedRow() {
         return selectedRow;
     }

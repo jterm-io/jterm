@@ -147,7 +147,11 @@ public class Scanlines implements AnimatedBackground {
         return lastSize;
     }
 
-    /** Visible for tests: current frame counter. */
+    /**
+     * Returns the current frame counter, visible for tests.
+     *
+     * @return the frame counter
+     */
     public int getFrame() {
         return frame;
     }

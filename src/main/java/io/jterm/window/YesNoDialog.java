@@ -87,19 +87,34 @@ public class YesNoDialog extends AbstractWindow {
         gui.addWindow(this);
     }
 
-    /** Registers a listener to be called when the user presses Y. */
+    /**
+     * Registers a listener to be called when the user presses Y.
+     *
+     * @param listener listener to invoke on yes
+     * @return this dialog (for chaining)
+     */
     public YesNoDialog onYes(Runnable listener) {
         yesListeners.add(Objects.requireNonNull(listener, "listener"));
         return this;
     }
 
-    /** Registers a listener to be called when the user presses N. */
+    /**
+     * Registers a listener to be called when the user presses N.
+     *
+     * @param listener listener to invoke on no
+     * @return this dialog (for chaining)
+     */
     public YesNoDialog onNo(Runnable listener) {
         noListeners.add(Objects.requireNonNull(listener, "listener"));
         return this;
     }
 
-    /** Registers a listener to be called when the user presses Esc. */
+    /**
+     * Registers a listener to be called when the user presses Esc.
+     *
+     * @param listener listener to invoke on cancel
+     * @return this dialog (for chaining)
+     */
     public YesNoDialog onCancel(Runnable listener) {
         cancelListeners.add(Objects.requireNonNull(listener, "listener"));
         return this;
@@ -133,12 +148,20 @@ public class YesNoDialog extends AbstractWindow {
         gui.removeWindow(this);
     }
 
-    /** Returns the prompt text displayed to the user. */
+    /**
+     * Returns the prompt text displayed to the user.
+     *
+     * @return the prompt text
+     */
     public String getPromptText() {
         return promptLabel.getText();
     }
 
-    /** Returns the status hint text shown at the bottom of the dialog. */
+    /**
+     * Returns the status hint text shown at the bottom of the dialog.
+     *
+     * @return the status hint text
+     */
     public String getStatusText() {
         return statusLabel.getText();
     }

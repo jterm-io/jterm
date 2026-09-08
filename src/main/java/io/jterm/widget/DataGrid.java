@@ -37,6 +37,7 @@ public class DataGrid<T> extends AbstractComponent implements GridListener {
     private volatile boolean showVerticalLines = false;
 
     private final List<Runnable> selectionListeners = new CopyOnWriteArrayList<>();
+    private final List<Runnable> activationListeners = new CopyOnWriteArrayList<>();
 
     /**
      * Creates a DataGrid with the given columns and an empty {@link DefaultGridModel}.
@@ -63,6 +64,8 @@ public class DataGrid<T> extends AbstractComponent implements GridListener {
     /**
      * Replaces the backing model. Unregisters from the old model, registers
      * with the new, resets selection/scroll, and invalidates.
+     *
+     * @param model the new backing row model
      */
     public void setModel(GridModel<T> model) {
         if (this.model != null) {
@@ -78,18 +81,30 @@ public class DataGrid<T> extends AbstractComponent implements GridListener {
         invalidate();
     }
 
-    /** Sets the column definitions and invalidates. */
+    /**
+     * Sets the column definitions and invalidates.
+     *
+     * @param columns the column definitions
+     */
     public void setColumns(List<GridColumn<T>> columns) {
         this.columns = columns;
         invalidate();
     }
 
-    /** Returns the current model. */
+    /**
+     * Returns the current model.
+     *
+     * @return the backing model
+     */
     public GridModel<T> getModel() {
         return model;
     }
 
-    /** Returns the column definitions. */
+    /**
+     * Returns the column definitions.
+     *
+     * @return the column definitions
+     */
     public List<GridColumn<T>> getColumns() {
         return columns;
     }
@@ -97,6 +112,8 @@ public class DataGrid<T> extends AbstractComponent implements GridListener {
     /**
      * Returns whether vertical separator lines between columns are drawn.
      * Default is {@code false} (no lines).
+     *
+     * @return {@code true} if vertical lines are shown
      */
     public boolean isShowVerticalLines() {
         return showVerticalLines;
@@ -115,12 +132,20 @@ public class DataGrid<T> extends AbstractComponent implements GridListener {
 
     // ---- Selection --------------------------------------------------------
 
-    /** Returns the currently selected row index. */
+    /**
+     * Returns the currently selected row index.
+     *
+     * @return the selected row index
+     */
     public int getSelectedRow() {
         return selectedRow;
     }
 
-    /** Sets the selected row, clamping to valid range, then ensures visibility. */
+    /**
+     * Sets the selected row, clamping to valid range, then ensures visibility.
+     *
+     * @param index the desired row index
+     */
     public void setSelectedRow(int index) {
         int count = model == null ? 0 : model.getRowCount();
         int old = selectedRow;
@@ -136,20 +161,50 @@ public class DataGrid<T> extends AbstractComponent implements GridListener {
         invalidate();
     }
 
-    /** Returns the row at the selected index, or null if the model is empty. */
+    /**
+     * Returns the row at the selected index, or null if the model is empty.
+     *
+     * @return the selected row, or {@code null}
+     */
     public T getSelectedItem() {
         if (model == null || model.getRowCount() == 0) return null;
         if (selectedRow < 0 || selectedRow >= model.getRowCount()) return null;
         return model.getRow(selectedRow);
     }
 
-    /** Adds a selection listener that fires when the selected row changes. */
+    /**
+     * Adds a selection listener that fires when the selected row changes.
+     *
+     * <p>Note: this fires on every selection <em>move</em> (arrow keys,
+     * programmatic {@link #setSelectedRow}), not just on Enter. To hook
+     * "user activated the selected row" (Enter), use
+     * {@link #addActivationListener(Runnable)} instead.</p>
+     *
+     * @param listener the listener to add
+     */
     public void addSelectionListener(Runnable listener) {
         selectionListeners.add(listener);
     }
 
     private void fireSelectionChanged() {
         for (var l : selectionListeners) l.run();
+    }
+
+    /**
+     * Adds an activation listener that fires only when the user activates
+     * the selected row by pressing Enter — not when the selection merely
+     * moves (arrow keys, page keys, programmatic moves). Use this for
+     * "open detail on Enter" behavior; {@link #addSelectionListener(Runnable)}
+     * fires on every selection change and is unsuitable for that purpose.
+     *
+     * @param listener the listener to add
+     */
+    public void addActivationListener(Runnable listener) {
+        activationListeners.add(listener);
+    }
+
+    private void fireActivated() {
+        for (var l : activationListeners) l.run();
     }
 
     // ---- GridListener -----------------------------------------------------
@@ -506,7 +561,7 @@ public class DataGrid<T> extends AbstractComponent implements GridListener {
                 if (model != null) setSelectedRow(model.getRowCount() - 1);
                 return true;
             }
-            case ENTER -> { fireSelectionChanged(); return true; }
+            case ENTER -> { fireActivated(); return true; }
             default -> { return false; }
         }
     }
@@ -532,12 +587,20 @@ public class DataGrid<T> extends AbstractComponent implements GridListener {
 
     // ---- Horizontal scrolling --------------------------------------------
 
-    /** Returns the current horizontal scroll offset. */
+    /**
+     * Returns the current horizontal scroll offset.
+     *
+     * @return the horizontal scroll offset
+     */
     public int getScrollOffsetX() {
         return scrollOffsetX;
     }
 
-    /** Returns the current vertical scroll offset. */
+    /**
+     * Returns the current vertical scroll offset.
+     *
+     * @return the vertical scroll offset
+     */
     public int getScrollOffsetY() {
         return scrollOffsetY;
     }

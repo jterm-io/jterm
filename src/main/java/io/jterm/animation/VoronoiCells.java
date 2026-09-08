@@ -55,7 +55,13 @@ public class VoronoiCells implements AnimatedBackground {
         time += 0.05;
     }
 
-    /** Visible for tests. */
+    /**
+     * Renders one frame of the animation at the current internal time.
+     * Visible for tests.
+     *
+     * @param graphics the text-graphics target
+     * @param size     terminal size to render at
+     */
     public void renderAtTime(TextGraphics graphics, TerminalSize size) {
         if (size.columns() <= 0 || size.rows() <= 0) return;
 
@@ -180,17 +186,29 @@ public class VoronoiCells implements AnimatedBackground {
         return lastSize;
     }
 
-    /** Visible for tests. */
+    /**
+     * Returns the current animation time. Visible for tests.
+     *
+     * @return animation time in seconds
+     */
     public double getTime() {
         return time;
     }
 
-    /** Visible for tests. */
+    /**
+     * Returns the current seed points. Visible for tests.
+     *
+     * @return the seed array, or null before the first render
+     */
     public Seed[] getSeeds() {
         return seeds;
     }
 
-    /** Visible for tests. */
+    /**
+     * Returns the number of seed points. Visible for tests.
+     *
+     * @return the seed count, or 0 before the first render
+     */
     public int getSeedCount() {
         return seeds == null ? 0 : seeds.length;
     }
@@ -227,15 +245,39 @@ public class VoronoiCells implements AnimatedBackground {
             if (y >= rows - 1) { y = rows - 1; vy = -vy; }
         }
 
-        /** Returns the X coordinate.
- * @return the X coordinate */
-
+        /**
+         * Returns the X coordinate.
+         *
+         * @return the X coordinate
+         */
         public double getX() { return x; }
+
+        /**
+         * Returns the Y coordinate.
+         *
+         * @return the Y coordinate
+         */
         public double getY() { return y; }
+
+        /**
+         * Returns the horizontal velocity.
+         *
+         * @return the horizontal velocity (cells per tick)
+         */
         public double getVx() { return vx; }
+
+        /**
+         * Returns the vertical velocity.
+         *
+         * @return the vertical velocity (cells per tick)
+         */
         public double getVy() { return vy; }
-        /** Returns the cell color.
- * @return the color */
+
+        /**
+         * Returns the cell color.
+         *
+         * @return the color
+         */
         public AnsiColor getColor() { return color; }
     }
 }

@@ -15,27 +15,55 @@ import java.util.List;
 public class TextGraphics {
     private final ScreenBuffer buffer;
 
-    /** Creates a graphics context backed by the given buffer. @param buffer the backing screen buffer */
+    /**
+     * Creates a graphics context backed by the given buffer.
+     *
+     * @param buffer the backing screen buffer
+     */
     public TextGraphics(ScreenBuffer buffer) {
         this.buffer = buffer;
     }
 
-    /** Returns the size of the drawing area. @return the buffer dimensions */
+    /**
+     * Returns the size of the drawing area.
+     *
+     * @return the buffer dimensions
+     */
     public TerminalSize getSize() {
         return buffer.size();
     }
 
-    /** Sets the cell at the given coordinates. @param x the column @param y the row @param cell the cell to set */
+    /**
+     * Sets the cell at the given coordinates.
+     *
+     * @param x the column
+     * @param y the row
+     * @param cell the cell to set
+     */
     public void setCell(int x, int y, TextCell cell) {
         buffer.setCell(x, y, cell);
     }
 
-    /** Returns the cell at the given coordinates. @param x the column @param y the row @return the cell */
+    /**
+     * Returns the cell at the given coordinates.
+     *
+     * @param x the column
+     * @param y the row
+     * @return the cell
+     */
     public TextCell getCell(int x, int y) {
         return buffer.getCell(x, y);
     }
 
-    /** Fills a rectangular area with the given cell. @param x the starting column @param y the starting row @param width the rectangle width @param height the rectangle height @param cell the fill cell */
+    /**
+     * Fills a rectangular area with the given cell.
+     *
+     * @param x the starting column
+     * @param y the starting row
+     * @param width the rectangle width
+     * @param height the rectangle height
+     * @param cell the fill cell
+     */
     public void fillRectangle(int x, int y, int width, int height, TextCell cell) {
         for (int r = y; r < y + height && r < buffer.size().rows(); r++) {
             for (int c = x; c < x + width && c < buffer.size().columns(); c++) {
@@ -44,7 +72,15 @@ public class TextGraphics {
         }
     }
 
-    /** Draws the outline of a rectangle using the given border cell. @param x the starting column @param y the starting row @param width the rectangle width @param height the rectangle height @param borderCell the border cell */
+    /**
+     * Draws the outline of a rectangle using the given border cell.
+     *
+     * @param x the starting column
+     * @param y the starting row
+     * @param width the rectangle width
+     * @param height the rectangle height
+     * @param borderCell the border cell
+     */
     public void drawRectangle(int x, int y, int width, int height, TextCell borderCell) {
         int maxRow = Math.min(y + height - 1, buffer.size().rows() - 1);
         int maxCol = Math.min(x + width - 1, buffer.size().columns() - 1);
@@ -58,7 +94,15 @@ public class TextGraphics {
         }
     }
 
-    /** Draws a straight line between two points using Bresenham's algorithm. @param x0 start column @param y0 start row @param x1 end column @param y1 end row @param cell the line cell */
+    /**
+     * Draws a straight line between two points using Bresenham's algorithm.
+     *
+     * @param x0 start column
+     * @param y0 start row
+     * @param x1 end column
+     * @param y1 end row
+     * @param cell the line cell
+     */
     public void drawLine(int x0, int y0, int x1, int y1, TextCell cell) {
         int dx = Math.abs(x1 - x0);
         int dy = Math.abs(y1 - y0);
@@ -243,7 +287,14 @@ public class TextGraphics {
         return '/';                     // NE/SW
     }
 
-    /** Draws a string at the given position using the template cell's style. @param x the column @param y the row @param text the text to draw @param template the template cell (character is replaced per char) */
+    /**
+     * Draws a string at the given position using the template cell's style.
+     *
+     * @param x the column
+     * @param y the row
+     * @param text the text to draw
+     * @param template the template cell (character is replaced per char)
+     */
     public void drawString(int x, int y, String text, TextCell template) {
         int col = x;
         for (int i = 0; i < text.length(); i++) {
@@ -253,7 +304,17 @@ public class TextGraphics {
         }
     }
 
-    /** Draws a string at the given position with the given foreground, background, and SGR modifiers. @param x the column @param y the row @param text the text to draw @param fg the foreground color @param bg the background color @param mods the SGR modifiers */
+    /**
+     * Draws a string at the given position with the given foreground,
+     * background, and SGR modifiers.
+     *
+     * @param x the column
+     * @param y the row
+     * @param text the text to draw
+     * @param fg the foreground color
+     * @param bg the background color
+     * @param mods the SGR modifiers
+     */
     public void drawString(int x, int y, String text, Color fg, Color bg, SGR... mods) {
         var modsSet = mods.length == 0 ? java.util.EnumSet.noneOf(SGR.class) : java.util.EnumSet.of(mods[0], mods);
         drawString(x, y, text, new TextCell(' ', fg, bg, modsSet.toArray(new SGR[0])));
@@ -309,12 +370,26 @@ public class TextGraphics {
         });
     }
 
-    /** Sets a single cell (alias for {@link #setCell}). @param x the column @param y the row @param cell the cell to set */
+    /**
+     * Sets a single cell (alias for {@link #setCell}).
+     *
+     * @param x the column
+     * @param y the row
+     * @param cell the cell to set
+     */
     public void putCell(int x, int y, TextCell cell) {
         buffer.setCell(x, y, cell);
     }
 
-    /** Returns a sub-graphics context for the given region. @param x the column offset @param y the row offset @param width the sub-region width @param height the sub-region height @return the sub-graphics */
+    /**
+     * Returns a sub-graphics context for the given region.
+     *
+     * @param x the column offset
+     * @param y the row offset
+     * @param width the sub-region width
+     * @param height the sub-region height
+     * @return the sub-graphics
+     */
     public TextGraphics getGraphics(int x, int y, int width, int height) {
         return new SubTextGraphics(this, x, y, width, height);
     }

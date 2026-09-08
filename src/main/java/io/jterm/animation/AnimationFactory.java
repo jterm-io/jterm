@@ -28,37 +28,66 @@ public final class AnimationFactory {
 
     private AnimationFactory() {}
 
-    /** Returns a new {@link SparkleCornersEffect} for animated borders. */
+    /**
+     * Returns a new {@link SparkleCornersEffect} for animated borders.
+     *
+     * @return a new sparkle corners effect
+     */
     public static SparkleCornersEffect sparkleCorners() {
         return new SparkleCornersEffect();
     }
 
-    /** Returns a new {@link MarchingAntsEffect} with default dash=3, gap=2. */
+    /**
+     * Returns a new {@link MarchingAntsEffect} with default dash=3, gap=2.
+     *
+     * @return a new marching ants effect
+     */
     public static MarchingAntsEffect marchingAnts() {
         return new MarchingAntsEffect();
     }
 
-    /** Returns a new {@link RotatingDashCornersEffect} for animated borders. */
+    /**
+     * Returns a new {@link RotatingDashCornersEffect} for animated borders.
+     *
+     * @return a new rotating dash corners effect
+     */
     public static RotatingDashCornersEffect rotatingDashCorners() {
         return new RotatingDashCornersEffect();
     }
 
-    /** Returns a new {@link ColorPulseEffect} with default 10 frames per color. */
+    /**
+     * Returns a new {@link ColorPulseEffect} with default 10 frames per color.
+     *
+     * @return a new color pulse effect
+     */
     public static ColorPulseEffect colorPulse() {
         return new ColorPulseEffect(10);
     }
 
-    /** Returns a new {@link ScanningLineEffect} with default highlight char (■) and speed 1. */
+    /**
+     * Returns a new {@link ScanningLineEffect} with default highlight char (■) and speed 1.
+     *
+     * @return a new scanning line effect
+     */
     public static ScanningLineEffect scanningLine() {
         return new ScanningLineEffect();
     }
 
-    /** Returns a randomly chosen animated border effect using a fresh {@link Random}. */
+    /**
+     * Returns a randomly chosen animated border effect using a fresh {@link Random}.
+     *
+     * @return a new random border effect
+     */
     public static AnimatedBorderEffect randomBorderEffect() {
         return randomBorderEffect(new Random());
     }
 
-    /** Returns a randomly chosen animated border effect using the supplied {@link Random}. */
+    /**
+     * Returns a randomly chosen animated border effect using the supplied {@link Random}.
+     *
+     * @param random random source for the pick
+     * @return a new random border effect
+     */
     public static AnimatedBorderEffect randomBorderEffect(Random random) {
         java.util.function.Supplier<AnimatedBorderEffect>[] effects = new java.util.function.Supplier[]{
                 SparkleCornersEffect::new,
@@ -70,23 +99,38 @@ public final class AnimationFactory {
         return effects[random.nextInt(effects.length)].get();
     }
 
-    /** Returns a randomly chosen animation using a fresh {@link Random}. */
+    /**
+     * Returns a randomly chosen animation using a fresh {@link Random}.
+     *
+     * @return a new random animated background
+     */
     public static AnimatedBackground random() {
         return random(new Random());
     }
 
-    /** Returns a randomly chosen animation using the supplied {@link Random}. */
+    /**
+     * Returns a randomly chosen animation using the supplied {@link Random}.
+     *
+     * @param random random source for the pick
+     * @return a new random animated background
+     */
     public static AnimatedBackground random(Random random) {
         var factory = FACTORIES.get(random.nextInt(FACTORIES.size()));
         return factory.get();
     }
 
-    /** Visible for tests: returns the count of registered animation factories. */
+    /** Visible for tests: returns the count of registered animation factories.
+     *
+     * @return the number of registered animation factories
+     */
     public static int factoryCount() {
         return FACTORIES.size();
     }
 
-    /** Visible for tests: returns the distinct classes produced by all factories. */
+    /** Visible for tests: returns the distinct classes produced by all factories.
+     *
+     * @return the set of distinct animated background classes
+     */
     public static Set<Class<? extends AnimatedBackground>> availableClasses() {
         return FACTORIES.stream()
                 .map(Supplier::get)

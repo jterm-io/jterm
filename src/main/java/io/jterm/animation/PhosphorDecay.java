@@ -197,7 +197,11 @@ public class PhosphorDecay implements AnimatedBackground {
         return lastSize;
     }
 
-    /** Visible for tests: read the current grid. */
+    /**
+     * Returns a defensive copy of the brightness grid, visible for tests.
+     *
+     * @return the grid of brightness levels (empty if not yet sized)
+     */
     public int[][] getGrid() {
         if (grid == null) return new int[0][0];
         int[][] copy = new int[grid.length][];
@@ -207,7 +211,13 @@ public class PhosphorDecay implements AnimatedBackground {
         return copy;
     }
 
-    /** Visible for tests: force a cell to a brightness level. */
+    /**
+     * Forces a cell to a brightness level, visible for tests.
+     *
+     * @param x the column of the cell
+     * @param y the row of the cell
+     * @param level the brightness level, clamped to 0-5
+     */
     public void setCell(int x, int y, int level) {
         if (grid == null || currentSize == null) return;
         if (x < 0 || x >= currentSize.columns() || y < 0 || y >= currentSize.rows()) return;

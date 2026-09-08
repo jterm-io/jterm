@@ -68,7 +68,11 @@ public class AnimatedBorder extends Border {
         this.fps = fps;
     }
 
-    /** Returns the border style. */
+    /**
+     * Returns the border style.
+     *
+     * @return the border style
+     */
     public BorderStyle getBorderStyle() {
         return storedStyle;
     }
@@ -87,12 +91,20 @@ public class AnimatedBorder extends Border {
         }
     }
 
-    /** Returns whether the animation timer is currently running. */
+    /**
+     * Returns whether the animation timer is currently running.
+     *
+     * @return true if the animation timer is currently running
+     */
     public boolean isAnimating() {
         return timer != null && timer.isRunning();
     }
 
-    /** Returns the animation effect. */
+    /**
+     * Returns the animation effect.
+     *
+     * @return the animation effect
+     */
     public AnimatedBorderEffect getEffect() {
         return effect;
     }
@@ -102,6 +114,8 @@ public class AnimatedBorder extends Border {
      * and style, initialized to the style defaults. Callers (including
      * effects and tests) can use this to prepare a context before calling
      * {@link #drawWithBorderContext(TextGraphics, BorderContext)}.
+     *
+     * @return a new border context initialized to the style defaults
      */
     public BorderContext createContext() {
         return new BorderContext(getSize(), storedStyle);

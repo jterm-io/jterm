@@ -13,8 +13,17 @@ import java.util.EnumSet;
  * Tracks bounds, parent, layout data, visibility, and focus state. Subclasses
  * provide preferred size calculation and rendering via
  * {@link #calculatePreferredSize()} and {@link #drawComponent(TextGraphics)}.
+ *
+ * <p>Constructs with default state: position (0,0), zero size, visible,
+ * focusable, and no parent or layout data.
  */
 public abstract class AbstractComponent implements Component {
+
+    /**
+     * Creates a component with default state (visible, unfocused, focusable,
+     * no parent or layout data).
+     */
+    public AbstractComponent() {}
     private volatile TerminalPosition position = TerminalPosition.TOP_LEFT;
     private volatile TerminalSize size = TerminalSize.ZERO;
     private volatile TerminalSize preferredSize;
@@ -44,7 +53,11 @@ public abstract class AbstractComponent implements Component {
         return preferredSize;
     }
 
-    /** Override the calculated preferred size. Set to null to revert to auto-calculation. */
+    /**
+     * Override the calculated preferred size. Set to null to revert to auto-calculation.
+     *
+     * @param size fixed preferred size, or {@code null} to revert to auto-calculation
+     */
     public void setPreferredSizeOverride(TerminalSize size) {
         this.preferredSizeOverride = size;
         invalidate();
@@ -54,6 +67,8 @@ public abstract class AbstractComponent implements Component {
 
     /**
      * Computes the component's natural preferred size.
+     *
+     * @return the preferred size based on the component's content
      */
     protected abstract TerminalSize calculatePreferredSize();
 
@@ -132,6 +147,8 @@ public abstract class AbstractComponent implements Component {
      * Renders this component into the supplied graphics context.
      *
      * The graphics size matches {@link #getSize()} after layout.
+     *
+     * @param graphics graphics context sized to this component's bounds
      */
     protected abstract void drawComponent(TextGraphics graphics);
 }

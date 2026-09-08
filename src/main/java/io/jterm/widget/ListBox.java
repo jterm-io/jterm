@@ -19,7 +19,11 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.function.Function;
 
-/** Scrollable list of items backed by a {@link ListModel}. */
+/**
+ * Scrollable list of items backed by a {@link ListModel}.
+ *
+ * @param <T> the type of items displayed in the list
+ */
 public class ListBox<T> extends AbstractComponent implements ListDataListener {
     private ListModel<T> model;
     private volatile int selectedIndex = 0;
@@ -34,7 +38,11 @@ public class ListBox<T> extends AbstractComponent implements ListDataListener {
         this(new DefaultListModel<>());
     }
 
-    /** Creates a ListBox that displays the supplied model. */
+    /**
+     * Creates a ListBox that displays the supplied model.
+     *
+     * @param model the model to display
+     */
     public ListBox(ListModel<T> model) {
         setModel(model);
     }
@@ -44,6 +52,8 @@ public class ListBox<T> extends AbstractComponent implements ListDataListener {
      *
      * <p>The list unregisters itself from the old model (if any), registers with
      * the new model, resets selection/scroll, and invalidates.
+     *
+     * @param model the new backing model
      */
     public void setModel(ListModel<T> model) {
         if (this.model != null) {
@@ -57,12 +67,20 @@ public class ListBox<T> extends AbstractComponent implements ListDataListener {
         invalidate();
     }
 
-    /** Returns the model currently backing this list. */
+    /**
+     * Returns the model currently backing this list.
+     *
+     * @return the backing model
+     */
     public ListModel<T> getModel() {
         return model;
     }
 
-    /** Convenience: delegates to the model if it is a {@link DefaultListModel}. */
+    /**
+     * Convenience: delegates to the model if it is a {@link DefaultListModel}.
+     *
+     * @param item the item to append
+     */
     public void addItem(T item) {
         if (model instanceof DefaultListModel<T> defaultModel) {
             defaultModel.addElement(item);
@@ -97,7 +115,11 @@ public class ListBox<T> extends AbstractComponent implements ListDataListener {
         invalidate();
     }
 
-    /** Returns whether auto-scroll is enabled. */
+    /**
+     * Returns whether auto-scroll is enabled.
+     *
+     * @return {@code true} if auto-scroll is enabled
+     */
     public boolean isAutoScroll() {
         return autoScroll;
     }
@@ -111,7 +133,11 @@ public class ListBox<T> extends AbstractComponent implements ListDataListener {
         invalidate();
     }
 
-    /** Returns the current scroll offset (the index of the topmost visible item). */
+    /**
+     * Returns the current scroll offset (the index of the topmost visible item).
+     *
+     * @return the current scroll offset
+     */
     public int getScrollOffset() {
         return scrollOffset;
     }
@@ -144,7 +170,11 @@ public class ListBox<T> extends AbstractComponent implements ListDataListener {
         invalidate();
     }
 
-    /** Returns whether the last model item is currently visible. */
+    /**
+     * Returns whether the last model item is currently visible.
+     *
+     * @return {@code true} if the last item is visible
+     */
     public boolean isLastItemVisible() {
         int rows = getSize().rows();
         int size = model.getSize();
@@ -162,29 +192,49 @@ public class ListBox<T> extends AbstractComponent implements ListDataListener {
         invalidate();
     }
 
-    /** Returns the current rendering function. */
+    /**
+     * Returns the current rendering function.
+     *
+     * @return the rendering function
+     */
     public Function<T, String> getRenderer() {
         return renderer;
     }
 
-    /** Adds a listener that is fired whenever the selection changes. */
+    /**
+     * Adds a listener that is fired whenever the selection changes.
+     *
+     * @param listener the listener to add
+     */
     public void addSelectionListener(Runnable listener) {
         selectionListeners.add(listener);
     }
 
-    /** Returns a defensive copy of the registered selection listeners. */
+    /**
+     * Returns a defensive copy of the registered selection listeners.
+     *
+     * @return a copy of the registered listeners
+     */
     public List<Runnable> getSelectionListeners() {
         return new ArrayList<>(selectionListeners);
     }
 
-    /** Returns the currently selected item, or {@code null} if the list is empty. */
+    /**
+     * Returns the currently selected item, or {@code null} if the list is empty.
+     *
+     * @return the selected item, or {@code null}
+     */
     public T getSelectedItem() {
         int size = model.getSize();
         if (size == 0 || selectedIndex < 0 || selectedIndex >= size) return null;
         return model.getElementAt(selectedIndex);
     }
 
-    /** Returns the index of the currently selected item. */
+    /**
+     * Returns the index of the currently selected item.
+     *
+     * @return the selected index
+     */
     public int getSelectedIndex() { return selectedIndex; }
 
     /**
@@ -208,7 +258,11 @@ public class ListBox<T> extends AbstractComponent implements ListDataListener {
         invalidate();
     }
 
-    /** Returns a list of all items currently in the model. */
+    /**
+     * Returns a list of all items currently in the model.
+     *
+     * @return a copy of the model's items
+     */
     public List<T> getItems() {
         List<T> result = new ArrayList<>(model.getSize());
         for (int i = 0; i < model.getSize(); i++) {

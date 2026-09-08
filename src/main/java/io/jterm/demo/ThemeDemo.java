@@ -40,6 +40,15 @@ import java.util.List;
  */
 public class ThemeDemo {
 
+    /** Creates the theme demo (no state; run via {@link #main}). */
+    public ThemeDemo() {}
+
+    /**
+     * Runs the theme demo.
+     *
+     * @param args ignored command-line arguments
+     * @throws IOException if the terminal cannot be initialized
+     */
     public static void main(String[] args) throws IOException {
         var terminal = new AnsiTerminal();
         var screen = new DefaultScreen(terminal);

@@ -40,6 +40,15 @@ public class ChartDemo {
     private static final int NUM_POINTS = 30;
     private static final Random rng = new Random(42);
 
+    /** Prevents instantiation; run the demo via {@link #main(String[])} instead. */
+    private ChartDemo() {}
+
+    /**
+     * Runs the chart demo in fullscreen mode.
+     *
+     * @param args command-line arguments (ignored)
+     * @throws IOException if the terminal screen cannot be initialized
+     */
     public static void main(String[] args) throws IOException {
         var terminal = new AnsiTerminal();
         var screen = new DefaultScreen(terminal);

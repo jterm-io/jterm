@@ -174,12 +174,23 @@ class DataGridScrollTest {
     }
 
     @Test
-    void enterFiresSelectionListener() {
+    void enterFiresActivationListener() {
+        var grid = gridWithRows(30, 6, tenRows());
+        var fired = new boolean[]{false};
+        grid.addActivationListener(() -> fired[0] = true);
+        grid.handleKeyStroke(arrow(KeyType.ENTER));
+        assertTrue(fired[0], "ENTER should fire activation listener");
+    }
+
+    @Test
+    void enterDoesNotFireSelectionListener() {
+        // ENTER is activation, not selection: arrow keys move the selection
+        // and fire selection listeners; only Enter fires activation.
         var grid = gridWithRows(30, 6, tenRows());
         var fired = new boolean[]{false};
         grid.addSelectionListener(() -> fired[0] = true);
         grid.handleKeyStroke(arrow(KeyType.ENTER));
-        assertTrue(fired[0], "ENTER should fire selection listener");
+        assertFalse(fired[0], "ENTER must not fire selection listener");
     }
 
     @Test

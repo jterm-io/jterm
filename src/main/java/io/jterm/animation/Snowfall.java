@@ -158,22 +158,38 @@ public class Snowfall implements AnimatedBackground {
         return lastSize;
     }
 
-    /** Visible for tests. */
+    /**
+     * Returns the accumulated animation time, visible for tests.
+     *
+     * @return the current animation time in seconds
+     */
     public double getTime() {
         return time;
     }
 
-    /** Visible for tests. */
+    /**
+     * Returns the live flake array, visible for tests.
+     *
+     * @return the current snowflakes (may be {@code null} before sizing)
+     */
     public Snowflake[] getFlakes() {
         return flakes;
     }
 
-    /** Visible for tests. */
+    /**
+     * Returns the number of active snowflakes, visible for tests.
+     *
+     * @return the flake count (0 before sizing)
+     */
     public int getFlakeCount() {
         return flakes == null ? 0 : flakes.length;
     }
 
-    /** Visible for tests. */
+    /**
+     * Returns the current horizontal wind offset, visible for tests.
+     *
+     * @return the wind offset
+     */
     public double getWindOffset() {
         return windOffset;
     }

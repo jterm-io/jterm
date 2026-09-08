@@ -42,7 +42,13 @@ public class DNAHelix implements AnimatedBackground {
         time += 0.08;
     }
 
-    /** Visible for tests to avoid wall-clock time. */
+    /**
+     * Renders one frame of the DNA helix at an explicit time, for tests.
+     *
+     * @param graphics the graphics target
+     * @param size the terminal size to render at
+     * @param timeSeconds the animation time in seconds
+     */
     public void renderAtTime(TextGraphics graphics, TerminalSize size, double timeSeconds) {
         if (size.columns() <= 0 || size.rows() <= 0) return;
 
@@ -151,7 +157,11 @@ public class DNAHelix implements AnimatedBackground {
         return lastSize;
     }
 
-    /** Visible for tests. */
+    /**
+     * Returns the accumulated animation time, visible for tests.
+     *
+     * @return the current animation time in seconds
+     */
     public double getTime() {
         return time;
     }

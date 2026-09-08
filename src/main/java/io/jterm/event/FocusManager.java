@@ -11,6 +11,13 @@ import java.util.List;
  * One FocusManager is owned per {@link io.jterm.window.TextGUI}.
  */
 public class FocusManager {
+
+    /**
+     * Creates a FocusManager with no focused component.
+     */
+    public FocusManager() {
+    }
+
     private volatile Component focusedComponent;
     private final List<Listener<Component>> listeners = new java.util.concurrent.CopyOnWriteArrayList<>();
 

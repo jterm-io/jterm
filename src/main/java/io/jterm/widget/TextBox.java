@@ -37,7 +37,11 @@ public class TextBox extends AbstractComponent {
      */
     public TextBox(int columns) { this.preferredColumns = columns; }
 
-    /** Returns the current text value. */
+    /**
+     * Returns the current text value.
+     *
+     * @return the current text value
+     */
     public String getValue() { return value; }
     /**
      * Sets the text value (uppercase-forced if enabled) and clamps cursor/viewport.
@@ -52,41 +56,73 @@ public class TextBox extends AbstractComponent {
         invalidate();
     }
 
-    /** Returns true if characters are drawn as {@code '*'} instead of real text. */
+    /**
+     * Returns whether characters are drawn as {@code '*'} instead of real text.
+     *
+     * @return true if password masking is enabled
+     */
     public boolean isMasked() { return masked; }
 
-    /** Enables or disables password masking. Invalidates the component. */
+    /**
+     * Enables or disables password masking. Invalidates the component.
+     *
+     * @param masked true to draw {@code '*'} instead of real text
+     */
     public void setMasked(boolean masked) {
         this.masked = masked;
         invalidate();
     }
 
-    /** Returns true if typed characters are forced to uppercase. */
+    /**
+     * Returns whether typed characters are forced to uppercase.
+     *
+     * @return true if input is forced to uppercase
+     */
     public boolean isForceUppercase() { return forceUppercase; }
 
-    /** When enabled, all typed characters and setValue input are forced to uppercase. */
+    /**
+     * When enabled, all typed characters and setValue input are forced to uppercase.
+     *
+     * @param force true to force uppercase input
+     */
     public void setForceUppercase(boolean force) {
         this.forceUppercase = force;
         if (force) value = value.toUpperCase();
         invalidate();
     }
 
-    /** Returns the background color override, or null if none set (uses theme background). */
+    /**
+     * Returns the background color override.
+     *
+     * @return the background color override, or null if none set (uses theme background)
+     */
     public Color getBackgroundColorOverride() { return backgroundColorOverride; }
 
-    /** Sets a background color override for this text box. Pass null to revert to theme background. */
+    /**
+     * Sets a background color override for this text box.
+     *
+     * @param color the background color, or null to revert to theme background
+     */
     public void setBackgroundColorOverride(Color color) {
         this.backgroundColorOverride = color;
         invalidate();
     }
 
-    /** Sets placeholder text shown in dim color when the field is empty. */
+    /**
+     * Sets placeholder text shown in dim color when the field is empty.
+     *
+     * @param text the placeholder text
+     */
     public void setPlaceholder(String text) {
         this.placeholder = text;
         invalidate();
     }
 
-    /** Returns the placeholder text shown when the field is empty. */
+    /**
+     * Returns the placeholder text shown when the field is empty.
+     *
+     * @return the placeholder text, or null if none set
+     */
     public String getPlaceholder() { return placeholder; }
 
     /**

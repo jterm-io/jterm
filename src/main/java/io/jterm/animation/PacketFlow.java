@@ -62,7 +62,13 @@ public class PacketFlow implements AnimatedBackground {
         draw(graphics, size);
     }
 
-    /** Visible for tests: render at a deterministic state. */
+    /**
+     * Visible for tests: render at a deterministic state.
+     *
+     * @param graphics the text-graphics target
+     * @param size     the terminal size to render at
+     * @param ignored  unused (kept for signature compatibility)
+     */
     public void renderAtTime(TextGraphics graphics, TerminalSize size, double ignored) {
         renderFrame(graphics, size);
     }
@@ -297,22 +303,38 @@ public class PacketFlow implements AnimatedBackground {
         return lastSize;
     }
 
-    /** Visible for tests: read the current nodes. */
+    /**
+     * Visible for tests: read the current nodes.
+     *
+     * @return a copy of the current nodes
+     */
     public synchronized List<Node> getNodes() {
         return List.copyOf(nodes);
     }
 
-    /** Visible for tests: read the current edges. */
+    /**
+     * Visible for tests: read the current edges.
+     *
+     * @return a copy of the current edges
+     */
     public synchronized List<Edge> getEdges() {
         return List.copyOf(edges);
     }
 
-    /** Visible for tests: read the current packets. */
+    /**
+     * Visible for tests: read the current packets.
+     *
+     * @return a copy of the current packets
+     */
     public synchronized List<Packet> getPackets() {
         return List.copyOf(packets);
     }
 
-    /** Visible for tests: read the current pulse counters. */
+    /**
+     * Visible for tests: read the current pulse counters.
+     *
+     * @return a copy of the current per-node pulse counters
+     */
     public synchronized List<Integer> getPulseFrames() {
         return List.copyOf(pulseFrames);
     }
@@ -340,15 +362,39 @@ public class PacketFlow implements AnimatedBackground {
             this.y = y;
         }
 
-        /** Returns the node index.
- * @return the index */
-
+        /**
+         * Returns the node index.
+         *
+         * @return the index
+         */
         public int index() { return index; }
+
+        /**
+         * Returns the human-readable node label.
+         *
+         * @return the label
+         */
         public String label() { return label; }
+
+        /**
+         * Returns the column coordinate.
+         *
+         * @return the x coordinate
+         */
         public int x() { return x; }
+
+        /**
+         * Returns the row coordinate.
+         *
+         * @return the y coordinate
+         */
         public int y() { return y; }
-        /** Returns the list of neighboring nodes.
- * @return the neighbors */
+
+        /**
+         * Returns the list of neighboring nodes.
+         *
+         * @return a copy of the neighbor list
+         */
         public List<Node> neighbors() { return List.copyOf(neighbors); }
     }
 
@@ -368,10 +414,18 @@ public class PacketFlow implements AnimatedBackground {
             this.b = b;
         }
 
-        /** Returns the first endpoint.
- * @return endpoint A */
-
+        /**
+         * Returns the first endpoint.
+         *
+         * @return endpoint A
+         */
         public Node a() { return a; }
+
+        /**
+         * Returns the second endpoint.
+         *
+         * @return endpoint B
+         */
         public Node b() { return b; }
 
         /**
@@ -420,14 +474,32 @@ public class PacketFlow implements AnimatedBackground {
             this.color = color;
         }
 
-        /** Returns the source node.
- * @return the source */
-
+        /**
+         * Returns the source node.
+         *
+         * @return the source
+         */
         public Node source() { return source; }
+
+        /**
+         * Returns the destination node.
+         *
+         * @return the destination
+         */
         public Node destination() { return destination; }
+
+        /**
+         * Returns the current travel progress.
+         *
+         * @return the progress in 0.0..1.0
+         */
         public double progress() { return progress; }
-        /** Returns the packet color.
- * @return the color */
+
+        /**
+         * Returns the packet color.
+         *
+         * @return the color
+         */
         public AnsiColor color() { return color; }
     }
 }

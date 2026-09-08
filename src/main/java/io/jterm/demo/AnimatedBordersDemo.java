@@ -30,6 +30,9 @@ import java.util.List;
  */
 public class AnimatedBordersDemo {
 
+    /** Prevents instantiation; run the demo via {@link #main(String[])} instead. */
+    private AnimatedBordersDemo() {}
+
     private static final String[] EFFECT_NAMES = {
             "Sparkle Corners",
             "Marching Ants",
@@ -38,6 +41,12 @@ public class AnimatedBordersDemo {
             "Scanning Line"
     };
 
+    /**
+     * Runs the animated border effects demo.
+     *
+     * @param args ignored
+     * @throws IOException if the terminal cannot be initialized
+     */
     public static void main(String[] args) throws IOException {
         var terminal = new AnsiTerminal();
         var screen = new DefaultScreen(terminal);

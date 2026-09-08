@@ -34,6 +34,16 @@ import java.util.List;
  * </ul>
  */
 public class MenuDemo {
+
+    /** Creates the menu demo (no state; run via {@link #main}). */
+    public MenuDemo() {}
+
+    /**
+     * Runs the menu demo.
+     *
+     * @param args ignored command-line arguments
+     * @throws IOException if the terminal cannot be initialized
+     */
     public static void main(String[] args) throws IOException {
         var terminal = new AnsiTerminal();
         var screen = new DefaultScreen(terminal);

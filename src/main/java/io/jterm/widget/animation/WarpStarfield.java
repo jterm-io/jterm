@@ -75,7 +75,11 @@ public class WarpStarfield extends AbstractComponent implements AnimatedBackgrou
         this.targetFps = Math.max(MIN_FPS, Math.min(MAX_FPS, fps));
     }
 
-    /** Returns the current target frame rate in frames per second. */
+    /**
+     * Returns the current target frame rate in frames per second.
+     *
+     * @return the target frame rate
+     */
     public int getTargetFps() {
         return targetFps;
     }
@@ -89,7 +93,11 @@ public class WarpStarfield extends AbstractComponent implements AnimatedBackgrou
         this.warpSpeed = Math.max(0.001, speed);
     }
 
-    /** Returns the current warp speed. */
+    /**
+     * Returns the current warp speed.
+     *
+     * @return the warp speed (depth decrement per tick)
+     */
     public double getWarpSpeed() {
         return warpSpeed;
     }
@@ -103,27 +111,47 @@ public class WarpStarfield extends AbstractComponent implements AnimatedBackgrou
         this.paused = paused;
     }
 
-    /** Returns whether the animation is currently paused. */
+    /**
+     * Returns whether the animation is currently paused.
+     *
+     * @return {@code true} if paused
+     */
     public boolean isPaused() {
         return paused;
     }
 
-    /** Returns the current frame counter value. */
+    /**
+     * Returns the current frame counter value.
+     *
+     * @return the frame counter
+     */
     public int getFrame() {
         return frame;
     }
 
-    /** Returns the X coordinate of the starfield center (viewport center). */
+    /**
+     * Returns the X coordinate of the starfield center (viewport center).
+     *
+     * @return the center X coordinate
+     */
     public int getCenterX() {
         return centerX;
     }
 
-    /** Returns the Y coordinate of the starfield center (viewport center). */
+    /**
+     * Returns the Y coordinate of the starfield center (viewport center).
+     *
+     * @return the center Y coordinate
+     */
     public int getCenterY() {
         return centerY;
     }
 
-    /** Returns the number of stars currently allocated, or 0 before the first resize. */
+    /**
+     * Returns the number of stars currently allocated, or 0 before the first resize.
+     *
+     * @return the number of stars
+     */
     public int getStarCount() {
         return stars == null ? 0 : stars.length;
     }
@@ -266,7 +294,14 @@ public class WarpStarfield extends AbstractComponent implements AnimatedBackgrou
         }
     }
 
-    /** Project a 3D normalized point to 2D screen coordinates. */
+    /**
+     * Project a 3D normalized point to 2D screen coordinates.
+     *
+     * @param x the X coordinate in normalized space
+     * @param y the Y coordinate in normalized space
+     * @param z the Z depth coordinate
+     * @return the projected screen position
+     */
     public TerminalPosition project(double x, double y, double z) {
         // Narrower FOV — stars stay closer to center, more focused stream
         int sx = (int) Math.round(centerX + (x / z) * centerX * 2.5);
@@ -274,12 +309,22 @@ public class WarpStarfield extends AbstractComponent implements AnimatedBackgrou
         return new TerminalPosition(sx, sy);
     }
 
-    /** Returns a brightness value in [0, 1] based on depth. */
+    /**
+     * Returns a brightness value in [0, 1] based on depth.
+     *
+     * @param z the Z depth coordinate
+     * @return a brightness value in [0, 1]; 1 near the viewer
+     */
     public double brightnessForDepth(double z) {
         return 1.0 - (Math.max(MIN_DEPTH, Math.min(z, MAX_DEPTH)) / MAX_DEPTH);
     }
 
-    /** Choose a glyph character based on depth. */
+    /**
+     * Choose a glyph character based on depth.
+     *
+     * @param z the Z depth coordinate
+     * @return the glyph for that depth
+     */
     public char glyphForDepth(double z) {
         if (z > 7.0) return '.';
         if (z > 3.0) return '+';
@@ -287,7 +332,12 @@ public class WarpStarfield extends AbstractComponent implements AnimatedBackgrou
         return '#';
     }
 
-    /** Move a star toward the viewer; respawn it once it passes through. */
+    /**
+     * Move a star toward the viewer; respawn it once it passes through.
+     *
+     * @param star  the star to advance
+     * @param speed the amount to decrease the star's depth this tick
+     */
     public void advanceStar(Star star, double speed) {
         star.z -= speed;
         if (star.z < MIN_DEPTH) {
@@ -297,7 +347,11 @@ public class WarpStarfield extends AbstractComponent implements AnimatedBackgrou
         }
     }
 
-    /** Create a new star at a random 3D position. */
+    /**
+     * Create a new star at a random 3D position.
+     *
+     * @return a new star
+     */
     public Star createStar() {
         double x = random.nextDouble() * 2.0 - 1.0;
         double y = random.nextDouble() * 2.0 - 1.0;

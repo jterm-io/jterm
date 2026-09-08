@@ -19,11 +19,23 @@ public class CheckBox extends AbstractComponent {
      */
     public CheckBox(String label) { this.label = label; }
 
-    /** Returns the label text. */
+    /**
+     * Returns the label text.
+     *
+     * @return the label text shown next to the checkbox
+     */
     public String getLabel() { return label; }
-    /** Returns whether the checkbox is currently checked. */
+    /**
+     * Returns whether the checkbox is currently checked.
+     *
+     * @return {@code true} if the checkbox is checked
+     */
     public boolean isSelected() { return selected; }
-    /** Sets the checked state without firing listeners. */
+    /**
+     * Sets the checked state without firing listeners.
+     *
+     * @param selected the new checked state
+     */
     public void setSelected(boolean selected) { this.selected = selected; invalidate(); }
 
     /** Toggles the checked state and fires all registered listeners. */
@@ -33,7 +45,11 @@ public class CheckBox extends AbstractComponent {
         invalidate();
     }
 
-    /** Adds a listener fired whenever the state is toggled. */
+    /**
+     * Adds a listener fired whenever the state is toggled.
+     *
+     * @param listener the listener to add
+     */
     public void addListener(Runnable listener) { listeners.add(listener); }
 
     /**

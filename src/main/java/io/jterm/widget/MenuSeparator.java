@@ -5,6 +5,12 @@ package io.jterm.widget;
  * in a {@link Menu}. Not selectable and not activatable.
  */
 public class MenuSeparator {
+
+    /**
+     * Creates a menu separator.
+     */
+    public MenuSeparator() {}
+
     @Override
     public String toString() { return "────────────────────"; }
 }
