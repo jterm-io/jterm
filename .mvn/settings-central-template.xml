@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  Template for ~/.m2/settings.xml — enables mvn deploy to Maven Central
+  via the Central Portal (see docs/RELEASE.md).
+
+  Copy the <servers> block into your real ~/.m2/settings.xml (do NOT put
+  credentials in this template). Token comes from
+  central.sonatype.com → Account → Generate User Token.
+-->
+<settings xmlns="http://maven.apache.org/SETTINGS/1.2.0"
+          xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+          xsi:schemaLocation="http://maven.apache.org/SETTINGS/1.2.0
+          https://maven.apache.org/xsd/settings-1.2.0.xsd">
+  <servers>
+    <server>
+      <id>central</id>
+      <username>PORTAL_USER_TOKEN_NAME</username>
+      <password>PORTAL_USER_TOKEN_PASSWORD</password>
+    </server>
+  </servers>
+</settings>

@@ -4,7 +4,7 @@ import java.util.EnumSet;
 
 /**
  * A record representing a styled range of text within a string.
- * The range is half-open: {@code [start, end)} — start is inclusive,
+ * The range is half-open: {@code [start, end)} &mdash; start is inclusive,
  * end is exclusive.
  *
  * @param start     the start index (inclusive, ≥ 0)
@@ -23,7 +23,7 @@ public record StyledSegment(int start, int end, Color fg, Color bg, EnumSet<SGR>
      * @param fg        the foreground color
      * @param bg        the background color
      * @param modifiers the SGR modifiers (defensively copied)
-     * @throws IllegalArgumentException if start < 0 or end ≤ start
+     * @throws IllegalArgumentException if start &lt; 0 or end ≤ start
      */
     public StyledSegment {
         if (start < 0)

@@ -10,3 +10,7 @@ target/
 *.swp
 *.swo
 ~*
+
+# Maven credentials — never commit real tokens
+settings.xml
+.mvn/settings.xml
